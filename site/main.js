@@ -1,0 +1,568 @@
+// Boot, fixed 60 Hz loop, input, camera, battle director, pickups, HUD, menus, test hooks.
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { createWorld, BRIDGE, GATE, ARENA, RIVER, bridgeDeck, radialTexture } from './world.js';
+import { createHero, createHeroView, HERO } from './hero.js';
+import { createCrowd, OFFICERS, ST, KIND } from './crowd.js';
+import { createMusou, createMusouView, MU } from './musou.js';
+import { createVfx } from './vfx.js';
+import { createAudio } from './audio.js';
+import { buildWarrior, PAL, Vox } from './voxel.js';
+import { applyPose, idlePose, P } from './anim.js';
+
+const $ = (id) => document.getElementById(id);
+const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('vm.' + k, JSON.stringify(v)); } catch {} } };
+
+// ---------------------------------------------------------------- renderer / post
+const canvas = $('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+let lowQ = LS.get('lowq', matchMedia('(pointer: coarse)').matches);
+renderer.setPixelRatio(Math.min(devicePixelRatio, lowQ ? 1 : 1.5));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 900);
+const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.55, 0.82);
+composer.addPass(bloom);
+const grade = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, flash: { value: 0 }, flashCol: { value: new THREE.Color(1, 1, 1) }, musou: { value: 0 }, time: { value: 0 }, hurt: { value: 0 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float flash, musou, time, hurt; uniform vec3 flashCol; varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+    void main(){ vec4 c = texture2D(tDiffuse, vUv);
+      c.rgb *= vec3(1.05, 1.0, 0.92);
+      float g = dot(c.rgb, vec3(0.3,0.59,0.11)); c.rgb = mix(c.rgb, vec3(g) * vec3(1.3,1.05,0.68), musou * 0.55);
+      vec2 d = vUv - 0.5; float v = dot(d, d); c.rgb *= 1.0 - v * (0.95 + musou * 0.8);
+      c.rgb = mix(c.rgb, c.rgb * vec3(1.4, 0.5, 0.45), hurt * smoothstep(0.08, 0.3, v));
+      c.rgb = mix(c.rgb, flashCol * 1.4, flash * 0.55);
+      c.rgb += (hash(vUv * 900.0 + time) - 0.5) * 0.02;
+      gl_FragColor = c; }`,
+});
+composer.addPass(grade);
+composer.addPass(new OutputPass());
+function applyQuality() {
+  game.lodDist = lowQ ? 0 : undefined;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, lowQ ? 1 : 1.5));
+  bloom.enabled = !lowQ;
+  game.world.sun.shadow.mapSize.set(lowQ ? 1024 : 2048, lowQ ? 1024 : 2048);
+  if (game.world.sun.shadow.map) { game.world.sun.shadow.map.dispose(); game.world.sun.shadow.map = null; }
+  onResize();
+}
+
+// ---------------------------------------------------------------- game object + event bus
+const game = { frame: 0, hitstop: 0, listeners: {}, reinforceOK: true };
+game.on = (n, f) => { (game.listeners[n] ||= []).push(f); };
+game.emit = (n, e) => { const l = game.listeners[n]; if (l) for (const f of l) { try { f(e); } catch (err) { console.error(n, err); } } };
+game.world = createWorld(scene);
+game.hero = createHero(game);
+game.crowd = createCrowd(game, scene);
+game.musou = createMusou(game);
+game.hero.musouPose = (out) => game.musou.pose(game.hero, out);
+const heroView = createHeroView(scene, game.hero);
+const musouView = createMusouView(scene, game);
+const vfx = createVfx(scene, game, camera);
+const audio = createAudio(game);
+audio.setVol(LS.get('vol', 0.8)); audio.setMusic(LS.get('mus', 0.55));
+
+// 張飛 on the far bank + objective beacon
+const feiRig = buildWarrior(PAL.zhangfei, { beard: true, weapon: 'serpent', scale: 1.18, mirror: true });
+scene.add(feiRig.root);
+feiRig.root.position.set(BRIDGE.x, 0, RIVER.z0 - 3.2); feiRig.root.rotation.y = 0;
+const feiPose = P({ ty: 0.2, w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35, thL: 0.3, shL: -0.2, thR: -0.25, lzL: 0.2, lzR: -0.2 });
+const beacon = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x7ac8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+beacon.position.set(BRIDGE.x, 30, BRIDGE.z); scene.add(beacon);
+
+// pickups
+const itemGeo = {};
+{
+  const bun = new Vox(); for (let x = -3; x <= 3; x++) for (let y = 0; y <= 3; y++) for (let z = -3; z <= 3; z++) if (x * x + z * z + (y * 1.6) ** 2 < 13) bun.set(x, y, z, y > 2 ? 0xfff4e0 : 0xf2e2c4);
+  bun.set(0, 4, 0, 0xd8b890); itemGeo.bun = bun.geometry({ s: 0.07, o: [0, 0, 0] });
+  const jar = new Vox(); for (let y = 0; y <= 7; y++) { const r = y < 5 ? 3 - (y === 0 ? 1 : 0) : 1; jar.box(-r, y, -r, r - 1, y, r - 1, y === 6 ? 0xb8281e : 0x6a4a2a); } jar.box(-1, 8, -1, 0, 8, 0, 0xd8b04a);
+  itemGeo.wine = jar.geometry({ s: 0.07, o: [0, 0, 0] });
+}
+const itemMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: 0x332200, roughness: 0.6 });
+const items = [];
+function dropItem(type, x, z) {
+  const m = new THREE.Mesh(itemGeo[type === 'wine' ? 'wine' : 'bun'], itemMat); m.castShadow = true;
+  if (type === 'bigbun') m.scale.setScalar(1.8);
+  scene.add(m); items.push({ type, x, z, m, t: 0 });
+}
+
+// ---------------------------------------------------------------- input
+const keys = new Set(), pressed = new Set();
+const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'] };
+addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  audio.resume();
+  if (e.code === 'Escape') { togglePause(); return; }
+  if ((e.code === 'Enter' || e.code === 'NumpadEnter') && ui.mode !== 'play') { if (ui.mode === 'title' || ui.mode === 'result') startGame(); else if (ui.mode === 'pause') togglePause(); return; }
+  if (e.code === 'KeyH') { $('help').style.opacity = $('help').style.opacity === '0' ? '1' : '0'; }
+  keys.add(e.code); pressed.add(e.code);
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+});
+addEventListener('keyup', (e) => keys.delete(e.code));
+addEventListener('blur', () => { keys.clear(); if (ui.mode === 'play') togglePause(); });
+let drag = null, camDX = 0;
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('pointerdown', (e) => {
+  audio.resume(); if (ui.mode !== 'play') return;
+  if (e.button === 0) pressed.add('Mouse0'); if (e.button === 2) pressed.add('Mouse2');
+  drag = { x: e.clientX, moved: false }; canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', (e) => { if (!drag) return; const dx = e.clientX - drag.x; drag.x = e.clientX; camDX += dx; });
+canvas.addEventListener('pointerup', () => { drag = null; });
+let padPrev = [];
+// ---- touch: left joystick, right buttons, drag elsewhere to turn the camera
+const touch = { id: null, ox: 0, oy: 0, x: 0, y: 0, cam: null };
+const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+if (isTouch) {
+  const tc = $('touch'); tc.classList.remove('hidden');
+  const knob = $('knob'), base = $('stickBase');
+  tc.addEventListener('touchstart', (e) => {
+    audio.resume();
+    for (const t of e.changedTouches) {
+      const b = t.target.closest && t.target.closest('[data-k]');
+      if (b) { const k = b.dataset.k; if (k === 'pause') togglePause(); else pressed.add('T_' + k); b.classList.add('on'); continue; }
+      if (t.clientX < innerWidth * 0.45 && touch.id === null) { touch.id = t.identifier; touch.ox = touch.x = t.clientX; touch.oy = touch.y = t.clientY; base.style.cssText = `left:${t.clientX}px;top:${t.clientY}px;opacity:1`; }
+      else if (!touch.cam) touch.cam = { id: t.identifier, x: t.clientX };
+    }
+    e.preventDefault();
+  }, { passive: false });
+  tc.addEventListener('touchmove', (e) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === touch.id) { touch.x = t.clientX; touch.y = t.clientY; const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.min(1, Math.hypot(dx, dy) / 50) / (Math.hypot(dx, dy) || 1); knob.style.transform = `translate(${dx * l * 50}px, ${dy * l * 50}px)`; }
+      if (touch.cam && t.identifier === touch.cam.id) { camDX += (t.clientX - touch.cam.x) * 1.2; touch.cam.x = t.clientX; }
+    }
+    e.preventDefault();
+  }, { passive: false });
+  const end = (e) => { for (const t of e.changedTouches) { if (t.identifier === touch.id) { touch.id = null; knob.style.transform = ''; base.style.opacity = '0.35'; } if (touch.cam && t.identifier === touch.cam.id) touch.cam = null; } tc.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); };
+  tc.addEventListener('touchend', end); tc.addEventListener('touchcancel', end);
+}
+const input = {
+  sample(consume = true) {
+    let fx = 0, sx = 0;
+    if (keys.has('KeyW') || keys.has('ArrowUp')) fx += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) fx -= 1;
+    if (keys.has('KeyD') || keys.has('ArrowRight')) sx += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) sx -= 1;
+    let camX = (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0);
+    const pr = (a) => KEYMAP[a].some((k) => pressed.has(k));
+    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou') };
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = [...pads].find((p) => p && p.connected);
+    if (gp) {
+      const ax = (i) => Math.abs(gp.axes[i] || 0) > 0.18 ? gp.axes[i] : 0;
+      sx += ax(0); fx -= ax(1); camX += ax(2) * 1.2;
+      const b = (i) => gp.buttons[i] && gp.buttons[i].pressed, was = (i) => padPrev[i];
+      const edge = (i) => b(i) && !was(i);
+      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7) || edge(4)) o.dodge = true;
+      if (edge(9)) togglePause();
+      padPrev = gp.buttons.map((x) => x.pressed);
+    }
+    if (touch.id !== null) { const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.hypot(dx, dy); if (l > 8) { const k = Math.min(1, l / 50) / l; sx += dx * k; fx -= dy * k; } }
+    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou']) if (pressed.has('T_' + a)) o[a] = true;
+    const mag = Math.min(1, Math.hypot(fx, sx));
+    const cy = cam.yaw, cfx = Math.sin(cy), cfz = Math.cos(cy);
+    let mx = cfx * fx + -cfz * sx, mz = cfz * fx + cfx * sx;
+    const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l;
+    if (consume) pressed.clear();
+    const dx = camDX; camDX = 0;
+    return { mx, mz, mag, camX, dragX: dx, ...(consume ? o : {}) };
+  },
+};
+
+// ---------------------------------------------------------------- camera
+const cam = { crowdK: 0, yaw: 0, pitch: 0.3, dist: 6.6, pos: new THREE.Vector3(0, 4, -20), look: new THREE.Vector3(), manualT: 0, fov: 52 };
+const _t = new THREE.Vector3(), _p = new THREE.Vector3();
+function camStep(inp) {
+  cam.yaw -= inp.camX * 2.4 / 60 + inp.dragX * 0.006;
+  if (Math.abs(inp.camX) > 0.05 || inp.dragX) cam.manualT = 90; else cam.manualT--;
+  const h = game.hero;
+  if (cam.manualT < 0 && h.state === 'run' && h.spd > 3) {
+    let d = h.yaw - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+    if (Math.abs(d) < 2.4) cam.yaw += d * 0.012;
+  }
+}
+function camUpdate(dt) {
+  const h = game.hero, mu = game.musou;
+  let crowdN = 0; const cr = game.crowd; cr.query(h.x, h.z, 4, (i) => { if (cr.isAlive(i)) crowdN++; });
+  cam.crowdK += (Math.min(1, crowdN / 14) - (cam.crowdK || 0)) * 0.03;
+  const portrait = innerHeight > innerWidth * 1.1;
+  let dist = cam.dist * (portrait ? 1.45 : 1) + cam.crowdK * 1.2, pitch = cam.pitch + (portrait ? 0.08 : 0) + cam.crowdK * 0.2, yaw = cam.yaw, lookY = 1.25, fov = portrait ? 64 : 52;
+  _t.set(h.x, h.y * 0.6 + lookY, h.z);
+  if (mu.active) {
+    const t = mu.t;
+    if (t < MU.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.2; pitch = 0.08; lookY = 1.45; _t.set(h.x, h.y + lookY, h.z); fov = 44; }
+    else if (t < MU.rush) { yaw = h.yaw - 0.9; dist = 8.5; pitch = 0.22; fov = 56; }
+    else { yaw = h.yaw + 0.2; dist = 12; pitch = 0.42; fov = 58; }
+  }
+  const k = mu.active ? 0.08 : 1 - Math.exp(-dt * 12);
+  const cp = Math.cos(pitch);
+  _p.set(_t.x - Math.sin(yaw) * dist * cp, _t.y + Math.sin(pitch) * dist, _t.z - Math.cos(yaw) * dist * cp);
+  if (mu.active && mu.t === 1) cam.pos.copy(_p);
+  cam.pos.lerp(_p, mu.active ? 0.12 : Math.min(1, k * 1.2));
+  cam.look.lerp(_t, mu.active ? 0.2 : Math.min(1, k * 1.6));
+  cam.fov += (fov - cam.fov) * 0.1;
+}
+function applyCam() {
+  camera.position.copy(cam.pos); game.camPos = cam.pos;
+  game.camFwd = game.camFwd || new THREE.Vector3(); game.camFwd.subVectors(cam.look, cam.pos).setY(0).normalize();
+  const s = vfx.shake * vfx.shake * 0.35;
+  if (s > 0) camera.position.add(_p.set((Math.random() - 0.5) * s, (Math.random() - 0.5) * s, (Math.random() - 0.5) * s));
+  camera.position.y = Math.max(camera.position.y, 0.4);
+  camera.lookAt(cam.look);
+  const ov = window.__camOv;
+  if (ov) { const h = game.hero; camera.position.set(h.x + ov[0], h.y + ov[1], h.z + ov[2]); camera.lookAt(h.x + (ov[3] || 0), h.y + (ov[4] ?? 1.1), h.z + (ov[5] || 0)); }
+  if (Math.abs(camera.fov - cam.fov) > 0.01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
+}
+// title screen orbit
+function titleCam(t) {
+  const a = t * 0.05 + 2.4;
+  camera.position.set(Math.sin(a) * 9 + game.hero.x, 2.4, Math.cos(a) * 9 + game.hero.z);
+  camera.lookAt(game.hero.x, 1.4, game.hero.z + 6);
+}
+
+// ---------------------------------------------------------------- director
+const DIR = { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [] };
+function say(who, zh, en, dur = 200) { DIR.dlgQ.push({ who, zh, en, dur }); }
+function banner(main, sub, blue) { const b = $('banner'); $('bannerMain').innerHTML = main; $('bannerSub').textContent = sub || ''; b.classList.toggle('blue', !!blue); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function spawnOfficerNear(k, dist = 16) {
+  const h = game.hero;
+  let a = Math.atan2(0 - h.x, 20 - h.z) + (Math.random() - 0.5) * 1.2;
+  let x = h.x + Math.sin(a) * dist, z = h.z + Math.cos(a) * dist;
+  x = Math.max(ARENA.x0 + 4, Math.min(ARENA.x1 - 4, x)); z = Math.max(ARENA.z0 + 4, Math.min(ARENA.z1 - 4, z));
+  const o = game.crowd.spawnOfficer(k, x, z);
+  const yaw = Math.atan2(h.x - x, h.z - z);
+  game.crowd.spawnSquad(x - Math.sin(yaw) * 3, z - Math.cos(yaw) * 3, yaw, 14, 'mixed', 'march');
+  return o;
+}
+function directorStep() {
+  if (DIR.over) { DIR.endT++; return; }
+  DIR.t++; DIR.time++;
+  const c = game.crowd, h = game.hero, ko = c.ko;
+  const offs = c.officers;
+  if (DIR.phase === 0) {
+    if (DIR.t === 30) say('趙雲', '主公之子在此，趙雲誓死護之！', 'My lord\'s son is in my care. None of you shall pass!');
+    if (ko >= 50 || DIR.t > 60 * 60) {
+      spawnOfficerNear(0); DIR.phase = 1; DIR.t = 0;
+      banner('敵將 <em>夏侯恩</em> 出現', 'ENEMY OFFICER XIAHOU EN APPROACHES');
+      say('夏侯恩', '趙雲！留下阿斗，饒你不死！', 'Zhao Yun! Hand over the child and I may spare you!');
+    }
+  } else if (DIR.phase === 1) {
+    if (offs[0].dead) {
+      DIR.phase = 2; DIR.t = 0; DIR.ko0 = ko;
+      h.sword = true; h.atkMul = 1.3;
+      setTimeout(() => banner('獲得 <em>青釭劍</em>', 'QINGGANG SWORD OBTAINED · ATTACK UP', true), 1600);
+      say('趙雲', '青釭之劍……削鐵如泥，好劍！', 'The Qinggang blade — it cuts iron like clay!');
+      dropItem('wine', offs[0].rig.root.position.x, offs[0].rig.root.position.z);
+    }
+  } else if (DIR.phase === 2) {
+    if (DIR.t > 60 * 25 || ko >= DIR.ko0 + 80) {
+      spawnOfficerNear(1, 15); spawnOfficerNear(2, 17);
+      DIR.phase = 3; DIR.t = 0;
+      banner('敵將 <em>晏明</em>・<em>淳于導</em> 出現', 'YAN MING & CHUNYU DAO APPROACH');
+      say('晏明', '常山小兒，吃我一刀！', 'Changshan whelp — taste my blade!');
+    }
+  } else if (DIR.phase === 3) {
+    if (offs[1].dead && offs[2].dead) { DIR.phase = 4; DIR.t = 0; }
+  } else if (DIR.phase === 4) {
+    if (DIR.t === 90) {
+      spawnOfficerNear(3, 18); DIR.phase = 5; DIR.t = 0;
+      banner('魏將 <em>張郃</em> 見參', 'ZHANG HE HAS ENTERED THE FIELD');
+      say('張郃', '常山趙子龍，名不虛傳。且讓張儁乂會你一會！', 'Zhao Zilong of Changshan — let me see if the tales are true!');
+    }
+  } else if (DIR.phase === 5) {
+    if (offs[3].dead) {
+      DIR.phase = 6; DIR.t = 0;
+      setTimeout(() => banner('向 <em>長坂橋</em> 突圍！', 'BREAK THROUGH TO CHANGBAN BRIDGE', true), 1800);
+      say('張飛', '子龍快走！此處交給俺老張！', 'Zilong, go! Leave this lot to me!', 240);
+    }
+  } else if (DIR.phase === 6) {
+    if (Math.abs(h.x - BRIDGE.x) < BRIDGE.w + 0.5 && h.z < RIVER.z1 - 1) finish(true);
+  }
+  // KO milestones
+  const mile = Math.floor(ko / 100) * 100;
+  if (mile > DIR.lastMile && mile > 0) { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
+  // combo decay
+  if (DIR.comboT > 0 && --DIR.comboT === 0) DIR.combo = 0;
+  // pickups
+  for (let k = items.length - 1; k >= 0; k--) {
+    const it = items[k]; it.t++;
+    it.m.position.set(it.x, 0.25 + Math.sin(it.t * 0.08) * 0.08, it.z); it.m.rotation.y += 0.03;
+    if (Math.hypot(h.x - it.x, h.z - it.z) < 1.2 && !h.dead) {
+      if (it.type === 'wine') { h.musou = HERO.musouMax; game.emit('pickup', { x: it.x, z: it.z, col: [1, 0.8, 0.3] }); floatText('無雙全滿', '#ffd060'); }
+      else { const v = it.type === 'bigbun' ? h.hpMax : h.hpMax * 0.25; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
+      scene.remove(it.m); items.splice(k, 1);
+    } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
+  }
+}
+function finish(win) {
+  if (DIR.over) return;
+  DIR.over = true; DIR.win = win; DIR.endT = 0;
+  if (win) { game.emit('victory'); banner('突圍 <em>成功</em>', 'VICTORY', true); say('趙雲', '主公，阿斗安然無恙！', 'My lord, your son is safe!', 220); }
+  setTimeout(showResult, win ? 3800 : 3200);
+}
+game.on('heroDead', () => { banner('趙雲 <em>敗走</em>', 'DEFEATED'); finish(false); });
+game.on('heroHit', (e) => {
+  const h = game.hero;
+  DIR.combo += e.n; DIR.comboT = 150; DIR.maxCombo = Math.max(DIR.maxCombo, DIR.combo);
+  if (!e.musou) h.musou = Math.min(HERO.musouMax, h.musou + e.n * 0.2 * (h.sword ? 1.2 : 1));
+  comboPop = true;
+});
+game.on('heroHurt', (e) => { DIR.dmg += e.dmg; DIR.src[e.src] = (DIR.src[e.src] || 0) + Math.round(e.dmg); DIR.combo = 0; hurtFlash = 1; });
+game.on('ko', (e) => {
+  if (e.off) { banner(`敵將 <em>${e.o.def.zh}</em> 擊破！`, `ENEMY OFFICER ${e.o.def.en} DEFEATED`); DIR.offDown++; game.hitstop = Math.max(game.hitstop, 14); dropItem('bigbun', e.x, e.z); return; }
+  const r = Math.random();
+  if (e.kind === KIND.CAPTAIN && r < 0.55) dropItem('bun', e.x, e.z);
+  else if (e.kind === KIND.BEARER && r < 0.35) dropItem('wine', e.x, e.z);
+  else if (r < 0.012) dropItem('bun', e.x, e.z);
+});
+game.on('musouEnd', () => say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150));
+game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
+game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some((o) => o.active && !o.dead) || game.musou.active ? 2 : 1);
+
+// ---------------------------------------------------------------- HUD
+const ui = { mode: 'title', shownKo: 0, hpLag: 1 };
+let comboPop = false, hurtFlash = 0;
+const hudEls = { hp: $('hp'), hpLag: $('hpLag'), hpBox: $('hpBox'), mu: $('mu'), muBox: $('muBox'), muLbl: $('muLbl'), ko: $('ko'), combo: $('combo'), comboN: $('comboN'),
+  obj: $('obj'), tm: $('tm'), morale: $('morale'), boss: $('boss'), bossName: $('bossName'), bossHp: $('bossHp'), dlg: $('dlg'), sword: $('swordTag') };
+const tagEls = OFFICERS.map((d) => { const e = document.createElement('div'); e.className = 'tag'; e.innerHTML = `<div class="nm">${d.zh}<small>${d.en}</small></div><div class="bar"><i></i></div><div class="mk">▼▼</div>`; e.style.display = 'none'; $('tags').appendChild(e); return e; });
+const floatLayer = document.createElement('div'); floatLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none'; $('hud').appendChild(floatLayer);
+function floatText(txt, color) {
+  const e = document.createElement('div'); e.textContent = txt;
+  e.style.cssText = `position:absolute;left:50%;top:58%;transform:translate(-50%,0);font-family:var(--serif);font-weight:900;font-size:22px;color:${color};text-shadow:0 2px 0 #000;transition:all 1.2s ease-out;opacity:1`;
+  floatLayer.appendChild(e); requestAnimationFrame(() => { e.style.top = '50%'; e.style.opacity = '0'; }); setTimeout(() => e.remove(), 1300);
+}
+// portrait
+{
+  const x = $('face').getContext('2d');
+  const px = (c, a, b, w = 1, h = 1) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
+  px('#2a3e40', 0, 0, 20, 20); px('#e9c29c', 5, 6, 10, 10); px('#17171c', 4, 3, 12, 4); px('#17171c', 4, 3, 2, 10); px('#17171c', 14, 3, 2, 10);
+  px('#23a39a', 4, 6, 12, 1); px('#5fd6c8', 9, 1, 2, 2); px('#17171c', 9, 0, 2, 1);
+  px('#1b1b22', 7, 10, 2, 1); px('#1b1b22', 11, 10, 2, 1); px('#17171c', 7, 9, 2, 1); px('#17171c', 11, 9, 2, 1); px('#c07a6a', 9, 13, 2, 1);
+  px('#eceae3', 3, 16, 14, 4); px('#23a39a', 3, 16, 14, 1); px('#c6cbd1', 8, 17, 4, 3);
+}
+const mapCv = $('map'), mctx = mapCv.getContext('2d');
+const MAPB = { x0: -56, x1: 56, z0: -64, z1: 64 };
+const mx = (x) => (MAPB.x1 - x) / (MAPB.x1 - MAPB.x0) * 188, mz = (z) => (MAPB.z1 - z) / (MAPB.z1 - MAPB.z0) * 188;
+function drawMap() {
+  const c = game.crowd, h = game.hero;
+  mctx.clearRect(0, 0, 188, 188);
+  mctx.fillStyle = 'rgba(120,90,60,0.25)'; mctx.fillRect(mx(ARENA.x1), mz(ARENA.z1), mx(ARENA.x0) - mx(ARENA.x1), mz(ARENA.z0) - mz(ARENA.z1));
+  mctx.fillStyle = 'rgba(160,140,120,0.9)'; mctx.fillRect(0, mz(GATE.z) - 2, 188, 4);
+  mctx.fillStyle = 'rgba(30,20,14,1)'; mctx.fillRect(mx(4.5), mz(GATE.z) - 2, mx(-4.5) - mx(4.5), 4);
+  mctx.fillStyle = 'rgba(80,120,150,0.8)'; mctx.fillRect(0, mz(RIVER.z1), 188, mz(RIVER.z0) - mz(RIVER.z1));
+  mctx.fillStyle = '#8a6a44'; mctx.fillRect(mx(1.8), mz(RIVER.z1 + 1), mx(-1.8) - mx(1.8), mz(RIVER.z0 - 1) - mz(RIVER.z1 + 1));
+  mctx.font = '900 11px "Noto Serif TC", serif'; mctx.fillStyle = '#e8d8b8'; mctx.textAlign = 'center';
+  mctx.fillText('城門', mx(0), mz(GATE.z) + 14); mctx.fillText('長坂橋', mx(0), mz(RIVER.z0) + 14);
+  for (let i = 0; i < c.N; i++) {
+    const s = c.st[i]; if (s === ST.OFF || s === ST.DEAD || c.kod[i] || c.kind[i] === KIND.OFFICER) continue;
+    const cap = c.kind[i] === KIND.CAPTAIN;
+    mctx.fillStyle = cap ? '#ffb070' : s === ST.FORM || s === ST.MARCH ? 'rgba(210,60,40,0.75)' : '#ff5a3a';
+    const sz = cap ? 4 : 2.4;
+    mctx.fillRect(mx(c.x[i]) - sz / 2, mz(c.z[i]) - sz / 2, sz, sz);
+  }
+  for (const o of c.officers) if (o.active && !o.dead) { const x = mx(c.x[o.idx]), y = mz(c.z[o.idx]); mctx.fillStyle = '#b8281e'; mctx.fillRect(x - 6, y - 6, 12, 12); mctx.fillStyle = '#fff'; mctx.font = '900 9px "Noto Serif TC", serif'; mctx.fillText('將', x, y + 3.5); }
+  for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
+  if (DIR.phase === 6) { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
+  // hero + view cone
+  const hx = mx(h.x), hz = mz(h.z);
+  mctx.save(); mctx.translate(hx, hz);
+  mctx.rotate(-cam.yaw + Math.PI); mctx.fillStyle = 'rgba(160,230,255,0.13)'; mctx.beginPath(); mctx.moveTo(0, 0); mctx.arc(0, 0, 36, Math.PI / 2 - 0.5, Math.PI / 2 + 0.5); mctx.fill(); mctx.restore();
+  mctx.save(); mctx.translate(hx, hz); mctx.rotate(-h.yaw + Math.PI);
+  mctx.fillStyle = '#5fe8d8'; mctx.strokeStyle = '#0a2a28'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.moveTo(0, 7); mctx.lineTo(-5, -5); mctx.lineTo(0, -2); mctx.lineTo(5, -5); mctx.closePath(); mctx.stroke(); mctx.fill(); mctx.restore();
+}
+const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！'];
+const _v = new THREE.Vector3();
+let dlgCur = null, dlgT = 0, lastKoShown = -1, mapT = 0;
+function hudUpdate() {
+  const h = game.hero, c = game.crowd;
+  const hp = h.hp / h.hpMax;
+  hudEls.hp.style.width = (hp * 100).toFixed(1) + '%';
+  ui.hpLag += (hp - ui.hpLag) * (hp < ui.hpLag ? 0.03 : 1);
+  hudEls.hpLag.style.width = (ui.hpLag * 100).toFixed(1) + '%';
+  hudEls.hpBox.classList.toggle('low', hp < 0.25);
+  hudEls.mu.style.width = (h.musou / HERO.musouMax * 100).toFixed(1) + '%';
+  const full = h.musou >= HERO.musouMax;
+  hudEls.muBox.classList.toggle('full', full); hudEls.muLbl.textContent = full && hp < 0.25 ? '真・無雙' : '無雙'; hudEls.muLbl.classList.toggle('on', full);
+  hudEls.sword.textContent = h.sword ? '青釭劍' : '';
+  if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
+  hudEls.combo.classList.toggle('on', DIR.combo >= 2);
+  if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
+  hudEls.obj.textContent = OBJ[Math.min(DIR.phase, OBJ.length - 1)];
+  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const wei = c.alive + 40, shu = 40 + c.ko * 0.8;
+  hudEls.morale.style.width = Math.max(8, Math.min(92, shu / (shu + wei) * 100)).toFixed(1) + '%';
+  // officer tags + boss bar
+  let boss = null, bd = 1e9;
+  c.officers.forEach((o, k) => {
+    const e = tagEls[k];
+    if (!o.active || o.dead) { e.style.display = 'none'; return; }
+    const i = o.idx, d = Math.hypot(c.x[i] - h.x, c.z[i] - h.z);
+    if (d < bd) { bd = d; boss = o; }
+    _v.set(c.x[i], c.y[i] + 2.45 * (o.def.opts.scale || 1), c.z[i]).project(camera);
+    if (_v.z > 1 || d > 45) { e.style.display = 'none'; return; }
+    e.style.display = ''; e.style.left = ((_v.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px'; e.style.top = ((-_v.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px';
+    e.querySelector('.bar i').style.width = (Math.max(0, c.hp[i] / c.hpMax[i]) * 100).toFixed(1) + '%';
+    e.style.opacity = d > 38 ? ((45 - d) / 7).toFixed(2) : '1';
+  });
+  const showBoss = boss && bd < 16;
+  hudEls.boss.classList.toggle('on', !!showBoss);
+  if (showBoss) { hudEls.bossName.textContent = boss.def.zh; hudEls.bossHp.style.width = (Math.max(0, c.hp[boss.idx] / c.hpMax[boss.idx]) * 100).toFixed(1) + '%'; }
+  // dialogue
+  if (dlgCur) { if (--dlgT <= 0) { dlgCur = null; hudEls.dlg.classList.remove('on'); } }
+  else if (DIR.dlgQ.length) { dlgCur = DIR.dlgQ.shift(); dlgT = dlgCur.dur; $('dlgWho').textContent = dlgCur.who; $('dlgLine').textContent = dlgCur.zh; $('dlgEn').textContent = dlgCur.en; hudEls.dlg.classList.add('on'); }
+  if (++mapT % 3 === 0) drawMap();
+}
+
+// ---------------------------------------------------------------- menus
+function showMenu(id) { for (const m of ['title', 'pause', 'result']) $(m).classList.toggle('hidden', m !== id); $('touch').style.visibility = id ? 'hidden' : 'visible'; $('hud').classList.toggle('hidden', id !== null && id !== 'play'); }
+function startGame() {
+  audio.resume();
+  resetGame();
+  ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
+}
+function resetGame() {
+  game.hero.reset(); game.crowd.reset(); game.frame = 0; game.hitstop = 0; game.musou.active = false; game.crowd.freeze = 0;
+  Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {} });
+  for (const it of items) scene.remove(it.m); items.length = 0;
+  game.crowd.spawnArmy();
+  cam.yaw = 0; cam.pos.set(0, 4, -22); ui.hpLag = 1; lastKoShown = -1;
+}
+function togglePause() {
+  if (ui.mode === 'play') {
+    ui.mode = 'pause'; showMenu('pause');
+    const s = Math.floor(DIR.time / 60);
+    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / 4</dd>`;
+  } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
+}
+function showResult() {
+  ui.mode = 'result'; showMenu('result');
+  const s = Math.floor(DIR.time / 60), ko = game.crowd.ko;
+  const pts = (DIR.win ? 1 : 0) + (s < 480 ? 1 : 0) + (ko >= 300 ? 1 : 0) + (DIR.dmg < 400 ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
+  const rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
+  $('resTitle').textContent = DIR.win ? '突圍' : '敗走'; $('resSub').textContent = DIR.win ? 'VICTORY · CHANGBAN' : 'DEFEAT';
+  $('resRank').textContent = rank; $('resRank').style.display = DIR.win ? '' : 'none';
+  const best = LS.get('best', null);
+  const rec = { time: s, ko, combo: DIR.maxCombo, rank };
+  if (DIR.win && (!best || s < best.time)) LS.set('best', rec);
+  $('resGrid').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
+  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄 ${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
+}
+$('go').onclick = startGame; $('again').onclick = startGame; $('resume').onclick = togglePause;
+$('restart').onclick = () => { startGame(); };
+for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mus', 'mus2', 'mus', (v) => audio.setMusic(v)]]) {
+  const v0 = LS.get(k, k === 'vol' ? 0.8 : 0.55); $(a).value = v0; $(b).value = v0;
+  const h = (e) => { const v = +e.target.value; $(a).value = v; $(b).value = v; f(v); LS.set(k, v); };
+  $(a).oninput = h; $(b).oninput = h;
+}
+$('lowq').checked = lowQ; $('lowq').onchange = (e) => { lowQ = e.target.checked; LS.set('lowq', lowQ); applyQuality(); };
+
+// ---------------------------------------------------------------- loop
+let paused = false, manual = false;
+function step() {
+  const inp = input.sample(game.hitstop <= 0);
+  if (ui.mode === 'play') { camStep(inp); camUpdate(1 / 60); }
+  if (ui.mode !== 'play' && ui.mode !== 'result') { heroView.step(); game.frame++; return; }
+  if (game.hitstop > 0) { game.hitstop--; }
+  else {
+    const hin = DIR.over ? { mx: 0, mz: 0, mag: 0 } : (auto.on ? autoInput(inp) : inp);
+    game.hero.step(hin);
+    game.crowd.step();
+    directorStep();
+    heroView.step();
+    heroView.update(); vfx.simStep(heroView); musouView.step();
+  }
+  hurtFlash = Math.max(0, hurtFlash - 0.04);
+  vfx.shake = Math.max(0, vfx.shake - 2.2 / 60); vfx.flash = Math.max(0, vfx.flash - 2.5 / 60);
+  game.frame++;
+}
+let lastT = 0;
+function render(dt) {
+  heroView.update();
+  game.crowd.render();
+  vfx.update(dt, heroView);
+  musouView.update();
+  if (ui.mode === 'title') titleCam(performance.now() / 1000); else applyCam();
+  game.world.update(dt, _v.set(game.hero.x, 0, game.hero.z));
+  feiRig.root.position.y = bridgeDeck(feiRig.root.position.z);
+  idlePose(game.frame / 60, feiPose); Object.assign(feiPose, { w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35 }); applyPose(feiRig, feiPose);
+  beacon.material.opacity += ((DIR.phase === 6 ? 0.22 + Math.sin(game.frame * 0.08) * 0.06 : 0) - beacon.material.opacity) * 0.05;
+  beacon.visible = beacon.material.opacity > 0.01;
+  grade.uniforms.flash.value = vfx.flash; grade.uniforms.flashCol.value.copy(vfx.flashCol);
+  grade.uniforms.musou.value = musouView.strength; grade.uniforms.time.value = (grade.uniforms.time.value + 0.37) % 100;
+  grade.uniforms.hurt.value = Math.max(hurtFlash, game.hero.hp / game.hero.hpMax < 0.25 && ui.mode === 'play' ? 0.35 + Math.sin(game.frame * 0.1) * 0.15 : 0);
+  game.world.skyMat.uniforms.grade.value = musouView.strength * 0.5;
+  composer.render();
+  if (ui.mode === 'play' || ui.mode === 'result') hudUpdate();
+}
+let acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (manual) return;
+  const dt = Math.min(0.1, Math.max(0, (now - (lastT || now)) / 1000)); lastT = now;
+  if (ui.mode === 'pause') { render(0); return; }
+  acc += dt;
+  let n = 0;
+  while (acc >= 1 / 60 && n < 4) { step(); acc -= 1 / 60; n++; }
+  if (n === 4) acc = 0;
+  render(dt);
+}
+function onResize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', onResize);
+
+// ---------------------------------------------------------------- autopilot (testing / attract)
+const auto = { on: false, plan: [], t: 0 };
+function autoInput(real) {
+  const h = game.hero, c = game.crowd;
+  const o = { mx: 0, mz: 0, mag: 0, attack: false, charge: false, jump: false, dodge: false, musou: false };
+  // dodge officer telegraphs
+  for (const of of c.officers) {
+    const dd = of.danger; if (!of.active || of.dead || !dd) continue;
+    const dx = h.x - dd.x, dz = h.z - dd.z, d = Math.hypot(dx, dz) || 1;
+    if ((dd.r && d < dd.r + 1) || (dd.line && d < 9)) { if (h.state !== 'dodge' && game.frame % 6 === 0) { o.dodge = true; o.mx = dx / d; o.mz = dz / d; o.mag = 1; return o; } }
+  }
+  if (h.musou >= HERO.musouMax && c.alive > 20) { o.musou = true; }
+  let tgt = null, td = 1e9;
+  for (const of of c.officers) if (of.active && !of.dead) { const d = Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z); if (d < td) { td = d; tgt = { x: c.x[of.idx], z: c.z[of.idx] }; } }
+  if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
+  if (DIR.phase === 6) { tgt = { x: BRIDGE.x, z: BRIDGE.z - 3 }; td = 99; }
+  if (tgt) { const dx = tgt.x - h.x, dz = tgt.z - h.z, d = Math.hypot(dx, dz) || 1; o.mx = dx / d; o.mz = dz / d; o.mag = td > 2.6 ? 1 : 0.3; }
+  if (td < 3.4 && game.frame % 7 === 0) {
+    if (!auto.plan.length) { const n = (Math.random() * 6) | 0; auto.plan = [...Array(n).fill('a'), Math.random() < 0.8 ? 'c' : 'a']; }
+    const k = auto.plan.shift(); if (k === 'a') o.attack = true; else o.charge = true;
+  }
+  return o;
+}
+
+// ---------------------------------------------------------------- test hooks
+window.__vm = {
+  game, DIR, cam, auto, heroView, scene, camera, renderer,
+  start() { startGame(); },
+  step(n = 1, dt = 1 / 60) { manual = true; for (let i = 0; i < n; i++) step(); render(dt); return this.info(); },
+  run() { manual = false; lastT = 0; },
+  simRun(sec) { manual = true; const n = sec * 60; for (let i = 0; i < n; i++) { step(); if (i % 30 === 0) { game.crowd.render(); vfx.update(1 / 2, heroView); } if (DIR.over && DIR.endT > 30) break; } render(1 / 60); return this.info(); },
+  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
+  capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
+  press(k) { pressed.add(k); },
+  officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
+};
+
+// ---------------------------------------------------------------- boot
+resetGame();
+game.lodDist = lowQ ? 0 : undefined; bloom.enabled = !lowQ;
+ui.mode = 'title'; showMenu('title'); $('hud').classList.add('hidden');
+$('loading').remove();
+onResize();
+setTimeout(() => $('go').focus(), 100);
+requestAnimationFrame(frame);

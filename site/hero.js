@@ -1,0 +1,295 @@
+// Zhao Yun: moveset data, state machine (60 Hz sim) and rig view.
+import * as THREE from 'three';
+import { P, BASE, sampleClip, approach, runPose, idlePose, applyPose, clonePose, weaponPoint } from './anim.js';
+import { buildWarrior, PAL } from './voxel.js';
+import { groundY } from './world.js';
+
+const TAU = Math.PI * 2;
+const W = (x, y, z, rx, ry, rz = 0) => [x, y, z, rx, ry, rz];
+// ---------------------------------------------------------------- moves (frames @60 Hz)
+// hit: { f:[a,b], shape:'arc'|'circle'|'line', range, ang, dir, len, width, dmg, kb, force, lift, stop, every, yMax }
+const chamberThrust = P({ ty: 0.75, tx: 0.05, w: W(-0.24, 0.12, -0.02, -0.08, -0.72), gL: 0.45, thL: 0.2, thR: -0.35, rootY: -0.1 });
+const thrust = P({ ty: 0.05, tx: 0.3, hx: -0.2, hy: 0, w: W(-0.08, 0.2, 0.5, -0.04, -0.12), gL: 0.3, thL: 0.75, shL: -0.3, thR: -0.6, shR: -0.1, rootY: -0.15, lzL: 0.05, lzR: -0.05 });
+export const MOVES = {
+  n1: { dur: 24, cancel: 11, lunge: [[4, 10, 0.9]], next: 'n2', charge: 'c2',
+    keys: [[0, BASE], [5, chamberThrust], [9, thrust, 'snap'], [14, thrust], [24, BASE]],
+    hits: [{ f: [8, 11], shape: 'arc', range: 3.2, ang: 60, dmg: 10, kb: 'flinch', force: 1.6, stop: 3 }] },
+  n2: { dur: 26, cancel: 12, lunge: [[3, 9, 0.6]], next: 'n3', charge: 'c3',
+    keys: [[0, thrust], [5, P({ ty: -0.7, tx: 0.15, w: W(-0.3, 0.0, 0.3, 0.3, -1.2), gL: 0.45, thL: 0.5, thR: -0.3, rootY: -0.12 })],
+      [11, P({ ty: 0.75, tx: 0.05, hx: 0.1, w: W(-0.1, 0.32, 0.36, -0.45, 1.05), gL: 0.4, thL: 0.2, thR: -0.5, rootY: -0.04 }), 'snap'],
+      [16, P({ ty: 0.85, tx: 0.05, w: W(-0.1, 0.34, 0.3, -0.55, 1.2), gL: 0.4 })], [26, BASE]],
+    hits: [{ f: [8, 12], shape: 'arc', range: 3.2, ang: 160, dir: 10, dmg: 11, kb: 'flinch', force: 2, stop: 3 }] },
+  n3: { dur: 28, cancel: 14, lunge: [[3, 10, 0.7]], next: 'n4', charge: 'c4',
+    keys: [[0, BASE], [5, P({ ty: 1.0, hipY: 0.4, w: W(-0.15, -0.05, 0.25, 0.3, 1.4), gL: 0.4, thL: 0.5, shL: -0.6, thR: -0.4, shR: -0.5, rootY: -0.2, lzL: 0.35, lzR: -0.35 })],
+      [11, P({ ty: -0.9, hipY: -0.4, tx: 0.25, w: W(-0.3, -0.05, 0.25, 0.25, -1.45), gL: 0.4, thL: 0.5, shL: -0.6, thR: -0.4, shR: -0.5, rootY: -0.22, lzL: 0.35, lzR: -0.35 }), 'snap'],
+      [17, P({ ty: -1.0, hipY: -0.4, tx: 0.2, w: W(-0.3, -0.02, 0.22, 0.2, -1.55), gL: 0.4, rootY: -0.18, lzL: 0.3, lzR: -0.3 })], [28, BASE]],
+    hits: [{ f: [7, 12], shape: 'arc', range: 3.4, ang: 210, dmg: 11, kb: 'push', force: 3, stop: 3 }] },
+  n4: { dur: 28, cancel: 16, lunge: [[3, 8, 0.6], [11, 15, 0.6]], next: 'n5', charge: 'c5',
+    keys: [[0, BASE], [4, chamberThrust], [7, thrust, 'snap'], [10, chamberThrust], [13, thrust, 'snap'], [18, thrust], [28, BASE]],
+    hits: [{ f: [6, 8], shape: 'line', len: 3.6, width: 1.5, dmg: 8, kb: 'flinch', force: 1.5, stop: 2 },
+      { f: [12, 14], shape: 'line', len: 3.6, width: 1.5, dmg: 9, kb: 'flinch', force: 2, stop: 3 }] },
+  n5: { dur: 30, cancel: 17, lunge: [[4, 11, 0.8]], next: 'n6', charge: 'c6',
+    keys: [[0, BASE], [7, P({ ty: 0.2, tx: -0.35, hx: 0.2, w: W(-0.15, 0.5, 0.05, -1.5, -0.3), gL: 0.35, thL: 0.3, thR: -0.2, rootY: 0 })],
+      [11, P({ ty: 0.1, tx: 0.55, hx: -0.4, w: W(-0.12, 0.05, 0.42, 0.45, -0.25), gL: 0.3, thL: 0.8, shL: -0.5, thR: -0.7, rootY: -0.28 }), 'snap'],
+      [18, P({ ty: 0.1, tx: 0.5, hx: -0.35, w: W(-0.12, 0.02, 0.42, 0.5, -0.25), gL: 0.3, thL: 0.8, shL: -0.5, thR: -0.7, rootY: -0.28 })], [30, BASE]],
+    hits: [{ f: [10, 13], shape: 'arc', range: 3.4, ang: 80, dmg: 13, kb: 'push', force: 3.5, stop: 4 }] },
+  n6: { dur: 42, cancel: 32, lunge: [[3, 16, 1.4]],
+    keys: [[0, BASE], [4, P({ ty: 0.9, rootY: -0.15, w: W(-0.2, 0.2, 0.2, -0.05, 1.2), gL: 0.3 })],
+      [16, P({ yawAdd: -TAU, ty: -0.2, rootY: 0.05, tx: 0.1, w: W(-0.15, 0.3, 0.3, 0.05, -1.5), gL: 0.25, thL: 0.5, shL: -1.0, thR: -0.2, shR: -0.8 }), 'out'],
+      [24, P({ yawAdd: -TAU, ty: -0.5, rootY: -0.25, tx: 0.35, w: W(-0.25, 0.1, 0.3, 0.15, -1.55), gL: 0.3, thL: 0.7, shL: -0.6, thR: -0.6, lzL: 0.3, lzR: -0.3 })],
+      [42, P({ yawAdd: -TAU })]],
+    hits: [{ f: [7, 17], shape: 'circle', range: 3.5, dmg: 16, kb: 'blow', force: 8, lift: 4, stop: 6, sweep: true }] },
+  // ---- charge attacks
+  c1: { dur: 38, cancel: 30, armor: true, lunge: [[4, 10, 0.6]],
+    keys: [[0, BASE], [7, P({ ty: -0.5, tx: 0.4, rootY: -0.3, w: W(-0.3, -0.1, 0.35, 0.55, -0.9), gL: 0.4, thL: 0.7, shL: -0.8, thR: -0.5, shR: -0.4 })],
+      [13, P({ ty: 0.5, tx: -0.3, hx: 0.25, rootY: 0.05, w: W(-0.1, 0.55, 0.2, -1.2, 0.3), gL: 0.3 }), 'snap'], [22, P({ ty: 0.5, tx: -0.3, w: W(-0.1, 0.55, 0.2, -1.3, 0.3), gL: 0.3 })], [38, BASE]],
+    hits: [{ f: [10, 14], shape: 'arc', range: 3.3, ang: 130, dmg: 14, kb: 'launch', force: 1.5, lift: 8.5, stop: 5 }] },
+  c2: { dur: 44, cancel: 34, armor: true,
+    keys: [[0, thrust], [6, P({ ty: -0.6, rootY: -0.25, w: W(-0.3, 0.0, 0.3, 0.4, -1.3), gL: 0.4, thL: 0.6, shL: -0.8 })],
+      [14, P({ yawAdd: TAU, ty: 0.2, tx: -0.3, rootY: 0.1, w: W(-0.1, 0.6, 0.1, -1.4, 0.2), gL: 0.25, thL: 0.2, shL: -0.9, thR: 0.1, shR: -0.9 }), 'out'],
+      [22, P({ yawAdd: TAU, ty: 0.2, tx: -0.4, w: W(-0.12, 0.7, 0.05, -1.55, 0), gL: 0.2 })],
+      [28, P({ yawAdd: TAU, ty: 0.1, tx: 0.1, w: W(-0.1, 0.5, 0.2, -1.1, -0.2), gL: 0.25 }), 'snap'], [44, P({ yawAdd: TAU })]],
+    hits: [{ f: [8, 15], shape: 'circle', range: 3.1, dmg: 13, kb: 'launch', force: 1, lift: 9.5, stop: 4 },
+      { f: [26, 29], shape: 'arc', range: 3.6, ang: 90, dmg: 12, kb: 'launch', force: 3, lift: 4, stop: 4, yMax: 4 }] },
+  c3: { dur: 62, cancel: 54, armor: true, lunge: [[6, 46, 1.6, 'lin'], [48, 52, 0.7]],
+    keys: [[0, BASE], [8, chamberThrust], [10, thrust, 'snap'], [12, chamberThrust], [14, thrust, 'snap'], [16, chamberThrust], [18, thrust, 'snap'],
+      [20, chamberThrust], [22, thrust, 'snap'], [24, chamberThrust], [26, thrust, 'snap'], [28, chamberThrust], [30, thrust, 'snap'],
+      [32, chamberThrust], [34, thrust, 'snap'], [36, chamberThrust], [38, thrust, 'snap'], [40, chamberThrust], [42, thrust, 'snap'],
+      [46, P({ ty: 0.9, tx: -0.05, w: W(-0.26, 0.15, -0.08, -0.05, -0.8), gL: 0.5, rootY: -0.1, thL: 0.3, thR: -0.4 })],
+      [50, P({ ty: -0.05, tx: 0.35, hx: -0.2, w: W(-0.05, 0.22, 0.55, -0.02, -0.05), gL: 0.3, thL: 0.9, shL: -0.3, thR: -0.8, rootY: -0.22 }), 'snap'],
+      [56, P({ ty: -0.05, tx: 0.35, w: W(-0.05, 0.22, 0.55, -0.02, -0.05), gL: 0.3, thL: 0.9, shL: -0.3, thR: -0.8, rootY: -0.22 })], [62, BASE]],
+    hits: [{ f: [9, 43], every: 4, shape: 'line', len: 3.8, width: 2.0, dmg: 5, kb: 'flinch', force: 0.4, stop: 1 },
+      { f: [49, 52], shape: 'line', len: 4.4, width: 2.4, dmg: 22, kb: 'blow', force: 9, lift: 3, stop: 7 }] },
+  c4: { dur: 58, cancel: 50, armor: true, lunge: [[6, 44, 1.2, 'lin']],
+    keys: [[0, BASE], [6, P({ ty: 0.9, rootY: -0.15, w: W(-0.2, 0.2, 0.2, 0, 1.3), gL: 0.3 })],
+      [44, P({ yawAdd: -3 * TAU, ty: -0.3, rootY: -0.05, tx: 0.15, w: W(-0.15, 0.25, 0.3, 0.05, -1.5), gL: 0.25, thL: 0.4, shL: -0.8, thR: -0.3, shR: -0.7, lzL: 0.3, lzR: -0.3 }), 'lin'],
+      [49, P({ yawAdd: -3 * TAU - 0.8, ty: -0.6, rootY: -0.28, tx: 0.4, w: W(-0.25, 0.1, 0.3, 0.2, -1.5), gL: 0.3, thL: 0.7, shL: -0.6, thR: -0.6 }), 'snap'],
+      [58, P({ yawAdd: -3 * TAU })]],
+    hits: [{ f: [8, 43], every: 6, shape: 'circle', range: 3.3, dmg: 6, kb: 'launch', force: -1.2, lift: 3.2, stop: 1 },
+      { f: [46, 49], shape: 'circle', range: 4.0, dmg: 18, kb: 'blow', force: 9, lift: 4, stop: 7 }] },
+  c5: { dur: 46, cancel: 38, armor: true, lunge: [[8, 26, 7.5, 'lin']],
+    keys: [[0, BASE], [7, P({ ty: 0.9, tx: 0.05, rootY: -0.25, w: W(-0.26, 0.1, -0.1, -0.05, -0.85), gL: 0.5, thL: 0.5, shL: -0.8, thR: -0.6, shR: -0.5 })],
+      [10, P({ ty: 0.0, tx: 0.45, hx: -0.3, rootY: -0.2, w: W(-0.06, 0.2, 0.55, 0, -0.05), gL: 0.3, thL: 0.9, shL: -0.4, thR: -0.9, shR: -0.2, cape: 1 }), 'snap'],
+      [26, P({ ty: 0.0, tx: 0.45, hx: -0.3, rootY: -0.2, w: W(-0.06, 0.2, 0.55, 0, -0.05), gL: 0.3, thL: 0.9, shL: -0.4, thR: -0.9, shR: -0.2, cape: 1 })],
+      [30, P({ ty: 1.0, rootY: -0.3, w: W(-0.2, 0.3, 0.2, -0.2, 1.3), gL: 0.3, thL: 0.6, shL: -0.8 }), 'snap'], [46, BASE]],
+    hits: [{ f: [9, 26], every: 3, shape: 'line', len: 3.2, width: 2.4, dmg: 8, kb: 'launch', force: 4, lift: 6, stop: 1 },
+      { f: [28, 31], shape: 'circle', range: 3.8, dmg: 16, kb: 'blow', force: 8, lift: 5, stop: 6 }] },
+  c6: { dur: 60, cancel: 52, armor: true, leap: [8, 8.5], plunge: [20, -20], land: 30,
+    keys: [[0, BASE], [7, P({ rootY: -0.3, tx: 0.3, w: W(-0.2, 0.1, 0.2, -0.6, -0.4), gL: 0.4, thL: 0.8, shL: -1.2, thR: 0.4, shR: -1.1 })],
+      [14, P({ tx: -0.4, hx: 0.3, w: W(-0.1, 0.62, 0.0, -1.5, -0.1), gL: 0.3, thL: 0.9, shL: -1.5, thR: 0.2, shR: -1.2, cape: 1 })],
+      [22, P({ tx: 0.6, hx: -0.4, w: W(-0.05, 0.2, 0.35, 1.1, -0.05), gL: 0.3, thL: 0.5, shL: -0.9, thR: -0.2, shR: -0.8, cape: 1 }), 'snap'],
+      [29, P({ tx: 0.6, hx: -0.4, w: W(-0.05, 0.2, 0.35, 1.1, -0.05), gL: 0.3, thL: 0.5, shL: -0.9, thR: -0.2, shR: -0.8, cape: 1 })],
+      [32, P({ tx: 0.7, rootY: -0.4, w: W(-0.05, 0.05, 0.4, 1.2, -0.05), gL: 0.25, thL: 1.1, shL: -1.6, thR: -0.5, shR: -1.2 }), 'snap'],
+      [44, P({ tx: 0.6, rootY: -0.38, w: W(-0.05, 0.05, 0.4, 1.2, -0.05), gL: 0.25, thL: 1.1, shL: -1.6, thR: -0.5, shR: -1.2 })], [60, BASE]],
+    hits: [{ f: [30, 33], shape: 'circle', range: 5.6, dmg: 28, kb: 'blow', force: 9, lift: 7, stop: 9, heavy: true }] },
+  // ---- air
+  aj: { dur: 24, cancel: 14, air: true, hover: 2.5,
+    keys: [[0, P({ tx: -0.2, w: W(-0.1, 0.5, 0.1, -1.2, 0.8), gL: 0.3, thL: 0.8, shL: -1.3, thR: 0.3, shR: -1.2 })],
+      [7, P({ tx: 0.4, w: W(-0.15, 0.0, 0.35, 0.8, -0.8), gL: 0.3, thL: 0.8, shL: -1.3, thR: 0.3, shR: -1.2 }), 'snap'], [24, P({ thL: 0.8, shL: -1.3, thR: 0.3, shR: -1.2 })]],
+    hits: [{ f: [5, 9], shape: 'arc', range: 3.2, ang: 180, dmg: 9, kb: 'flinch', force: 2, stop: 2, yMax: 4 }] },
+  ak: { dur: 40, cancel: 30, air: true, armor: true, plunge: [4, -20], land: 14,
+    keys: [[0, P({ tx: -0.3, w: W(-0.1, 0.6, 0.0, -1.5, 0), gL: 0.3, thL: 0.8, shL: -1.3, thR: 0.3, shR: -1.2 })],
+      [6, P({ tx: 0.6, w: W(-0.05, 0.1, 0.3, 1.3, 0), gL: 0.25, thL: 0.5, shL: -0.9, thR: 0.1, shR: -0.8, cape: 1 }), 'snap'],
+      [13, P({ tx: 0.6, w: W(-0.05, 0.1, 0.3, 1.3, 0), gL: 0.25, thL: 0.5, shL: -0.9, cape: 1 })],
+      [16, P({ tx: 0.7, rootY: -0.4, w: W(-0.05, 0.05, 0.4, 1.2, 0), gL: 0.25, thL: 1.1, shL: -1.6, thR: -0.5, shR: -1.2 }), 'snap'], [40, BASE]],
+    hits: [{ f: [14, 17], shape: 'circle', range: 4.0, dmg: 14, kb: 'launch', force: 3, lift: 6, stop: 5 }] },
+};
+for (const [k, m] of Object.entries(MOVES)) m.id = k;
+
+export const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100 };
+
+export function createHero(game) {
+  const h = { x: 0, y: 0, z: -12, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0,
+    move: null, mt: 0, serial: 1, buf: null, bufAge: 0, inv: 0, grounded: true, airChain: 0, spd: 0, ph: 0, landed: false,
+    dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false };
+  h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
+    grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null });
+
+  const setState = (s) => { h.state = s; h.t = 0; };
+  const startMove = (id, inp) => {
+    const m = MOVES[id];
+    h.move = m; h.mt = 0; h.serial++; h.hitsThisMove = 0; setState('move');
+    h.lungeDone = 0;
+    // face the stick, else soft-lock the nearest enemy in front
+    if (inp && inp.mag > 0.2) h.yaw = Math.atan2(inp.mx, inp.mz);
+    else { const e = game.crowd.nearest(h.x, h.z, 5.5, Math.sin(h.yaw), Math.cos(h.yaw), -0.2); if (e) h.yaw = Math.atan2(e.x - h.x, e.z - h.z); }
+    if (m.air) { h.airChain++; if (m.hover) h.vy = Math.max(h.vy, m.hover); }
+    game.emit('move', { id, hero: h });
+  };
+  h.startMove = startMove;
+
+  h.hurt = (dmg, fx, fz, heavy, src = '?') => {
+    if (h.dead || h.inv > 0 || h.state === 'musou' || h.state === 'down' || h.state === 'getup') return false;
+    const armored = h.state === 'move' && h.move.armor;
+    h.hp -= dmg * (armored ? 0.5 : 1);
+    h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
+    game.emit('heroHurt', { dmg: dmg * (armored ? 0.5 : 1), heavy, src });
+    if (h.hp <= 0) { h.hp = 0; h.dead = true; setState('down'); h.move = null; game.emit('heroDead'); return true; }
+    if (armored && !heavy) return true;
+    h.move = null; h.yaw = Math.atan2(fx - h.x, fz - h.z);
+    if (heavy) { setState('down'); h.vy = h.grounded ? 4 : h.vy; h.grounded = false; h.kx = -Math.sin(h.yaw) * 5; h.kz = -Math.cos(h.yaw) * 5; }
+    else { setState('hurt'); h.kx = -Math.sin(h.yaw) * 2.5; h.kz = -Math.cos(h.yaw) * 2.5; }
+    return true;
+  };
+
+  h.step = (inp) => {
+    const dt = 1 / 60;
+    h.t++; if (h.inv > 0) h.inv--;
+    // buffer presses
+    if (inp.attack) { h.buf = 'a'; h.bufAge = 0; } else if (inp.charge) { h.buf = 'c'; h.bufAge = 0; }
+    if (inp.jump) { h.bufJ = 8; } if (inp.dodge) { h.bufD = 8; }
+    if (h.buf && ++h.bufAge > 30) h.buf = null;
+    if (h.bufJ > 0) h.bufJ--; if (h.bufD > 0) h.bufD--;
+    const S = h.state;
+    let mvx = 0, mvz = 0, want = 0;
+    if (S === 'dead') return;
+    if (S === 'musou') { game.musou.heroStep(h, inp); integrate(dt); return; }
+
+    const canAct = S === 'idle' || S === 'run' || (S === 'land' && h.t > 4);
+    if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt')) { h.move = null; game.musou.start(h); return; }
+
+    if (S === 'move') {
+      const m = h.move; h.mt++;
+      // lunge
+      let adv = 0;
+      if (m.lunge) for (const [a, b, d, e] of m.lunge) if (h.mt > a && h.mt <= b) { const u0 = (h.mt - 1 - a) / (b - a), u1 = (h.mt - a) / (b - a); const f = e === 'lin' ? (x) => x : (x) => 1 - (1 - x) ** 2; adv += (f(u1) - f(u0)) * d; }
+      if (adv) {
+        if (inp.mag > 0.2 && (m.id === 'c5' || m.id === 'c3')) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.06);
+        const e = game.crowd.blockedAhead(h.x, h.z, Math.sin(h.yaw), Math.cos(h.yaw));
+        const k = m.armor ? 1 : e ? 0.35 : 1;
+        h.x += Math.sin(h.yaw) * adv * k; h.z += Math.cos(h.yaw) * adv * k;
+      }
+      if (m.leap && h.mt === m.leap[0]) { h.vy = m.leap[1]; h.grounded = false; }
+      if (m.plunge && h.mt === m.plunge[0]) { h.vy = m.plunge[1]; }
+      if (m.leap && h.mt > m.leap[0] && h.mt < m.plunge[0]) h.vy = Math.max(h.vy, h.mt > 14 ? 0 : h.vy);
+      if (m.land) { if (!h.grounded && h.mt >= m.land - 1) h.mt = m.land - 1; }
+      if (m.hover && h.mt < 10) h.vy = Math.max(h.vy, 0.5);
+      // hits
+      m.hits.forEach((hd, i) => {
+        if (h.mt < hd.f[0] || h.mt > hd.f[1]) return;
+        const rep = hd.every ? Math.floor((h.mt - hd.f[0]) / hd.every) : 0;
+        if (hd.every && (h.mt - hd.f[0]) % hd.every !== 0) return;
+        const key = h.serial * 64 + i * 8 + (rep % 8);
+        const n = game.crowd.heroHit(h, hd, key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
+        h.hitsThisMove += n;
+      });
+      if (m.id === 'c6' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 5.6 });
+      if (m.id === 'ak' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 4 });
+      if (m.id === 'c5' && h.mt === 28) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 1.2, z: h.z + Math.cos(h.yaw) * 1.2 });
+      // chaining
+      const canCancel = h.mt >= m.cancel;
+      if (h.bufD > 0 && (h.mt < (m.hits[0]?.f[0] ?? 0) || canCancel) && !m.air && h.grounded) { startDodge(inp); return integrate(dt); }
+      if (h.buf && canCancel) {
+        if (m.air) { if (h.buf === 'a' && h.airChain < 3 && !h.grounded) { h.buf = null; startMove('aj', inp); } else if (h.buf === 'c' && !h.grounded && m.id !== 'ak') { h.buf = null; startMove('ak', inp); } }
+        else if (h.buf === 'a' && m.next) { h.buf = null; startMove(m.next, inp); }
+        else if (h.buf === 'c' && m.charge) { h.buf = null; startMove(m.charge, inp); }
+        else if (h.buf === 'a' && !m.next && h.mt >= m.dur - 6) { h.buf = null; startMove('n1', inp); }
+      }
+      if (h.bufJ > 0 && canCancel && h.grounded && !m.armor) { h.bufJ = 0; startJump(inp); return integrate(dt); }
+      if (h.state === 'move' && h.move === m && h.mt >= m.dur) { h.move = null; setState(h.grounded ? 'idle' : 'jump'); }
+      integrate(dt, m.air ? 0.5 : 0);
+      if (m.air && h.grounded && !m.land && h.state === 'move') { h.move = null; setState('land'); }
+      return;
+    }
+    if (S === 'hurt') { h.x += h.kx * dt; h.z += h.kz * dt; h.kx *= 0.88; h.kz *= 0.88; if (h.t > 20) setState('idle'); integrate(dt); return; }
+    if (S === 'down') { h.x += h.kx * dt; h.z += h.kz * dt; h.kx *= 0.93; h.kz *= 0.93; integrate(dt); if (h.dead) return; if (h.t > 55 && h.grounded) { setState('getup'); h.inv = 40; } return; }
+    if (S === 'getup') { if (h.t > 22) setState('idle'); return; }
+    if (S === 'dodge') {
+      const k = h.t < 14 ? 1 : Math.max(0, 1 - (h.t - 14) / 8);
+      h.x += h.dodgeDir[0] * HERO.dodge * 0.5 * k * dt * (h.t < 4 ? 1.6 : 1); h.z += h.dodgeDir[1] * HERO.dodge * 0.5 * k * dt * (h.t < 4 ? 1.6 : 1);
+      if (h.t > 14 && h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return; }
+      if (h.t >= 22) setState('idle');
+      integrate(dt); return;
+    }
+    // free states: idle / run / jump / land
+    if (inp.mag > 0.1) { mvx = inp.mx; mvz = inp.mz; want = inp.mag; }
+    if (S === 'jump') {
+      h.vx += (mvx * HERO.run * 0.85 - h.vx) * 0.08; h.vz += (mvz * HERO.run * 0.85 - h.vz) * 0.08;
+      if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), 0.15);
+      if (h.buf === 'a' && h.airChain < 3) { h.buf = null; startMove('aj', inp); return integrate(dt); }
+      if (h.buf === 'c') { h.buf = null; startMove('ak', inp); return integrate(dt); }
+      h.x += h.vx * dt; h.z += h.vz * dt;
+      integrate(dt);
+      if (h.grounded) setState('land');
+      return;
+    }
+    if (h.bufD > 0) { startDodge(inp); return integrate(dt); }
+    if (h.bufJ > 0) { h.bufJ = 0; startJump(inp); return integrate(dt); }
+    if (h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return integrate(dt); }
+    const target = want * HERO.run;
+    h.spd += Math.sign(target - h.spd) * Math.min(Math.abs(target - h.spd), HERO.accel * dt);
+    if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), HERO.turn * dt);
+    h.x += Math.sin(h.yaw) * h.spd * dt; h.z += Math.cos(h.yaw) * h.spd * dt;
+    h.ph += h.spd * dt * 1.55;
+    if (S === 'land' && h.t > 8) setState('idle');
+    if (S !== 'land') setState_(h.spd > 0.6 ? 'run' : 'idle');
+    integrate(dt);
+  };
+  const setState_ = (s) => { if (h.state !== s) setState(s); };
+  const startJump = (inp) => { setState('jump'); h.vy = HERO.jumpV; h.grounded = false; h.airChain = 0; const s = inp.mag > 0.1 ? HERO.run * 0.9 : h.spd * 0.5; h.vx = Math.sin(inp.mag > 0.1 ? Math.atan2(inp.mx, inp.mz) : h.yaw) * s; h.vz = Math.cos(inp.mag > 0.1 ? Math.atan2(inp.mx, inp.mz) : h.yaw) * s; game.emit('jump'); };
+  const startDodge = (inp) => {
+    h.bufD = 0; h.move = null; setState('dodge'); h.inv = 16;
+    const a = inp.mag > 0.1 ? Math.atan2(inp.mx, inp.mz) : h.yaw + Math.PI;
+    h.dodgeDir = [Math.sin(a), Math.cos(a)];
+    if (inp.mag > 0.1) h.yaw = a;
+    game.emit('dodge');
+  };
+  function integrate(dt, hoverG = 0) {
+    const gy = groundY(h.x, h.z);
+    if (!h.grounded || h.y > gy + 0.01) {
+      h.vy -= HERO.g * (1 - hoverG) * dt; h.y += h.vy * dt;
+      if (h.y <= gy) { h.y = gy; h.vy = 0; if (!h.grounded) { h.grounded = true; h.airChain = 0; game.emit('land', { x: h.x, z: h.z }); } }
+      else h.grounded = false;
+    } else { h.y = gy; }
+    game.world.resolve(h, 0.45, true);
+    game.crowd.pushHero(h);
+  }
+  return h;
+}
+
+function turn(a, b, k) {
+  let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
+  return a + Math.sign(d) * Math.min(Math.abs(d), k);
+}
+export { turn };
+
+// ---------------------------------------------------------------- view
+export function createHeroView(scene, h) {
+  const rig = buildWarrior(PAL.zhao, { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' });
+  scene.add(rig.root);
+  const cur = clonePose(BASE), tgt = clonePose(BASE);
+  const tip = new THREE.Vector3(), mid = new THREE.Vector3();
+  let t = 0;
+  const v = { rig, cur, tip, mid, trailOn: false };
+  v.step = () => {   // once per sim frame
+    t += 1 / 60;
+    let k = 0.28;
+    const S = h.state;
+    if (S === 'move' || S === 'musou') {
+      const m = h.state === 'musou' ? null : h.move;
+      if (m) sampleClip(m.keys, h.mt, tgt); else h.musouPose(tgt);
+      k = 0.6;
+    } else if (S === 'run') { runPose(h.ph, h.spd, tgt); k = 0.3; }
+    else if (S === 'jump') { Object.assign(tgt, clonePose(BASE), { tx: -0.1, thL: 0.9, shL: -1.4, thR: 0.2, shR: -1.0, rootY: 0, cape: 0.8, w: [-0.3, 0.1, 0.0, -0.3, Math.PI - 0.5, 0], ikL: 0, aL: [-0.8, 0, 0.6] }); k = 0.25; }
+    else if (S === 'land') { Object.assign(tgt, clonePose(BASE), { rootY: -0.25, tx: 0.4, thL: 0.8, shL: -1.2, thR: -0.3, shR: -0.9 }); k = 0.4; }
+    else if (S === 'dodge') { Object.assign(tgt, clonePose(BASE), { rootY: -0.3, tx: 0.7, hx: -0.4, thL: 1.0, shL: -1.4, thR: -0.6, shR: -0.8, cape: 1, w: [-0.3, 0.0, -0.05, -0.1, Math.PI - 0.3, 0], ikL: 0, aL: [0.9, 0, 0.3] }); k = 0.45; }
+    else if (S === 'hurt') { Object.assign(tgt, clonePose(BASE), { tx: -0.45, hx: 0.4, rootY: -0.1, thL: 0.1, thR: -0.4, cape: 0.5 }); k = 0.5; }
+    else if (S === 'down') { Object.assign(tgt, clonePose(BASE), { pitch: -1.45, rootY: 0.25, tx: -0.1, thL: 0.3, shL: -0.4, thR: 0.1, shR: -0.2, w: [-0.35, 0.0, 0.1, 0, 0.3, 0], ikL: 0, aL: [-0.3, 0, 1.2] }); k = 0.22; }
+    else if (S === 'getup') { Object.assign(tgt, clonePose(BASE), { rootY: -0.35, tx: 0.5, thL: 1.0, shL: -1.6, thR: -0.2, shR: -1.4 }); k = 0.3; }
+    else if (S === 'dead') { k = 0.1; }
+    else idlePose(t, tgt);
+    approach(cur, tgt, k);
+    // secondary: cape follows speed
+    cur.cape = Math.max(cur.cape, Math.min(1, h.spd / 7) * 0.8);
+    v.trailOn = S === 'musou' || (S === 'move' && h.move.hits.some((hd) => h.mt >= hd.f[0] - 2 && h.mt <= hd.f[1] + 2));
+  };
+  v.update = () => {
+    rig.root.position.set(h.x, h.y, h.z);
+    rig.root.rotation.y = h.yaw;
+    applyPose(rig, cur);
+    rig.root.updateMatrixWorld(true);
+    weaponPoint(rig, 2.15, tip); weaponPoint(rig, 1.0, mid);
+    rig.root.visible = true;
+  };
+  return v;
+}
