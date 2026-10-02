@@ -9,6 +9,8 @@
 - 截图接收：`python shot_server.py shots`（8209），页面里 `__vm.capture(name)` 落盘到 `shots/`；`python sheet.py <前缀> [列数] [缩放]` 拼成联系表
 - 单文件：`python build_dist.py` → `dist/index.html`（离线，three 以 data: URL 内嵌，`voxel-musou-dist` 8210）+ `dist/artifact.html`
 - Artifact：https://claude.ai/artifact/6vHvvz97Ud36zWFPoh2RDW
+- 在线：https://leigaorobot.github.io/changban-musou/ （仓库 https://github.com/LeiGaoRobot/changban-musou ，Pages 从 master 的 `docs/` 发布）
+- 更新发布：`python build_dist.py` → `cp dist/index.html docs/` → commit → push → Artifact 同路径重发
 
 ## 玩法
 
