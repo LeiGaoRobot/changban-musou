@@ -78,7 +78,7 @@ export function createVfx(scene, game, camera) {
   const dCircle = new THREE.Mesh(new THREE.CircleGeometry(1, 48), dangerMat); dCircle.rotation.x = -Math.PI / 2;
   const dEdge = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), dangerMat); dEdge.rotation.x = -Math.PI / 2;
   const dRect = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat); dRect.rotation.x = -Math.PI / 2;
-  const dangers = []; for (let k = 0; k < 4; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
+  const dangers = []; for (let k = 0; k < 8; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
   const lanes = []; for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat.clone()); m.rotation.order = 'YXZ'; m.visible = false; scene.add(m); lanes.push(m); }
   // pickup meshes (meat bun / wine jar)
   V.items = [];
@@ -125,6 +125,11 @@ export function createVfx(scene, game, camera) {
     ring(e.x, 0.3, e.z, 1, 60, 1.2, 0xffe0a0, 1); ring(e.x, 0.5, e.z, 0.5, 34, 0.8, 0xffffff, 0.9); ring(e.x, 1.2, e.z, 0.5, 20, 0.5, 0xffb060, 0.8);
     V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
     for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
+  });
+  game.on('roarMini', (e) => {
+    ring(e.x, 0.15, e.z, 0.6, e.r * 1.05, e.big ? 0.7 : 0.45, 0xffb060, 0.95); ring(e.x, 0.9, e.z, 0.4, e.r * 0.7, 0.35, 0xffffff, 0.8);
+    V.shake = Math.max(V.shake, e.big ? 1.2 : 0.7); V.flash = e.big ? 0.8 : 0.35; V.flashCol.setRGB(1, 0.8, 0.55);
+    for (let k = 0; k < 30; k++) { const a = k / 30 * 6.283; dust.spawn({ x: e.x + Math.cos(a) * 1.5, y: 0.3, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * e.r * 1.3, vy: 0.8 + Math.random(), vz: Math.sin(a) * e.r * 1.3, drag: 3, s: 1.2, grow: 3, life: 0.9, a0: 0.4, r: 0.68, gg: 0.58, b: 0.46 }); }
   });
   game.on('pickup', (e) => { for (let k = 0; k < 20; k++) { const a = Math.random() * 6.28; glow.spawn({ x: e.x, y: 0.5 + Math.random(), z: e.z, vx: Math.cos(a) * 1.5, vy: 2 + Math.random() * 2, vz: Math.sin(a) * 1.5, drag: 1.5, s: 0.18, life: 0.8, r: e.col[0], gg: e.col[1], b: e.col[2] }); } });
 

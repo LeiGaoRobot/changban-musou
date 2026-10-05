@@ -132,6 +132,10 @@ export const PAL = {
     boot: 0x22241c, belt: 0x5e3a1e, helm: 0x4a5040, plume: 0xa82c1e, eye: 0x1b1b22, lip: 0x9a5e50, metal: 0xb88a3a },
   zhang: { armor: 0x3b2a58, plate: 0x6e58a0, trim: 0xe0b450, trim2: 0xf6dc8a, cloth: 0x201a30, skin: 0xecccae, hair: 0x14121a,
     boot: 0x1e1a2a, belt: 0xa8322a, helm: 0x4a3a6e, plume: 0xe8e0f0, eye: 0x1b1b22, lip: 0xb07060, cape: 0x5a3a8a, metal: 0xe0b450 },
+  wenpin: { armor: 0x2f4a4a, plate: 0x5a7a78, trim: 0xc8ccd2, trim2: 0xeef2f6, cloth: 0x1e2a2c, skin: 0xe2c0a0, hair: 0x1a1512,
+    boot: 0x1e2628, belt: 0x6a2a22, helm: 0x3a5a58, plume: 0xeeeeee, eye: 0x1b1b22, lip: 0x9a5e50, cape: 0x2a5a8a, metal: 0xc8ccd2 },
+  xuchu: { armor: 0x5a4630, plate: 0x8a6a42, trim: 0x2a2420, trim2: 0xb8281c, cloth: 0x3a2c20, skin: 0xc89868, hair: 0x14100c,
+    boot: 0x241a14, belt: 0xb8281c, helm: 0x6a5236, plume: 0xb8281c, eye: 0x101010, lip: 0x8a5040, metal: 0xd8b04a },
   zhangfei: { armor: 0x2a2a30, plate: 0x4a4a52, trim: 0xa8322a, trim2: 0xd8503c, cloth: 0x1c1c22, skin: 0xb88a62, hair: 0x0e0e10,
     boot: 0x18181c, belt: 0x6a1e18, eye: 0x101010, lip: 0x7a4a3a, metal: 0x8a8a92 },
 };
@@ -346,6 +350,16 @@ export function weaponV(kind) {
   } else if (kind === 'claw') {                              // 張郃 鉤爪
     v.box(-2, -2, -3, 2, 2, 2, 0x6e58a0); v.box(-3, -1, 3, 3, 1, 4, G);
     for (const x of [-3, 0, 3]) { for (let z = 5; z <= 22; z++) v.set(x, z > 16 ? Math.round((z - 16) * 0.5) : 0, z, z > 19 ? S2 : S1); for (let z = 5; z <= 12; z++) v.set(x, -1, z, 0x9aa0aa); }
+  } else if (kind === 'hammer') {                            // 許褚 大錘
+    v.box(0, 0, -16, 0, 0, 38, 0x3a2e24); for (let z = -10; z <= 32; z += 14) ring(z, 0x8a6a2a);
+    v.box(-1, -1, 38, 1, 1, 40, G);
+    for (let x = -4; x <= 4; x++) for (let y = -4; y <= 4; y++) for (let z = 41; z <= 53; z++) {
+      if (Math.abs(x) === 4 && Math.abs(y) === 4) continue;
+      const face = Math.abs(x) === 4 || Math.abs(y) === 4 || z === 41 || z === 53;
+      if (!face) continue;
+      v.set(x, y, z, (z === 41 || z === 53 || z === 47) ? G : (x + y + z) % 4 === 0 ? 0x6a6e78 : 0x4a4e58);
+    }
+    for (const [x, y] of [[-5, 0], [5, 0], [0, -5], [0, 5]]) { v.set(x, y, 44, G); v.set(x, y, 50, G); }
   } else if (kind === 'serpent') {                           // 丈八蛇矛
     v.box(0, 0, -30, 0, 0, 54, 0x1e1a18); for (let z = -20; z <= 46; z += 11) ring(z, 0x8a2a22);
     v.box(-1, -1, 54, 1, 1, 56, 0xa8322a); v.ell(0.5, -2, 52.5, 2, 2.6, 2, 0xb3261c);

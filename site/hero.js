@@ -99,6 +99,15 @@ for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
 export const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
 
+// playable officers. reach scales hit shapes, tough = ordinary blows never stagger him
+export const CHARS = {
+  zhao: { key: 'zhao', zh: '趙雲', en: 'ZHAO YUN', seal: '常山', pal: 'zhao', opts: { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' },
+    horse: 'white', hp: 500, run: 7.4, atk: 1, reach: 1, tough: false, musou: 'dragon', tip: 2.15, stage: 'changban' },
+  fei: { key: 'fei', zh: '張飛', en: 'ZHANG FEI', seal: '燕人', pal: 'zhangfei', opts: { beard: true, headband: true, topknot: true, weapon: 'serpent', scale: 1.16 },
+    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.15, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge' },
+};
+const reachHit = (hd, r) => (r === 1 ? hd : hd['_r' + r] || (hd['_r' + r] = { ...hd, range: hd.range && hd.range * r, len: hd.len && hd.len * r, width: hd.width && hd.width * (1 + (r - 1) * 0.5) }));
+
 // ---- mounted: seat pose + two sweeps (J) and a couched charge (K)
 const RIDE_O = { rootY: 0, tx: 0.15, ty: 0.05, hx: -0.1, hy: 0, thL: 1.2, shL: -1.35, thR: 1.2, shR: -1.35, lzL: 0.5, lzR: -0.5,
   w: W(-0.34, 0.18, 0.1, -0.55, -0.2), ikL: 0, aL: [0.85, 0, 0.15], cape: 0.3 };
@@ -122,7 +131,7 @@ export function createHero(game) {
     move: null, mt: 0, serial: 1, buf: null, bufAge: 0, inv: 0, grounded: true, airChain: 0, spd: 0, ph: 0, landed: false,
     dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false, riding: false, ratk: null,
     horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } };
-  h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
+  h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: game.char.hp, hpMax: game.char.hp, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
     grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null, riding: false, ratk: null,
     horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } });
 
@@ -147,7 +156,7 @@ export function createHero(game) {
     h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
     game.emit('heroHurt', { dmg, heavy, src });
     if (h.hp <= 0) { h.hp = 0; h.dead = true; unhorse(); setState('down'); h.move = null; game.emit('heroDead'); return true; }
-    if ((armored || h.riding) && !heavy) return true;
+    if ((armored || h.riding || game.char.tough) && !heavy) return true;
     h.move = null; h.yaw = Math.atan2(fx - h.x, fz - h.z);
     if (h.riding) unhorse();
     if (heavy) { setState('down'); h.vy = h.grounded ? 4 : h.vy; h.grounded = false; h.kx = -Math.sin(h.yaw) * 5; h.kz = -Math.cos(h.yaw) * 5; }
@@ -185,8 +194,8 @@ export function createHero(game) {
     const dt = 1 / 60;
     h.t++; if (h.inv > 0) h.inv--;
     for (const k in h.buff) if (h.buff[k] > 0) h.buff[k]--;
-    h.atkMul = (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
-    const runTop = HERO.run * (h.buff.boots > 0 ? 1.25 : 1);
+    h.atkMul = game.char.atk * (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
+    const runTop = game.char.run * (h.buff.boots > 0 ? 1.25 : 1), reach = game.char.reach;
     horseStep(dt);
     // buffer presses
     if (inp.attack) { h.buf = 'a'; h.bufAge = 0; } else if (inp.charge) { h.buf = 'c'; h.bufAge = 0; }
@@ -216,7 +225,7 @@ export function createHero(game) {
           if (ra.t < hd.f[0] || ra.t > hd.f[1]) return;
           if (hd.every && (ra.t - hd.f[0]) % hd.every !== 0) return;
           const key = h.serial * 64 + i * 8 + ((hd.every ? Math.floor((ra.t - hd.f[0]) / hd.every) : 0) % 8);
-          game.crowd.heroHit(h, hd, key, 0, 0);
+          game.crowd.heroHit(h, reachHit(hd, reach), key, 0, 0);
         });
         if (ra.id === 'rc' && ra.t === 34) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 2, z: h.z + Math.cos(h.yaw) * 2 });
         if (ra.t >= A.cancel && h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : ra.id === 'ra' ? 'rb' : 'ra', inp); }
@@ -262,7 +271,7 @@ export function createHero(game) {
         const rep = hd.every ? Math.floor((h.mt - hd.f[0]) / hd.every) : 0;
         if (hd.every && (h.mt - hd.f[0]) % hd.every !== 0) return;
         const key = h.serial * 64 + i * 8 + (rep % 8);
-        const n = game.crowd.heroHit(h, hd, key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
+        const n = game.crowd.heroHit(h, reachHit(hd, reach), key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
         h.hitsThisMove += n;
       });
       if (m.id === 'c6' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 5.6 });
@@ -296,7 +305,7 @@ export function createHero(game) {
     // free states: idle / run / jump / land
     if (inp.mag > 0.1) { mvx = inp.mx; mvz = inp.mz; want = inp.mag; }
     if (S === 'jump') {
-      h.vx += (mvx * HERO.run * 0.85 - h.vx) * 0.08; h.vz += (mvz * HERO.run * 0.85 - h.vz) * 0.08;
+      h.vx += (mvx * runTop * 0.85 - h.vx) * 0.08; h.vz += (mvz * runTop * 0.85 - h.vz) * 0.08;
       if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), 0.15);
       if (h.buf === 'a' && h.airChain < 3) { h.buf = null; startMove('aj', inp); return integrate(dt); }
       if (h.buf === 'c') { h.buf = null; startMove('ak', inp); return integrate(dt); }
@@ -347,13 +356,21 @@ export { turn };
 
 // ---------------------------------------------------------------- view
 export function createHeroView(scene, h) {
-  const rig = buildWarrior(PAL.zhao, { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' });
-  scene.add(rig.root);
-  const horse = buildHorse({ pal: 'white' }); scene.add(horse.root);
+  const sets = {};
+  for (const k in CHARS) {
+    const ch = CHARS[k], r = buildWarrior(PAL[ch.pal], ch.opts), hs = buildHorse({ pal: ch.horse });
+    r.root.visible = hs.root.visible = false; scene.add(r.root, hs.root); sets[k] = { rig: r, horse: hs };
+  }
+  let rig = sets.zhao.rig, horse = sets.zhao.horse;
   const cur = clonePose(BASE), tgt = clonePose(BASE), rideT = clonePose(RIDE);
   const tip = new THREE.Vector3(), mid = new THREE.Vector3();
   let t = 0;
-  const v = { rig, horse, cur, tip, mid, trailOn: false };
+  const v = { rig, horse, cur, tip, mid, trailOn: false, char: CHARS.zhao };
+  v.setChar = (k) => {
+    for (const q in sets) sets[q].rig.root.visible = sets[q].horse.root.visible = q === k;
+    rig = sets[k].rig; horse = sets[k].horse; v.rig = rig; v.horse = horse; v.char = CHARS[k];
+  };
+  v.setChar('zhao');
   v.step = () => {   // once per sim frame
     t += 1 / 60;
     let k = 0.28;
@@ -385,11 +402,11 @@ export function createHeroView(scene, h) {
     const hz = h.horse, g = Math.min(1, hz.spd / HERO.ride);
     horse.root.position.set(hz.x, h.riding ? h.y : groundY(hz.x, hz.z), hz.z); horse.root.rotation.y = hz.yaw;
     poseHorse(horse, hz.ph, g, t);
-    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y - 0.68 : 0), h.z);
+    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y + 0.28 - 0.96 * rig.scale : 0), h.z);
     rig.root.rotation.y = h.yaw;
     applyPose(rig, cur);
     rig.root.updateMatrixWorld(true);
-    weaponPoint(rig, 2.15, tip); weaponPoint(rig, 1.0, mid);
+    weaponPoint(rig, v.char.tip, tip); weaponPoint(rig, 1.0, mid);
     rig.root.visible = true;
   };
   return v;

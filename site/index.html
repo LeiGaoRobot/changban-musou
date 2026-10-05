@@ -97,6 +97,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .buffs { display: flex; gap: 6px; min-height: 24px; margin-bottom: 4px; }
 .buffs span { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 2px; border-radius: 12px; background: rgba(0,0,0,.55); border: 1px solid var(--c); font-family: var(--latin); font-size: 12px; color: #fff; }
 .buffs b { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--c); color: #1a1008; font-family: var(--serif); font-weight: 900; font-size: 13px; }
+.chars { display: flex; gap: 10px; margin-top: 1.6vh; }
+.chars button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 132px; padding: 7px 14px; border-radius: 4px; background: rgba(255,255,255,.06); border: 1px solid var(--line); text-align: left; }
+.chars button b { font-family: var(--serif); font-weight: 900; font-size: 20px; letter-spacing: .12em; }
+.chars button span { font-size: 12px; color: var(--dim); letter-spacing: .25em; }
+.chars button.on { background: linear-gradient(180deg, rgba(184,40,30,.85), rgba(120,24,18,.85)); border-color: #e8a090; }
+.chars button.on span { color: #f6d8c8; }
+.chars button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .diffs { display: flex; align-items: center; gap: 8px; margin-top: 2.2vh; font-size: 14px; color: var(--dim); letter-spacing: .2em; }
 .diffs button { font-family: var(--serif); font-weight: 900; font-size: 17px; min-width: 46px; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,.07); border: 1px solid var(--line); letter-spacing: 0; }
 .diffs button.on { background: var(--red); border-color: #e8a090; color: #fff; }
@@ -115,13 +122,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.sm { width: 40px; height: 40px; font-size: 13px; }
 /* ---------- menus */
 .menu { position: fixed; inset: 0; display: flex; pointer-events: auto; z-index: 10; }
-.menu .col { scrollbar-width: none; width: min(560px, 100vw); padding: 5vh 56px 3vh; display: flex; flex-direction: column;
+.menu .col { scrollbar-width: none; width: min(580px, 100vw); padding: 4vh 56px 2.5vh; display: flex; flex-direction: column;
   background: linear-gradient(90deg, rgba(18,10,6,.92) 0%, rgba(18,10,6,.78) 62%, rgba(18,10,6,0) 100%); overflow-y: auto; }
 .menu h1 { margin: 0; display: flex; align-items: flex-start; gap: 12px; }
-.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(64px, 11vh, 124px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
+.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(56px, 9.5vh, 112px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
-.menu .tag2 { font-size: 19px; letter-spacing: .3em; margin: 2.2vh 0 1.8vh; color: #f0e2c4; }
+.menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
 .ctl { display: grid; grid-template-columns: auto 1fr; gap: 5px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
 .ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 17px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
@@ -161,7 +168,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
-  <div class="h-title"><b>趙雲</b><i class="seal">常山</i><small>ZHAO YUN</small></div>
+  <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
     <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>F</kbd>喚馬 · <kbd>Q</kbd><kbd>E</kbd>視角
@@ -177,7 +184,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="badge"><canvas id="face" width="20" height="20"></canvas></div>
     <div class="bars">
       <div class="buffs" id="buffs"></div>
-      <div class="name">趙雲 <em id="swordTag"></em></div>
+      <div class="name"><span id="pName">趙雲</span> <em id="swordTag"></em></div>
       <div class="hp" id="hpBox"><u id="hpLag"></u><i id="hp"></i></div>
       <div style="position:relative"><div class="mu" id="muBox"><i id="mu"></i></div><div class="mu-lbl" id="muLbl">無雙</div></div>
     </div>
@@ -198,18 +205,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 </div>
 <div class="menu" id="title">
   <div class="col">
-    <h1><b>趙雲</b><i class="seal">常山</i></h1>
+    <h1><b id="tName">趙雲</b><i class="seal" id="tSeal">常山</i></h1>
     <div class="sub">VOXEL MUSOU</div>
-    <div class="tag2">長坂坡 · 一杆長槍，單騎七進七出</div>
+    <div class="chars" id="chars">
+      <button data-c="zhao"><b>趙雲</b><span>長坂單騎</span></button>
+      <button data-c="fei"><b>張飛</b><span>據水斷橋</span></button>
+    </div>
+    <div class="tag2" id="tTag">長坂坡 · 一杆長槍，單騎七進七出</div>
     <dl class="ctl">
       <dt>移動<small>MOVE</small></dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向鍵</dd>
       <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 — 連按出六段連擊</dd>
       <dt>蓄力<small>CHARGE</small></dt><dd><kbd>K</kbd> / 右鍵 — 連擊中按出 C1–C6</dd>
-      <dt>跳躍<small>JUMP</small></dt><dd><kbd>Space</kbd> — 空中可接 <kbd>J</kbd> / <kbd>K</kbd></dd>
-      <dt>閃避<small>DODGE</small></dt><dd><kbd>L</kbd> / <kbd>Shift</kbd></dd>
+      <dt>跳・閃<small>JUMP / DODGE</small></dt><dd><kbd>Space</kbd> 跳（空中可接 <kbd>J</kbd><kbd>K</kbd>）· <kbd>L</kbd> / <kbd>Shift</kbd> 閃避</dd>
       <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · 馬上 <kbd>J</kbd>橫掃 <kbd>K</kbd>突擊</dd>
-      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> — 金色氣力滿時；瀕危時為真・無雙</dd>
-      <dt>視角<small>CAMERA</small></dt><dd><kbd>Q</kbd><kbd>E</kbd> / 拖曳滑鼠</dd>
+      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）· 視角 <kbd>Q</kbd><kbd>E</kbd> / 拖曳</dd>
     </dl>
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <button class="go" id="go">出陣 <small>START</small></button>
@@ -218,7 +227,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <label><input type="checkbox" id="lowq"> 低畫質</label>
     </div>
-    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>擊破四員魏將，奪青釭劍，向長坂橋突圍。打碎木箱有肉包與強化道具；虎豹騎的紅色衝鋒線要讓開。</div>
+    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
   </div>
 </div>
 

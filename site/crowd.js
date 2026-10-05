@@ -18,6 +18,9 @@ export const OFFICERS = [
   { key: 'yan', zh: '晏明', en: 'YAN MING', pal: PAL.yan, weapon: 'halberd', opts: { helm: true, beard: true, mirror: true, scale: 1.1 }, hp: 1600, speed: 4.6, atk: ['combo', 'spin'], dmg: 1.1 },
   { key: 'chunyu', zh: '淳于導', en: 'CHUNYU DAO', pal: PAL.chunyu, weapon: 'glaive', opts: { helm: true, beard: true, mirror: true, scale: 1.12 }, hp: 1600, speed: 4.6, atk: ['combo', 'dash'], dmg: 1.1 },
   { key: 'zhang', zh: '張郃', en: 'ZHANG HE', pal: PAL.zhang, weapon: 'claw', opts: { helm: true, horns: true, mirror: true, offhand: 'claw', dual: true, cape: true, scale: 1.08 }, hp: 2400, speed: 6.0, atk: ['combo', 'dash', 'spin', 'leap'], dmg: 1.2 },
+  // 據水斷橋
+  { key: 'wenpin', zh: '文聘', en: 'WEN PIN', pal: PAL.wenpin, weapon: 'halberd', opts: { helm: true, cape: true, scale: 1.06 }, hp: 1700, speed: 5.2, atk: ['combo', 'dash'], dmg: 1.1 },
+  { key: 'xuchu', zh: '許褚', en: 'XU CHU', pal: PAL.xuchu, weapon: 'hammer', opts: { helm: true, beard: true, scale: 1.26 }, hp: 3000, speed: 4.8, atk: ['combo', 'spin', 'leap'], dmg: 1.35 },
 ];
 // officer attacks: segments of hero clips with a telegraph hold on the chamber frame
 const OATK = {
@@ -88,8 +91,8 @@ export function createCrowd(game, scene) {
     return i;
   }
   // a squad: rows × cols block facing yaw; archers stand in two loose rows
-  c.spawnSquad = (cx, cz, yaw, n = CROWD.squad, type = 'mixed', state = 'hold') => {
-    const sq = { id: c.squads.length, cx, cz, yaw, state, members: [], type, t: 0, bearer: -1 };
+  c.spawnSquad = (cx, cz, yaw, n = CROWD.squad, type = 'mixed', state = 'hold', goal = null) => {
+    const sq = { id: c.squads.length, cx, cz, yaw, state, members: [], type, t: 0, bearer: -1, goal };
     const cols = type === 'archer' ? 6 : 6, sp = 1.25;
     const fx = Math.sin(yaw), fz = Math.cos(yaw), rx = -fz, rz = fx;
     for (let k = 0; k < n; k++) {
@@ -247,13 +250,13 @@ export function createCrowd(game, scene) {
     const h = game.hero, dt = 1 / 60;
     buildGrid();
     // director: keep ~CROWD.engaged soldiers on the hero
-    let engaged = 0, tokens = 0, aliveN = 0;
+    let engaged = 0, tokens = 0, aliveN = 0, nearN = 0;
     for (let i = 0; i < CROWD.maxGrunts; i++) {
       const s = c.st[i]; if (s === ST.OFF || s === ST.DEAD || c.kod[i]) continue; aliveN++;
-      if (s >= ST.ENGAGE && s <= ST.GETUP) engaged++;
+      if (s >= ST.ENGAGE && s <= ST.GETUP) { engaged++; if ((c.x[i] - h.x) ** 2 + (c.z[i] - h.z) ** 2 < 81) nearN++; }
       if (s === ST.WIND || s === ST.STRIKE) tokens++;
     }
-    c.alive = aliveN; c.tokensUsed = tokens;
+    c.alive = aliveN; c.tokensUsed = tokens; c.nearN = nearN;
     if (!c.freeze) {
       for (const sq of c.squads) {
         sq.t++;
@@ -262,7 +265,15 @@ export function createCrowd(game, scene) {
           if (!live.length) { sq.state = 'gone'; continue; }
           const d = Math.hypot(sq.cx - h.x, sq.cz - h.z);
           if (sq.state === 'hold' && (d < 11 || (engaged < CROWD.engaged && d < 70 && sq === nearestHolding()))) { sq.state = 'march'; engaged += live.length * 0.5; }
-          if (sq.state === 'march') {
+          if (sq.state === 'march' && sq.goal && !(sq.type === 'archer' && d < 19)) {   // heading for the bridge: only individuals peel off to fight
+            const gx = sq.goal.x - sq.cx, gz = sq.goal.z - sq.cz, gd = Math.hypot(gx, gz);
+            if (gd < 2.2) {
+              for (const i of live) if (c.st[i] === ST.FORM || c.st[i] === ST.MARCH) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
+              sq.state = 'gone'; continue;
+            }
+            let dy = Math.atan2(gx, gz) - sq.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); sq.yaw += Math.sign(dy) * Math.min(Math.abs(dy), 0.05);
+            sq.cx += Math.sin(sq.yaw) * CROWD.march * 1.1 * dt; sq.cz += Math.cos(sq.yaw) * CROWD.march * 1.1 * dt;
+          } else if (sq.state === 'march') {
             const stopAt = sq.type === 'archer' ? 16 : 7;
             if (d > stopAt) {
               const a = Math.atan2(h.x - sq.cx, h.z - sq.cz);
@@ -333,11 +344,16 @@ export function createCrowd(game, scene) {
         if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
         faceTo(sq.yaw, 0.08);
         if (sq.state === 'hold') { c.st[i] = ST.FORM; }
-        if (sq.state === 'engaged' || d < 5) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
+        if (sq.state === 'engaged' || (sq.goal ? d < 4.4 && c.nearN < 30 : d < 5)) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
         break;
       }
       case ST.ENGAGE: {
         const kind = c.kind[i];
+        if (game.goal && (d > (kind === KIND.ARCHER ? 27 : 12) || (c.nearN > 38 && d > 5.5 && c.pref[i] > 0.5 && kind !== KIND.ARCHER) || (game.rush && (kind === KIND.ARCHER || kind === KIND.BEARER)))) {   // nobody to fight here (or no room at him): make for the bridge
+          const gx = game.goal.x - c.x[i], gz = game.goal.z - c.z[i], gd = Math.hypot(gx, gz) || 1;
+          if (gd < 1.6) { c.st[i] = ST.OFF; game.emit('cross', { n: 1 }); break; }
+          move(gx / gd * 3.4, gz / gd * 3.4); faceTo(Math.atan2(gx, gz)); break;
+        }
         if (kind === KIND.ARCHER) {
           const want = 15 + c.pref[i] * 4;
           if (d > want + 2) move(dx / d * CROWD.walk, dz / d * CROWD.walk);

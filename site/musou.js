@@ -7,6 +7,9 @@ import { ST } from './crowd.js';
 import { radialTexture } from './world.js';
 
 export const MU = { raise: 40, rush: 150, leap: 150, slam: 172, end: 204, rushSpeed: 8.5 };
+// 張飛: three bellows, each wider than the last
+export const ROAR = { raise: 36, at: [42, 82, 124], range: [7.5, 9.5, 12.5], dmg: [20, 26, 46], end: 166, walk: 3.2 };
+const roarStance = P({ ty: -0.3, tx: 0.32, hx: -0.3, rootY: -0.22, w: [-0.25, 0.15, 0.42, 0.1, -0.9, 0], gL: 0.4, thL: 0.8, shL: -0.6, thR: -0.65, shR: -0.3, lzL: 0.38, lzR: -0.38 });
 const TAU = Math.PI * 2;
 const raisePose = [[0, BASE], [14, P({ yawAdd: TAU, ty: 0.2, tx: -0.3, hx: 0.3, rootY: 0.02, w: [-0.1, 0.62, 0.05, -1.5, 0.2, 0], gL: 0.25, thL: 0.2, thR: -0.2 }), 'out'],
   [30, P({ yawAdd: TAU * 2, ty: 0.3, tx: -0.35, hx: 0.3, w: [-0.1, 0.7, 0.0, -1.55, 0.0, 0], gL: 0.25 }), 'lin'],
@@ -17,7 +20,7 @@ const leapPose = [[0, P({ tx: -0.4, hx: 0.3, w: [-0.1, 0.62, 0.0, -1.5, -0.1, 0]
 export function createMusou(game) {
   const mu = { active: false, t: 0, true: false, serial: 0, dragon: [] };
   mu.start = (h) => {
-    mu.active = true; mu.t = 0; mu.true = h.hp < h.hpMax * 0.25; mu.serial++;
+    mu.active = true; mu.t = 0; mu.true = h.hp < h.hpMax * 0.25; mu.serial++; mu.style = game.char.musou;
     h.state = 'musou'; h.t = 0; h.musou = 0; h.move = null; h.inv = 999;
     game.crowd.freeze = 1;
     // aura shock: clear the stage around him
@@ -28,6 +31,19 @@ export function createMusou(game) {
   mu.heroStep = (h, inp) => {
     const t = ++mu.t; h.t = t;
     const mul = mu.true ? 1.6 : 1;
+    if (mu.style === 'roar') {
+      if (t === ROAR.raise) { game.crowd.freeze = 0; game.emit('musouRush'); }
+      if (t > ROAR.raise) {
+        if (inp.mag > 0.2) { h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.09); h.x += Math.sin(h.yaw) * ROAR.walk / 60; h.z += Math.cos(h.yaw) * ROAR.walk / 60; }
+        const k = ROAR.at.indexOf(t);
+        if (k >= 0) {
+          game.crowd.heroHit(h, { shape: 'circle', range: ROAR.range[k], dmg: ROAR.dmg[k], kb: 'blow', force: 8 + k * 2, lift: 6 + k * 2, stop: k === 2 ? 10 : 4, yMax: 8, heavy: k === 2 }, 990000 + mu.serial * 8 + k, 0, 0, { musou: true, mul });
+          game.emit('roarMini', { x: h.x, z: h.z, r: ROAR.range[k], big: k === 2 });
+        } else if ((t - ROAR.raise) % 7 === 0) game.crowd.heroHit(h, { shape: 'circle', range: 3.8, dmg: 7, kb: 'push', force: 2, stop: 0, yMax: 4 }, 900000 + mu.serial * 1000 + t, 0, 0, { musou: true, mul });
+      }
+      if (t >= ROAR.end) { mu.active = false; h.state = 'idle'; h.t = 0; h.inv = 30; game.emit('musouEnd'); }
+      return;
+    }
     if (t === MU.raise) { game.crowd.freeze = 0; game.emit('musouRush'); }
     if (t > MU.raise && t < MU.rush) {
       if (inp.mag > 0.2) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.07);
@@ -49,6 +65,11 @@ export function createMusou(game) {
   };
   mu.pose = (h, out) => {
     const t = mu.t;
+    if (mu.style === 'roar') {
+      if (t < ROAR.raise) return sampleClip(raisePose, t * 40 / ROAR.raise, out);
+      for (const a of ROAR.at) if (t >= a - 4 && t < a + 14) return sampleClip([[0, roarStance]], 0, out);
+      return sampleClip(MOVES.c4.keys, 8 + ((t - ROAR.raise) % 36), out);
+    }
     if (t < MU.raise) return sampleClip(raisePose, t, out);
     if (t < MU.rush) {
       const k = (t - MU.raise) % 36, clip = ((t - MU.raise) / 36 | 0) % 2 ? MOVES.c4 : MOVES.c3;
@@ -81,7 +102,8 @@ export function createMusouView(scene, game) {
   let op = 0;
   v.update = () => {
     const mu = game.musou, h = game.hero, t = mu.t;
-    const on = mu.active && t > 20;
+    const on = mu.active && t > 20 && mu.style !== 'roar';
+    auraMat.color.setHex(mu.style === 'roar' ? 0xff7040 : 0xffd070);
     op += ((on ? 1 : 0) - op) * 0.2;
     mat.opacity = op; mat.transparent = op < 0.97; mat.depthWrite = op > 0.5; glowMat.opacity = op * 0.16;
     all.forEach((m) => { m.visible = op > 0.02; }); glows.forEach((g) => { g.visible = op > 0.02; });

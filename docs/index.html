@@ -97,6 +97,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .buffs { display: flex; gap: 6px; min-height: 24px; margin-bottom: 4px; }
 .buffs span { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 2px; border-radius: 12px; background: rgba(0,0,0,.55); border: 1px solid var(--c); font-family: var(--latin); font-size: 12px; color: #fff; }
 .buffs b { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--c); color: #1a1008; font-family: var(--serif); font-weight: 900; font-size: 13px; }
+.chars { display: flex; gap: 10px; margin-top: 1.6vh; }
+.chars button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 132px; padding: 7px 14px; border-radius: 4px; background: rgba(255,255,255,.06); border: 1px solid var(--line); text-align: left; }
+.chars button b { font-family: var(--serif); font-weight: 900; font-size: 20px; letter-spacing: .12em; }
+.chars button span { font-size: 12px; color: var(--dim); letter-spacing: .25em; }
+.chars button.on { background: linear-gradient(180deg, rgba(184,40,30,.85), rgba(120,24,18,.85)); border-color: #e8a090; }
+.chars button.on span { color: #f6d8c8; }
+.chars button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .diffs { display: flex; align-items: center; gap: 8px; margin-top: 2.2vh; font-size: 14px; color: var(--dim); letter-spacing: .2em; }
 .diffs button { font-family: var(--serif); font-weight: 900; font-size: 17px; min-width: 46px; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,.07); border: 1px solid var(--line); letter-spacing: 0; }
 .diffs button.on { background: var(--red); border-color: #e8a090; color: #fff; }
@@ -115,13 +122,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.sm { width: 40px; height: 40px; font-size: 13px; }
 /* ---------- menus */
 .menu { position: fixed; inset: 0; display: flex; pointer-events: auto; z-index: 10; }
-.menu .col { scrollbar-width: none; width: min(560px, 100vw); padding: 5vh 56px 3vh; display: flex; flex-direction: column;
+.menu .col { scrollbar-width: none; width: min(580px, 100vw); padding: 4vh 56px 2.5vh; display: flex; flex-direction: column;
   background: linear-gradient(90deg, rgba(18,10,6,.92) 0%, rgba(18,10,6,.78) 62%, rgba(18,10,6,0) 100%); overflow-y: auto; }
 .menu h1 { margin: 0; display: flex; align-items: flex-start; gap: 12px; }
-.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(64px, 11vh, 124px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
+.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(56px, 9.5vh, 112px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
-.menu .tag2 { font-size: 19px; letter-spacing: .3em; margin: 2.2vh 0 1.8vh; color: #f0e2c4; }
+.menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
 .ctl { display: grid; grid-template-columns: auto 1fr; gap: 5px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
 .ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 17px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
@@ -161,7 +168,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
-  <div class="h-title"><b>趙雲</b><i class="seal">常山</i><small>ZHAO YUN</small></div>
+  <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
     <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>F</kbd>喚馬 · <kbd>Q</kbd><kbd>E</kbd>視角
@@ -177,7 +184,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="badge"><canvas id="face" width="20" height="20"></canvas></div>
     <div class="bars">
       <div class="buffs" id="buffs"></div>
-      <div class="name">趙雲 <em id="swordTag"></em></div>
+      <div class="name"><span id="pName">趙雲</span> <em id="swordTag"></em></div>
       <div class="hp" id="hpBox"><u id="hpLag"></u><i id="hp"></i></div>
       <div style="position:relative"><div class="mu" id="muBox"><i id="mu"></i></div><div class="mu-lbl" id="muLbl">無雙</div></div>
     </div>
@@ -198,18 +205,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 </div>
 <div class="menu" id="title">
   <div class="col">
-    <h1><b>趙雲</b><i class="seal">常山</i></h1>
+    <h1><b id="tName">趙雲</b><i class="seal" id="tSeal">常山</i></h1>
     <div class="sub">VOXEL MUSOU</div>
-    <div class="tag2">長坂坡 · 一杆長槍，單騎七進七出</div>
+    <div class="chars" id="chars">
+      <button data-c="zhao"><b>趙雲</b><span>長坂單騎</span></button>
+      <button data-c="fei"><b>張飛</b><span>據水斷橋</span></button>
+    </div>
+    <div class="tag2" id="tTag">長坂坡 · 一杆長槍，單騎七進七出</div>
     <dl class="ctl">
       <dt>移動<small>MOVE</small></dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向鍵</dd>
       <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 — 連按出六段連擊</dd>
       <dt>蓄力<small>CHARGE</small></dt><dd><kbd>K</kbd> / 右鍵 — 連擊中按出 C1–C6</dd>
-      <dt>跳躍<small>JUMP</small></dt><dd><kbd>Space</kbd> — 空中可接 <kbd>J</kbd> / <kbd>K</kbd></dd>
-      <dt>閃避<small>DODGE</small></dt><dd><kbd>L</kbd> / <kbd>Shift</kbd></dd>
+      <dt>跳・閃<small>JUMP / DODGE</small></dt><dd><kbd>Space</kbd> 跳（空中可接 <kbd>J</kbd><kbd>K</kbd>）· <kbd>L</kbd> / <kbd>Shift</kbd> 閃避</dd>
       <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · 馬上 <kbd>J</kbd>橫掃 <kbd>K</kbd>突擊</dd>
-      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> — 金色氣力滿時；瀕危時為真・無雙</dd>
-      <dt>視角<small>CAMERA</small></dt><dd><kbd>Q</kbd><kbd>E</kbd> / 拖曳滑鼠</dd>
+      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）· 視角 <kbd>Q</kbd><kbd>E</kbd> / 拖曳</dd>
     </dl>
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <button class="go" id="go">出陣 <small>START</small></button>
@@ -218,7 +227,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <label><input type="checkbox" id="lowq"> 低畫質</label>
     </div>
-    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>擊破四員魏將，奪青釭劍，向長坂橋突圍。打碎木箱有肉包與強化道具；虎豹騎的紅色衝鋒線要讓開。</div>
+    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
   </div>
 </div>
 
@@ -401,6 +410,10 @@ const PAL = {
     boot: 0x22241c, belt: 0x5e3a1e, helm: 0x4a5040, plume: 0xa82c1e, eye: 0x1b1b22, lip: 0x9a5e50, metal: 0xb88a3a },
   zhang: { armor: 0x3b2a58, plate: 0x6e58a0, trim: 0xe0b450, trim2: 0xf6dc8a, cloth: 0x201a30, skin: 0xecccae, hair: 0x14121a,
     boot: 0x1e1a2a, belt: 0xa8322a, helm: 0x4a3a6e, plume: 0xe8e0f0, eye: 0x1b1b22, lip: 0xb07060, cape: 0x5a3a8a, metal: 0xe0b450 },
+  wenpin: { armor: 0x2f4a4a, plate: 0x5a7a78, trim: 0xc8ccd2, trim2: 0xeef2f6, cloth: 0x1e2a2c, skin: 0xe2c0a0, hair: 0x1a1512,
+    boot: 0x1e2628, belt: 0x6a2a22, helm: 0x3a5a58, plume: 0xeeeeee, eye: 0x1b1b22, lip: 0x9a5e50, cape: 0x2a5a8a, metal: 0xc8ccd2 },
+  xuchu: { armor: 0x5a4630, plate: 0x8a6a42, trim: 0x2a2420, trim2: 0xb8281c, cloth: 0x3a2c20, skin: 0xc89868, hair: 0x14100c,
+    boot: 0x241a14, belt: 0xb8281c, helm: 0x6a5236, plume: 0xb8281c, eye: 0x101010, lip: 0x8a5040, metal: 0xd8b04a },
   zhangfei: { armor: 0x2a2a30, plate: 0x4a4a52, trim: 0xa8322a, trim2: 0xd8503c, cloth: 0x1c1c22, skin: 0xb88a62, hair: 0x0e0e10,
     boot: 0x18181c, belt: 0x6a1e18, eye: 0x101010, lip: 0x7a4a3a, metal: 0x8a8a92 },
 };
@@ -615,6 +628,16 @@ function weaponV(kind) {
   } else if (kind === 'claw') {                              // 張郃 鉤爪
     v.box(-2, -2, -3, 2, 2, 2, 0x6e58a0); v.box(-3, -1, 3, 3, 1, 4, G);
     for (const x of [-3, 0, 3]) { for (let z = 5; z <= 22; z++) v.set(x, z > 16 ? Math.round((z - 16) * 0.5) : 0, z, z > 19 ? S2 : S1); for (let z = 5; z <= 12; z++) v.set(x, -1, z, 0x9aa0aa); }
+  } else if (kind === 'hammer') {                            // 許褚 大錘
+    v.box(0, 0, -16, 0, 0, 38, 0x3a2e24); for (let z = -10; z <= 32; z += 14) ring(z, 0x8a6a2a);
+    v.box(-1, -1, 38, 1, 1, 40, G);
+    for (let x = -4; x <= 4; x++) for (let y = -4; y <= 4; y++) for (let z = 41; z <= 53; z++) {
+      if (Math.abs(x) === 4 && Math.abs(y) === 4) continue;
+      const face = Math.abs(x) === 4 || Math.abs(y) === 4 || z === 41 || z === 53;
+      if (!face) continue;
+      v.set(x, y, z, (z === 41 || z === 53 || z === 47) ? G : (x + y + z) % 4 === 0 ? 0x6a6e78 : 0x4a4e58);
+    }
+    for (const [x, y] of [[-5, 0], [5, 0], [0, -5], [0, 5]]) { v.set(x, y, 44, G); v.set(x, y, 50, G); }
   } else if (kind === 'serpent') {                           // 丈八蛇矛
     v.box(0, 0, -30, 0, 0, 54, 0x1e1a18); for (let z = -20; z <= 46; z += 11) ring(z, 0x8a2a22);
     v.box(-1, -1, 54, 1, 1, 56, 0xa8322a); v.ell(0.5, -2, 52.5, 2, 2.6, 2, 0xb3261c);
@@ -1483,7 +1506,7 @@ function itemGeos() {
 return { HS, HORSE_PAL, buildHorse, poseHorse, itemGeos };
 })();
 // ---------------- hero.js ----------------
-const { MOVES, HERO, RIDE_ATK, createHero, createHeroView, turn } = (() => {
+const { MOVES, HERO, CHARS, RIDE_ATK, createHero, createHeroView, turn } = (() => {
 // Zhao Yun: moveset data, state machine (60 Hz sim) and rig view.
 
 
@@ -1584,6 +1607,15 @@ for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
 const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
 
+// playable officers. reach scales hit shapes, tough = ordinary blows never stagger him
+const CHARS = {
+  zhao: { key: 'zhao', zh: '趙雲', en: 'ZHAO YUN', seal: '常山', pal: 'zhao', opts: { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' },
+    horse: 'white', hp: 500, run: 7.4, atk: 1, reach: 1, tough: false, musou: 'dragon', tip: 2.15, stage: 'changban' },
+  fei: { key: 'fei', zh: '張飛', en: 'ZHANG FEI', seal: '燕人', pal: 'zhangfei', opts: { beard: true, headband: true, topknot: true, weapon: 'serpent', scale: 1.16 },
+    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.15, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge' },
+};
+const reachHit = (hd, r) => (r === 1 ? hd : hd['_r' + r] || (hd['_r' + r] = { ...hd, range: hd.range && hd.range * r, len: hd.len && hd.len * r, width: hd.width && hd.width * (1 + (r - 1) * 0.5) }));
+
 // ---- mounted: seat pose + two sweeps (J) and a couched charge (K)
 const RIDE_O = { rootY: 0, tx: 0.15, ty: 0.05, hx: -0.1, hy: 0, thL: 1.2, shL: -1.35, thR: 1.2, shR: -1.35, lzL: 0.5, lzR: -0.5,
   w: W(-0.34, 0.18, 0.1, -0.55, -0.2), ikL: 0, aL: [0.85, 0, 0.15], cape: 0.3 };
@@ -1607,7 +1639,7 @@ function createHero(game) {
     move: null, mt: 0, serial: 1, buf: null, bufAge: 0, inv: 0, grounded: true, airChain: 0, spd: 0, ph: 0, landed: false,
     dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false, riding: false, ratk: null,
     horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } };
-  h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
+  h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: game.char.hp, hpMax: game.char.hp, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
     grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null, riding: false, ratk: null,
     horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } });
 
@@ -1632,7 +1664,7 @@ function createHero(game) {
     h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
     game.emit('heroHurt', { dmg, heavy, src });
     if (h.hp <= 0) { h.hp = 0; h.dead = true; unhorse(); setState('down'); h.move = null; game.emit('heroDead'); return true; }
-    if ((armored || h.riding) && !heavy) return true;
+    if ((armored || h.riding || game.char.tough) && !heavy) return true;
     h.move = null; h.yaw = Math.atan2(fx - h.x, fz - h.z);
     if (h.riding) unhorse();
     if (heavy) { setState('down'); h.vy = h.grounded ? 4 : h.vy; h.grounded = false; h.kx = -Math.sin(h.yaw) * 5; h.kz = -Math.cos(h.yaw) * 5; }
@@ -1670,8 +1702,8 @@ function createHero(game) {
     const dt = 1 / 60;
     h.t++; if (h.inv > 0) h.inv--;
     for (const k in h.buff) if (h.buff[k] > 0) h.buff[k]--;
-    h.atkMul = (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
-    const runTop = HERO.run * (h.buff.boots > 0 ? 1.25 : 1);
+    h.atkMul = game.char.atk * (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
+    const runTop = game.char.run * (h.buff.boots > 0 ? 1.25 : 1), reach = game.char.reach;
     horseStep(dt);
     // buffer presses
     if (inp.attack) { h.buf = 'a'; h.bufAge = 0; } else if (inp.charge) { h.buf = 'c'; h.bufAge = 0; }
@@ -1701,7 +1733,7 @@ function createHero(game) {
           if (ra.t < hd.f[0] || ra.t > hd.f[1]) return;
           if (hd.every && (ra.t - hd.f[0]) % hd.every !== 0) return;
           const key = h.serial * 64 + i * 8 + ((hd.every ? Math.floor((ra.t - hd.f[0]) / hd.every) : 0) % 8);
-          game.crowd.heroHit(h, hd, key, 0, 0);
+          game.crowd.heroHit(h, reachHit(hd, reach), key, 0, 0);
         });
         if (ra.id === 'rc' && ra.t === 34) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 2, z: h.z + Math.cos(h.yaw) * 2 });
         if (ra.t >= A.cancel && h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : ra.id === 'ra' ? 'rb' : 'ra', inp); }
@@ -1747,7 +1779,7 @@ function createHero(game) {
         const rep = hd.every ? Math.floor((h.mt - hd.f[0]) / hd.every) : 0;
         if (hd.every && (h.mt - hd.f[0]) % hd.every !== 0) return;
         const key = h.serial * 64 + i * 8 + (rep % 8);
-        const n = game.crowd.heroHit(h, hd, key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
+        const n = game.crowd.heroHit(h, reachHit(hd, reach), key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
         h.hitsThisMove += n;
       });
       if (m.id === 'c6' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 5.6 });
@@ -1781,7 +1813,7 @@ function createHero(game) {
     // free states: idle / run / jump / land
     if (inp.mag > 0.1) { mvx = inp.mx; mvz = inp.mz; want = inp.mag; }
     if (S === 'jump') {
-      h.vx += (mvx * HERO.run * 0.85 - h.vx) * 0.08; h.vz += (mvz * HERO.run * 0.85 - h.vz) * 0.08;
+      h.vx += (mvx * runTop * 0.85 - h.vx) * 0.08; h.vz += (mvz * runTop * 0.85 - h.vz) * 0.08;
       if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), 0.15);
       if (h.buf === 'a' && h.airChain < 3) { h.buf = null; startMove('aj', inp); return integrate(dt); }
       if (h.buf === 'c') { h.buf = null; startMove('ak', inp); return integrate(dt); }
@@ -1831,13 +1863,21 @@ function turn(a, b, k) {
 
 // ---------------------------------------------------------------- view
 function createHeroView(scene, h) {
-  const rig = buildWarrior(PAL.zhao, { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' });
-  scene.add(rig.root);
-  const horse = buildHorse({ pal: 'white' }); scene.add(horse.root);
+  const sets = {};
+  for (const k in CHARS) {
+    const ch = CHARS[k], r = buildWarrior(PAL[ch.pal], ch.opts), hs = buildHorse({ pal: ch.horse });
+    r.root.visible = hs.root.visible = false; scene.add(r.root, hs.root); sets[k] = { rig: r, horse: hs };
+  }
+  let rig = sets.zhao.rig, horse = sets.zhao.horse;
   const cur = clonePose(BASE), tgt = clonePose(BASE), rideT = clonePose(RIDE);
   const tip = new THREE.Vector3(), mid = new THREE.Vector3();
   let t = 0;
-  const v = { rig, horse, cur, tip, mid, trailOn: false };
+  const v = { rig, horse, cur, tip, mid, trailOn: false, char: CHARS.zhao };
+  v.setChar = (k) => {
+    for (const q in sets) sets[q].rig.root.visible = sets[q].horse.root.visible = q === k;
+    rig = sets[k].rig; horse = sets[k].horse; v.rig = rig; v.horse = horse; v.char = CHARS[k];
+  };
+  v.setChar('zhao');
   v.step = () => {   // once per sim frame
     t += 1 / 60;
     let k = 0.28;
@@ -1869,17 +1909,17 @@ function createHeroView(scene, h) {
     const hz = h.horse, g = Math.min(1, hz.spd / HERO.ride);
     horse.root.position.set(hz.x, h.riding ? h.y : groundY(hz.x, hz.z), hz.z); horse.root.rotation.y = hz.yaw;
     poseHorse(horse, hz.ph, g, t);
-    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y - 0.68 : 0), h.z);
+    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y + 0.28 - 0.96 * rig.scale : 0), h.z);
     rig.root.rotation.y = h.yaw;
     applyPose(rig, cur);
     rig.root.updateMatrixWorld(true);
-    weaponPoint(rig, 2.15, tip); weaponPoint(rig, 1.0, mid);
+    weaponPoint(rig, v.char.tip, tip); weaponPoint(rig, 1.0, mid);
     rig.root.visible = true;
   };
   return v;
 }
 
-return { MOVES, HERO, RIDE_ATK, createHero, createHeroView, turn };
+return { MOVES, HERO, CHARS, RIDE_ATK, createHero, createHeroView, turn };
 })();
 // ---------------- crowd.js ----------------
 const { ST, KIND, CROWD, OFFICERS, shapeHit, createCrowd } = (() => {
@@ -1902,6 +1942,9 @@ const OFFICERS = [
   { key: 'yan', zh: '晏明', en: 'YAN MING', pal: PAL.yan, weapon: 'halberd', opts: { helm: true, beard: true, mirror: true, scale: 1.1 }, hp: 1600, speed: 4.6, atk: ['combo', 'spin'], dmg: 1.1 },
   { key: 'chunyu', zh: '淳于導', en: 'CHUNYU DAO', pal: PAL.chunyu, weapon: 'glaive', opts: { helm: true, beard: true, mirror: true, scale: 1.12 }, hp: 1600, speed: 4.6, atk: ['combo', 'dash'], dmg: 1.1 },
   { key: 'zhang', zh: '張郃', en: 'ZHANG HE', pal: PAL.zhang, weapon: 'claw', opts: { helm: true, horns: true, mirror: true, offhand: 'claw', dual: true, cape: true, scale: 1.08 }, hp: 2400, speed: 6.0, atk: ['combo', 'dash', 'spin', 'leap'], dmg: 1.2 },
+  // 據水斷橋
+  { key: 'wenpin', zh: '文聘', en: 'WEN PIN', pal: PAL.wenpin, weapon: 'halberd', opts: { helm: true, cape: true, scale: 1.06 }, hp: 1700, speed: 5.2, atk: ['combo', 'dash'], dmg: 1.1 },
+  { key: 'xuchu', zh: '許褚', en: 'XU CHU', pal: PAL.xuchu, weapon: 'hammer', opts: { helm: true, beard: true, scale: 1.26 }, hp: 3000, speed: 4.8, atk: ['combo', 'spin', 'leap'], dmg: 1.35 },
 ];
 // officer attacks: segments of hero clips with a telegraph hold on the chamber frame
 const OATK = {
@@ -1972,8 +2015,8 @@ function createCrowd(game, scene) {
     return i;
   }
   // a squad: rows × cols block facing yaw; archers stand in two loose rows
-  c.spawnSquad = (cx, cz, yaw, n = CROWD.squad, type = 'mixed', state = 'hold') => {
-    const sq = { id: c.squads.length, cx, cz, yaw, state, members: [], type, t: 0, bearer: -1 };
+  c.spawnSquad = (cx, cz, yaw, n = CROWD.squad, type = 'mixed', state = 'hold', goal = null) => {
+    const sq = { id: c.squads.length, cx, cz, yaw, state, members: [], type, t: 0, bearer: -1, goal };
     const cols = type === 'archer' ? 6 : 6, sp = 1.25;
     const fx = Math.sin(yaw), fz = Math.cos(yaw), rx = -fz, rz = fx;
     for (let k = 0; k < n; k++) {
@@ -2131,13 +2174,13 @@ function createCrowd(game, scene) {
     const h = game.hero, dt = 1 / 60;
     buildGrid();
     // director: keep ~CROWD.engaged soldiers on the hero
-    let engaged = 0, tokens = 0, aliveN = 0;
+    let engaged = 0, tokens = 0, aliveN = 0, nearN = 0;
     for (let i = 0; i < CROWD.maxGrunts; i++) {
       const s = c.st[i]; if (s === ST.OFF || s === ST.DEAD || c.kod[i]) continue; aliveN++;
-      if (s >= ST.ENGAGE && s <= ST.GETUP) engaged++;
+      if (s >= ST.ENGAGE && s <= ST.GETUP) { engaged++; if ((c.x[i] - h.x) ** 2 + (c.z[i] - h.z) ** 2 < 81) nearN++; }
       if (s === ST.WIND || s === ST.STRIKE) tokens++;
     }
-    c.alive = aliveN; c.tokensUsed = tokens;
+    c.alive = aliveN; c.tokensUsed = tokens; c.nearN = nearN;
     if (!c.freeze) {
       for (const sq of c.squads) {
         sq.t++;
@@ -2146,7 +2189,15 @@ function createCrowd(game, scene) {
           if (!live.length) { sq.state = 'gone'; continue; }
           const d = Math.hypot(sq.cx - h.x, sq.cz - h.z);
           if (sq.state === 'hold' && (d < 11 || (engaged < CROWD.engaged && d < 70 && sq === nearestHolding()))) { sq.state = 'march'; engaged += live.length * 0.5; }
-          if (sq.state === 'march') {
+          if (sq.state === 'march' && sq.goal && !(sq.type === 'archer' && d < 19)) {   // heading for the bridge: only individuals peel off to fight
+            const gx = sq.goal.x - sq.cx, gz = sq.goal.z - sq.cz, gd = Math.hypot(gx, gz);
+            if (gd < 2.2) {
+              for (const i of live) if (c.st[i] === ST.FORM || c.st[i] === ST.MARCH) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
+              sq.state = 'gone'; continue;
+            }
+            let dy = Math.atan2(gx, gz) - sq.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); sq.yaw += Math.sign(dy) * Math.min(Math.abs(dy), 0.05);
+            sq.cx += Math.sin(sq.yaw) * CROWD.march * 1.1 * dt; sq.cz += Math.cos(sq.yaw) * CROWD.march * 1.1 * dt;
+          } else if (sq.state === 'march') {
             const stopAt = sq.type === 'archer' ? 16 : 7;
             if (d > stopAt) {
               const a = Math.atan2(h.x - sq.cx, h.z - sq.cz);
@@ -2217,11 +2268,16 @@ function createCrowd(game, scene) {
         if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
         faceTo(sq.yaw, 0.08);
         if (sq.state === 'hold') { c.st[i] = ST.FORM; }
-        if (sq.state === 'engaged' || d < 5) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
+        if (sq.state === 'engaged' || (sq.goal ? d < 4.4 && c.nearN < 30 : d < 5)) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
         break;
       }
       case ST.ENGAGE: {
         const kind = c.kind[i];
+        if (game.goal && (d > (kind === KIND.ARCHER ? 27 : 12) || (c.nearN > 38 && d > 5.5 && c.pref[i] > 0.5 && kind !== KIND.ARCHER) || (game.rush && (kind === KIND.ARCHER || kind === KIND.BEARER)))) {   // nobody to fight here (or no room at him): make for the bridge
+          const gx = game.goal.x - c.x[i], gz = game.goal.z - c.z[i], gd = Math.hypot(gx, gz) || 1;
+          if (gd < 1.6) { c.st[i] = ST.OFF; game.emit('cross', { n: 1 }); break; }
+          move(gx / gd * 3.4, gz / gd * 3.4); faceTo(Math.atan2(gx, gz)); break;
+        }
         if (kind === KIND.ARCHER) {
           const want = 15 + c.pref[i] * 4;
           if (d > want + 2) move(dx / d * CROWD.walk, dz / d * CROWD.walk);
@@ -2613,7 +2669,7 @@ function createCavalry(game, scene) {
 return { CAV, createCavalry };
 })();
 // ---------------- musou.js ----------------
-const { MU, createMusou, createMusouView } = (() => {
+const { MU, ROAR, createMusou, createMusouView } = (() => {
 // 無雙亂舞: sim timeline for the hero + the voxel azure dragon view.
 
 
@@ -2622,6 +2678,9 @@ const { MU, createMusou, createMusouView } = (() => {
 
 
 const MU = { raise: 40, rush: 150, leap: 150, slam: 172, end: 204, rushSpeed: 8.5 };
+// 張飛: three bellows, each wider than the last
+const ROAR = { raise: 36, at: [42, 82, 124], range: [7.5, 9.5, 12.5], dmg: [20, 26, 46], end: 166, walk: 3.2 };
+const roarStance = P({ ty: -0.3, tx: 0.32, hx: -0.3, rootY: -0.22, w: [-0.25, 0.15, 0.42, 0.1, -0.9, 0], gL: 0.4, thL: 0.8, shL: -0.6, thR: -0.65, shR: -0.3, lzL: 0.38, lzR: -0.38 });
 const TAU = Math.PI * 2;
 const raisePose = [[0, BASE], [14, P({ yawAdd: TAU, ty: 0.2, tx: -0.3, hx: 0.3, rootY: 0.02, w: [-0.1, 0.62, 0.05, -1.5, 0.2, 0], gL: 0.25, thL: 0.2, thR: -0.2 }), 'out'],
   [30, P({ yawAdd: TAU * 2, ty: 0.3, tx: -0.35, hx: 0.3, w: [-0.1, 0.7, 0.0, -1.55, 0.0, 0], gL: 0.25 }), 'lin'],
@@ -2632,7 +2691,7 @@ const leapPose = [[0, P({ tx: -0.4, hx: 0.3, w: [-0.1, 0.62, 0.0, -1.5, -0.1, 0]
 function createMusou(game) {
   const mu = { active: false, t: 0, true: false, serial: 0, dragon: [] };
   mu.start = (h) => {
-    mu.active = true; mu.t = 0; mu.true = h.hp < h.hpMax * 0.25; mu.serial++;
+    mu.active = true; mu.t = 0; mu.true = h.hp < h.hpMax * 0.25; mu.serial++; mu.style = game.char.musou;
     h.state = 'musou'; h.t = 0; h.musou = 0; h.move = null; h.inv = 999;
     game.crowd.freeze = 1;
     // aura shock: clear the stage around him
@@ -2643,6 +2702,19 @@ function createMusou(game) {
   mu.heroStep = (h, inp) => {
     const t = ++mu.t; h.t = t;
     const mul = mu.true ? 1.6 : 1;
+    if (mu.style === 'roar') {
+      if (t === ROAR.raise) { game.crowd.freeze = 0; game.emit('musouRush'); }
+      if (t > ROAR.raise) {
+        if (inp.mag > 0.2) { h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.09); h.x += Math.sin(h.yaw) * ROAR.walk / 60; h.z += Math.cos(h.yaw) * ROAR.walk / 60; }
+        const k = ROAR.at.indexOf(t);
+        if (k >= 0) {
+          game.crowd.heroHit(h, { shape: 'circle', range: ROAR.range[k], dmg: ROAR.dmg[k], kb: 'blow', force: 8 + k * 2, lift: 6 + k * 2, stop: k === 2 ? 10 : 4, yMax: 8, heavy: k === 2 }, 990000 + mu.serial * 8 + k, 0, 0, { musou: true, mul });
+          game.emit('roarMini', { x: h.x, z: h.z, r: ROAR.range[k], big: k === 2 });
+        } else if ((t - ROAR.raise) % 7 === 0) game.crowd.heroHit(h, { shape: 'circle', range: 3.8, dmg: 7, kb: 'push', force: 2, stop: 0, yMax: 4 }, 900000 + mu.serial * 1000 + t, 0, 0, { musou: true, mul });
+      }
+      if (t >= ROAR.end) { mu.active = false; h.state = 'idle'; h.t = 0; h.inv = 30; game.emit('musouEnd'); }
+      return;
+    }
     if (t === MU.raise) { game.crowd.freeze = 0; game.emit('musouRush'); }
     if (t > MU.raise && t < MU.rush) {
       if (inp.mag > 0.2) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.07);
@@ -2664,6 +2736,11 @@ function createMusou(game) {
   };
   mu.pose = (h, out) => {
     const t = mu.t;
+    if (mu.style === 'roar') {
+      if (t < ROAR.raise) return sampleClip(raisePose, t * 40 / ROAR.raise, out);
+      for (const a of ROAR.at) if (t >= a - 4 && t < a + 14) return sampleClip([[0, roarStance]], 0, out);
+      return sampleClip(MOVES.c4.keys, 8 + ((t - ROAR.raise) % 36), out);
+    }
     if (t < MU.raise) return sampleClip(raisePose, t, out);
     if (t < MU.rush) {
       const k = (t - MU.raise) % 36, clip = ((t - MU.raise) / 36 | 0) % 2 ? MOVES.c4 : MOVES.c3;
@@ -2696,7 +2773,8 @@ function createMusouView(scene, game) {
   let op = 0;
   v.update = () => {
     const mu = game.musou, h = game.hero, t = mu.t;
-    const on = mu.active && t > 20;
+    const on = mu.active && t > 20 && mu.style !== 'roar';
+    auraMat.color.setHex(mu.style === 'roar' ? 0xff7040 : 0xffd070);
     op += ((on ? 1 : 0) - op) * 0.2;
     mat.opacity = op; mat.transparent = op < 0.97; mat.depthWrite = op > 0.5; glowMat.opacity = op * 0.16;
     all.forEach((m) => { m.visible = op > 0.02; }); glows.forEach((g) => { g.visible = op > 0.02; });
@@ -2753,7 +2831,7 @@ function createMusouView(scene, game) {
   return v;
 }
 
-return { MU, createMusou, createMusouView };
+return { MU, ROAR, createMusou, createMusouView };
 })();
 // ---------------- vfx.js ----------------
 const { createVfx } = (() => {
@@ -2836,7 +2914,7 @@ function createVfx(scene, game, camera) {
   const dCircle = new THREE.Mesh(new THREE.CircleGeometry(1, 48), dangerMat); dCircle.rotation.x = -Math.PI / 2;
   const dEdge = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), dangerMat); dEdge.rotation.x = -Math.PI / 2;
   const dRect = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat); dRect.rotation.x = -Math.PI / 2;
-  const dangers = []; for (let k = 0; k < 4; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
+  const dangers = []; for (let k = 0; k < 8; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
   const lanes = []; for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat.clone()); m.rotation.order = 'YXZ'; m.visible = false; scene.add(m); lanes.push(m); }
   // pickup meshes (meat bun / wine jar)
   V.items = [];
@@ -2883,6 +2961,11 @@ function createVfx(scene, game, camera) {
     ring(e.x, 0.3, e.z, 1, 60, 1.2, 0xffe0a0, 1); ring(e.x, 0.5, e.z, 0.5, 34, 0.8, 0xffffff, 0.9); ring(e.x, 1.2, e.z, 0.5, 20, 0.5, 0xffb060, 0.8);
     V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
     for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
+  });
+  game.on('roarMini', (e) => {
+    ring(e.x, 0.15, e.z, 0.6, e.r * 1.05, e.big ? 0.7 : 0.45, 0xffb060, 0.95); ring(e.x, 0.9, e.z, 0.4, e.r * 0.7, 0.35, 0xffffff, 0.8);
+    V.shake = Math.max(V.shake, e.big ? 1.2 : 0.7); V.flash = e.big ? 0.8 : 0.35; V.flashCol.setRGB(1, 0.8, 0.55);
+    for (let k = 0; k < 30; k++) { const a = k / 30 * 6.283; dust.spawn({ x: e.x + Math.cos(a) * 1.5, y: 0.3, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * e.r * 1.3, vy: 0.8 + Math.random(), vz: Math.sin(a) * e.r * 1.3, drag: 3, s: 1.2, grow: 3, life: 0.9, a0: 0.4, r: 0.68, gg: 0.58, b: 0.46 }); }
   });
   game.on('pickup', (e) => { for (let k = 0; k < 20; k++) { const a = Math.random() * 6.28; glow.spawn({ x: e.x, y: 0.5 + Math.random(), z: e.z, vx: Math.cos(a) * 1.5, vy: 2 + Math.random() * 2, vz: Math.sin(a) * 1.5, drag: 1.5, s: 0.18, life: 0.8, r: e.col[0], gg: e.col[1], b: e.col[2] }); } });
 
@@ -3079,7 +3162,7 @@ function createAudio(game) {
   on('arrow', () => { if (Math.random() < 0.5) S.arrow(); });
   on('pickup', S.pickup);
   on('mount', S.whinny); on('whistle', S.whistle); on('hoof', S.hoof); on('unhorse', S.whinny);
-  on('cavalry', S.horn); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
+  on('cavalry', S.horn); on('waveHorn', S.horn); on('roarMini', (e) => { S.roar(); S.slam(e.big); }); on('cross', () => S.hurt(true)); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
   on('milestone', S.milestone);
   on('victory', S.victory);
   on('officer', () => S.gong(0.6));
@@ -3162,6 +3245,8 @@ const DIFFS = {
 };
 let diffKey = LS.get('diff', 'normal'); if (!DIFFS[diffKey]) diffKey = 'normal';
 game.diff = DIFFS[diffKey]; game.slow = 0;
+let charKey = LS.get('char', 'zhao'); if (!CHARS[charKey]) charKey = 'zhao';
+game.char = CHARS[charKey]; game.stage = game.char.stage; game.goal = null;
 game.world = createWorld(scene);
 game.hero = createHero(game);
 game.crowd = createCrowd(game, scene);
@@ -3318,7 +3403,8 @@ function camUpdate(dt) {
   if (DIR.phase === 7) { _t.set(BRIDGE.x + 1.2, 2.0, RIVER.z0 + 5); yaw = 0.34; dist = 16; pitch = 0.24; fov = 50; ease = 0.035; }
   if (mu.active) {
     const t = mu.t;
-    if (t < MU.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.2; pitch = 0.08; lookY = 1.45; _t.set(h.x, h.y + lookY, h.z); fov = 44; }
+    if (mu.style === 'roar') { if (t < ROAR.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.6; pitch = 0.06; lookY = 1.7; _t.set(h.x, h.y + lookY, h.z); fov = 44; } else { yaw = h.yaw + 0.35; dist = 11.5; pitch = 0.36; fov = 58; } }
+    else if (t < MU.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.2; pitch = 0.08; lookY = 1.45; _t.set(h.x, h.y + lookY, h.z); fov = 44; }
     else if (t < MU.rush) { yaw = h.yaw - 0.9; dist = 8.5; pitch = 0.22; fov = 56; }
     else { yaw = h.yaw + 0.2; dist = 12; pitch = 0.42; fov = 58; }
   }
@@ -3367,7 +3453,8 @@ function directorStep() {
   DIR.t++; DIR.time++;
   const c = game.crowd, h = game.hero, ko = c.ko;
   const offs = c.officers;
-  if (DIR.phase === 0) {
+  if (game.stage === 'bridge') bridgeDirector();
+  else if (DIR.phase === 0) {
     if (DIR.t === 30) say('趙雲', '主公之子在此，趙雲誓死護之！', 'My lord\'s son is in my care. None of you shall pass!');
     if (ko >= 50 || DIR.t > 60 * 60) {
       spawnOfficerNear(0); DIR.phase = 1; DIR.t = 0;
@@ -3413,7 +3500,7 @@ function directorStep() {
     if (DIR.t >= 270) finish(true);
   }
   // 虎豹騎 charges once the first officer is down
-  if (DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
+  if (game.stage === 'changban' && DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
   // KO milestones
   const mile = Math.floor(ko / 100) * 100;
   if (mile > DIR.lastMile && mile > 0) { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
@@ -3431,13 +3518,63 @@ function directorStep() {
     } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
   }
 }
+// ---- 據水斷橋: Zhang Fei holds the bridge mouth against five waves; twenty men across and it is lost
+const WAVES = [
+  { squads: [[-12, 26], [0, 32], [12, 26]] },
+  { squads: [[-18, 28], [-6, 34], [6, 34], [18, 28]], archers: [[0, 44]] },
+  { squads: [[-14, 30], [0, 36], [14, 30]], officer: 4, cav: 4, cavN: 1 },
+  { squads: [[-22, 28], [-11, 34], [0, 38], [11, 34], [22, 28]], archers: [[-9, 46], [9, 46]], cav: 5, cavN: 2 },
+  { squads: [[-14, 30], [0, 36], [14, 30]], archers: [[0, 46]], officer: 5, cav: 5, cavN: 1 },
+];
+const CROSS_MAX = 20;
+function startWave(n) {
+  const c = game.crowd, w = WAVES[n - 1], g = game.goal;
+  DIR.wave = n; DIR.waveLive = 0; DIR.waveT = 0;
+  for (const [x, z] of w.squads) c.spawnSquad(x, z, Math.atan2(g.x - x, g.z - z), CROWD.squad, 'mixed', 'march', g);
+  for (const [x, z] of w.archers || []) c.spawnSquad(x, z, Math.atan2(g.x - x, g.z - z), 12, 'archer', 'march', g);
+  banner(`魏軍 第 <em>${n}</em> 波`, `WAVE ${n} / ${WAVES.length}`);
+  if (w.officer != null) {
+    const o = c.spawnOfficer(w.officer, 0, 42);
+    setTimeout(() => banner(`敵將 <em>${o.def.zh}</em> 出現`, `ENEMY OFFICER ${o.def.en} APPROACHES`), 2600);
+    if (w.officer === 4) say('文聘', '張飛匹夫，橋上只你一人，也敢攔我大軍？', 'One man on a bridge, Zhang Fei? You would stop an army?');
+    else say('許褚', '俺許仲康來會你！看錘！', 'Xu Zhongkang comes for you — mind the hammer!');
+  }
+  DIR.cavLeft = w.cavN || 0; DIR.cavSize = w.cav || 4; DIR.cavT = 60 * 9;
+  game.emit('waveHorn');
+}
+function bridgeDirector() {
+  const c = game.crowd;
+  if (DIR.t === 30) say('張飛', '子龍已過橋去了。俺老張在此，一個也休想過去！', 'Zilong is across. Not one of you gets past me!');
+  if (DIR.endAt) { if (DIR.t >= DIR.endAt) finish(true); return; }
+  if (DIR.wave === 0) { if (DIR.t === 150) startWave(1); return; }
+  DIR.waveLive++;
+  if (DIR.waveT > 0) { if (--DIR.waveT === 0) startWave(DIR.wave + 1); return; }
+  if (DIR.cavLeft > 0 && --DIR.cavT <= 0) { if (game.cav.launch(DIR.cavSize)) { DIR.cavLeft--; DIR.cavT = 60 * 20 / game.diff.cav; } else DIR.cavT = 120; }
+  const offAlive = c.officers.some((o) => o.active && !o.dead);
+  // once only archers and standard-bearers are left they make a run for the bridge themselves
+  if (DIR.t % 60 === 0) { let f = 0; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.ARCHER && c.kind[i] !== KIND.BEARER) f++; game.rush = f === 0 && DIR.waveLive > 60 * 12; }
+  if (DIR.waveLive > 60 * 5 && !offAlive && ((c.alive <= 2 && !game.cav.busy() && DIR.cavLeft === 0) || DIR.waveLive > 60 * (DIR.wave >= WAVES.length ? 180 : 100))) {
+    if (DIR.wave >= WAVES.length) {
+      DIR.endAt = DIR.t + 230; game.hero.inv = 99999;
+      banner('曹軍 <em>退卻</em>', 'THE WEI ARMY FALLS BACK', true);
+      say('張飛', '燕人張翼德在此！誰敢與我決一死戰！', 'I am Zhang Yide of Yan! Who dares fight me to the death?!', 220);
+      setTimeout(() => { game.emit('roar', { x: game.hero.x, z: game.hero.z }); game.crowd.shock(game.hero.x, game.hero.z, 40, 14, 9); }, 900);
+    } else { banner(`第 <em>${DIR.wave}</em> 波 擊退`, `WAVE ${DIR.wave} REPELLED`, true); DIR.waveT = 60 * 4; dropItem('bun', game.goal.x - 1.5, game.goal.z + 3); if (DIR.wave % 2 === 0) dropItem('wine', game.goal.x + 1.5, game.goal.z + 3); }
+  }
+}
+game.on('cross', (e) => {
+  if (DIR.over || DIR.endAt) return;
+  DIR.crossed += e.n; floatText(`渡橋 ${DIR.crossed} / ${CROSS_MAX}`, '#ff7a5a');
+  if (DIR.crossed >= CROSS_MAX) { banner('長坂橋 <em>失守</em>', 'THE BRIDGE IS LOST'); finish(false); }
+});
+
 function finish(win) {
   if (DIR.over) return;
   DIR.over = true; DIR.win = win; DIR.endT = 0;
-  if (win) { game.emit('victory'); banner('突圍 <em>成功</em>', 'VICTORY', true); say('趙雲', '主公，阿斗安然無恙！', 'My lord, your son is safe!', 220); }
+  if (win) { game.emit('victory'); if (game.stage === 'bridge') banner('長坂橋 <em>守住了</em>', 'THE BRIDGE HOLDS', true); else { banner('突圍 <em>成功</em>', 'VICTORY', true); say('趙雲', '主公，阿斗安然無恙！', 'My lord, your son is safe!', 220); } }
   setTimeout(showResult, win ? 3800 : 3200);
 }
-game.on('heroDead', () => { banner('趙雲 <em>敗走</em>', 'DEFEATED'); finish(false); });
+game.on('heroDead', () => { banner(`${game.char.zh} <em>敗走</em>`, 'DEFEATED'); finish(false); });
 game.on('heroHit', (e) => {
   const h = game.hero;
   DIR.combo += e.n; DIR.comboT = 150; DIR.maxCombo = Math.max(DIR.maxCombo, DIR.combo);
@@ -3458,8 +3595,8 @@ game.on('cavalry', () => {
   if (game.cav.waves === 1) say('曹純', '虎豹騎，踏平他！', 'Tiger-Leopard riders — run him down!');
 });
 game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
-game.on('mount', () => { if (!DIR.rode) { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
-game.on('musouEnd', () => say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150));
+game.on('mount', () => { if (!DIR.rode && charKey === 'zhao') { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
+game.on('musouEnd', () => { if (charKey === 'fei') say('張飛', '燕人張翼德在此！', 'Zhang Yide of Yan stands here!', 150); else say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150); });
 game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
 game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some((o) => o.active && !o.dead) || game.musou.active ? 2 : 1);
 
@@ -3476,9 +3613,17 @@ function floatText(txt, color) {
   floatLayer.appendChild(e); requestAnimationFrame(() => { e.style.top = '50%'; e.style.opacity = '0'; }); setTimeout(() => e.remove(), 1300);
 }
 // portrait
-{
+function drawFace(k) {
   const x = $('face').getContext('2d');
   const px = (c, a, b, w = 1, h = 1) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
+  if (k === 'fei') {
+    px('#3a2420', 0, 0, 20, 20); px('#b88a62', 5, 5, 10, 10); px('#0e0e10', 4, 2, 12, 4); px('#0e0e10', 4, 2, 2, 9); px('#0e0e10', 14, 2, 2, 9);
+    px('#a8322a', 4, 5, 12, 1); px('#0e0e10', 9, 0, 2, 2);
+    px('#f4f4f0', 7, 9, 2, 1); px('#f4f4f0', 11, 9, 2, 1); px('#101010', 8, 9, 1, 1); px('#101010', 11, 9, 1, 1); px('#0e0e10', 6, 8, 3, 1); px('#0e0e10', 11, 8, 3, 1);
+    px('#0e0e10', 5, 11, 10, 5); px('#7a4a3a', 9, 12, 2, 1); px('#0e0e10', 7, 16, 6, 2);
+    px('#2a2a30', 2, 17, 16, 3); px('#a8322a', 2, 17, 16, 1);
+    return;
+  }
   px('#2a3e40', 0, 0, 20, 20); px('#e9c29c', 5, 6, 10, 10); px('#17171c', 4, 3, 12, 4); px('#17171c', 4, 3, 2, 10); px('#17171c', 14, 3, 2, 10);
   px('#23a39a', 4, 6, 12, 1); px('#5fd6c8', 9, 1, 2, 2); px('#17171c', 9, 0, 2, 1);
   px('#1b1b22', 7, 10, 2, 1); px('#1b1b22', 11, 10, 2, 1); px('#17171c', 7, 9, 2, 1); px('#17171c', 11, 9, 2, 1); px('#c07a6a', 9, 13, 2, 1);
@@ -3509,7 +3654,7 @@ function drawMap() {
   for (const r of game.cav.riders) if (r.on) { mctx.fillStyle = r.rider ? '#ffb030' : '#8a7a60'; mctx.fillRect(mx(r.x) - 3, mz(r.z) - 3, 6, 6); }
   if (!h.riding) { const hz = h.horse; mctx.fillStyle = '#ffffff'; mctx.beginPath(); mctx.moveTo(mx(hz.x), mz(hz.z) - 4); mctx.lineTo(mx(hz.x) + 3.5, mz(hz.z)); mctx.lineTo(mx(hz.x), mz(hz.z) + 4); mctx.lineTo(mx(hz.x) - 3.5, mz(hz.z)); mctx.fill(); }
   for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : BUFFS[it.type] ? BUFFS[it.type].col : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
-  if (DIR.phase === 6) { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
+  if (DIR.phase === 6 || game.stage === 'bridge') { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
   // hero + view cone
   const hx = mx(h.x), hz = mz(h.z);
   mctx.save(); mctx.translate(hx, hz);
@@ -3537,8 +3682,8 @@ function hudUpdate() {
   if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
   hudEls.combo.classList.toggle('on', DIR.combo >= 2);
   if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
-  hudEls.obj.textContent = OBJ[Math.min(DIR.phase, OBJ.length - 1)];
-  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  hudEls.obj.textContent = game.stage === 'bridge' ? (DIR.endAt ? '曹軍退卻' : DIR.wave ? `死守長坂橋 · 第 ${DIR.wave} / ${WAVES.length} 波` : '魏軍將至 · 死守長坂橋') : OBJ[Math.min(DIR.phase, OBJ.length - 1)];
+  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` + (game.stage === 'bridge' ? ` · 渡橋 ${DIR.crossed} / ${CROSS_MAX}` : '');
   const wei = c.alive + 40, shu = 40 + c.ko * 0.8;
   hudEls.morale.style.width = Math.max(8, Math.min(92, shu / (shu + wei) * 100)).toFixed(1) + '%';
   // officer tags + boss bar
@@ -3575,28 +3720,35 @@ function resetGame() {
   Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {}, cavT: 60 * 14, koPos: null, rode: false });
   Object.assign(feiPose, clonePose(FEI.stand));
   for (const it of items) scene.remove(it.m); items.length = 0;
-  game.crowd.spawnArmy();
-  cam.yaw = 0; cam.pos.set(0, 4, -22); ui.hpLag = 1; lastKoShown = -1;
+  Object.assign(DIR, { wave: 0, waveT: 0, waveLive: 0, crossed: 0, endAt: 0, cavLeft: 0 }); game.rush = false;
+  feiRig.root.visible = game.stage === 'changban';
+  if (game.stage === 'bridge') {
+    const h = game.hero; h.z = -38; h.horse.x = 4.5; h.horse.z = -42; h.horse.yaw = 0.4;
+    game.goal = { x: BRIDGE.x, z: ARENA.z0 + 1.2 }; game.reinforceOK = false;
+  } else { game.goal = null; game.crowd.spawnArmy(); }
+  cam.yaw = 0; cam.pos.set(0, 4, game.hero.z - 8); ui.hpLag = 1; lastKoShown = -1;
 }
 function togglePause() {
   if (ui.mode === 'play') {
     ui.mode = 'pause'; showMenu('pause');
     const s = Math.floor(DIR.time / 60);
-    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / 4</dd>`;
+    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / ${game.stage === 'bridge' ? 2 : 4}</dd>`;
   } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
 }
 function showResult() {
   ui.mode = 'result'; showMenu('result');
   const s = Math.floor(DIR.time / 60), ko = game.crowd.ko;
-  const pts = (DIR.win ? 1 : 0) + (s < 480 ? 1 : 0) + (ko >= 300 ? 1 : 0) + (DIR.dmg < 400 ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
+  const br = game.stage === 'bridge';
+  const pts = (DIR.win ? 1 : 0) + (br ? (DIR.crossed <= 5 ? 1 : 0) : (s < 480 ? 1 : 0)) + (ko >= 300 ? 1 : 0) + (DIR.dmg < (br ? 500 : 400) ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
   const rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
-  $('resTitle').textContent = DIR.win ? '突圍' : '敗走'; $('resSub').textContent = DIR.win ? 'VICTORY · CHANGBAN' : 'DEFEAT';
+  $('resTitle').textContent = DIR.win ? (br ? '斷橋' : '突圍') : (br && DIR.crossed >= CROSS_MAX ? '失守' : '敗走'); $('resSub').textContent = DIR.win ? (br ? 'VICTORY · THE BRIDGE HOLDS' : 'VICTORY · CHANGBAN') : 'DEFEAT';
   $('resRank').textContent = rank; $('resRank').style.display = DIR.win ? '' : 'none';
-  const best = LS.get('best_' + diffKey, diffKey === 'normal' ? LS.get('best', null) : null);
+  const bkey = (br ? 'bestB_' : 'best_') + diffKey;
+  const best = LS.get(bkey, !br && diffKey === 'normal' ? LS.get('best', null) : null);
   const rec = { time: s, ko, combo: DIR.maxCombo, rank };
-  if (DIR.win && (!best || s < best.time)) LS.set('best_' + diffKey, rec);
-  $('resGrid').innerHTML = `<dt>難度</dt><dd style="font-family:var(--serif)">${game.diff.zh}</dd><dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
-  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄（${game.diff.zh}）${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
+  if (DIR.win && (!best || (br ? ko > best.ko : s < best.time))) LS.set(bkey, rec);
+  $('resGrid').innerHTML = `<dt>難度</dt><dd style="font-family:var(--serif)">${game.diff.zh}</dd><dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / ${br ? 2 : 4}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
+  $('resNote').innerHTML = (DIR.win ? (br ? '評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上<br>' : '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>') : '') + (best ? `最佳紀錄（${game.diff.zh}）${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
 }
 $('go').onclick = startGame; $('again').onclick = startGame; $('resume').onclick = togglePause;
 $('restart').onclick = () => { startGame(); };
@@ -3605,6 +3757,17 @@ for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mu
   const h = (e) => { const v = +e.target.value; $(a).value = v; $(b).value = v; f(v); LS.set(k, v); };
   $(a).oninput = h; $(b).oninput = h;
 }
+const STAGE_TAG = { changban: '長坂坡 · 一杆長槍，單騎七進七出', bridge: '長坂橋 · 據水斷橋，一夫當關' };
+function setChar(k, refresh = true) {
+  charKey = k; game.char = CHARS[k]; game.stage = game.char.stage; LS.set('char', k);
+  heroView.setChar(k); drawFace(k);
+  const ch = game.char;
+  $('tName').textContent = ch.zh; $('tSeal').textContent = ch.seal; $('tTag').textContent = STAGE_TAG[game.stage];
+  $('hName').textContent = ch.zh; $('hSeal').textContent = ch.seal; $('hEn').textContent = ch.en; $('pName').textContent = ch.zh;
+  for (const b of document.querySelectorAll('#chars button')) b.classList.toggle('on', b.dataset.c === k);
+  if (refresh && ui.mode === 'title') resetGame();
+}
+for (const b of document.querySelectorAll('#chars button')) b.onclick = () => setChar(b.dataset.c);
 function setDiff(k) { diffKey = k; game.diff = DIFFS[k]; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
 for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
 setDiff(diffKey);
@@ -3702,9 +3865,16 @@ function autoInput(real) {
   let tgt = null, td = 1e9;
   for (const of of c.officers) if (of.active && !of.dead) { const d = Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z); if (d < td) { td = d; tgt = { x: c.x[of.idx], z: c.z[of.idx] }; } }
   if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
+  if (game.goal) {
+    const offNear = c.officers.some((of) => of.active && !of.dead && Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z) < 6);
+    let bd = 1e9, bi = -1; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.BEARER && c.kind[i] !== KIND.ARCHER) { const d = Math.hypot(c.x[i] - game.goal.x, c.z[i] - game.goal.z); if (d < bd) { bd = d; bi = i; } }
+    if (bi >= 0 && bd > 24) { bi = -1; if (!offNear) tgt = null; }   // hold the bridge mouth until they come
+    if (bi >= 0 && offNear && bd > 9) bi = -2;                        // an officer is on him and nobody is near the bridge yet
+    if (bi >= 0) { tgt = { x: c.x[bi], z: c.z[bi] }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z); } else if (!tgt) { tgt = { x: game.goal.x, z: game.goal.z + 7 }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z) > 2 ? 99 : 0; }
+  }
   if (DIR.phase === 6) { tgt = { x: BRIDGE.x, z: BRIDGE.z - 3 }; td = 99; }
   if (tgt) { const dx = tgt.x - h.x, dz = tgt.z - h.z, d = Math.hypot(dx, dz) || 1; o.mx = dx / d; o.mz = dz / d; o.mag = td > 2.6 ? 1 : 0.3; }
-  if (auto.ride && !h.riding && td > 26 && game.frame % 90 === 0) o.mount = true;
+  if (auto.ride && !h.riding && td > 26 && td < 90 && game.frame % 90 === 0) o.mount = true;
   if (h.riding && td < 4 && DIR.phase !== 6) { o.jump = true; return o; }
   if (td < 3.4 && game.frame % 7 === 0) {
     if (!auto.plan.length) { const n = (Math.random() * 6) | 0; auto.plan = [...Array(n).fill('a'), Math.random() < 0.8 ? 'c' : 'a']; }
@@ -3720,15 +3890,16 @@ window.__vm = {
   step(n = 1, dt = 1 / 60) { manual = true; for (let i = 0; i < n; i++) step(); render(dt); return this.info(); },
   run() { manual = false; lastT = 0; },
   simRun(sec) { manual = true; const n = sec * 60; for (let i = 0; i < n; i++) { step(); if (i % 30 === 0) { game.crowd.render(); vfx.update(1 / 2, heroView); } if (DIR.over && DIR.endT > 30) break; } render(1 / 60); return this.info(); },
-  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
+  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, char: charKey, wave: DIR.wave, crossed: DIR.crossed, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
-  setDiff, dropItem, items,
+  setDiff, setChar, dropItem, items, startWave,
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 
 // ---------------------------------------------------------------- boot
+setChar(charKey, false);
 resetGame();
 game.lodDist = lowQ ? 0 : undefined; bloom.enabled = !lowQ;
 ui.mode = 'title'; showMenu('title'); $('hud').classList.add('hidden');
