@@ -94,6 +94,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .dmg-flash { position: absolute; inset: 0; box-shadow: inset 0 0 120px rgba(200, 30, 20, 0.0); transition: box-shadow .3s; }
 
 
+.buffs { display: flex; gap: 6px; min-height: 24px; margin-bottom: 4px; }
+.buffs span { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 2px; border-radius: 12px; background: rgba(0,0,0,.55); border: 1px solid var(--c); font-family: var(--latin); font-size: 12px; color: #fff; }
+.buffs b { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 50%; background: var(--c); color: #1a1008; font-family: var(--serif); font-weight: 900; font-size: 13px; }
+.diffs { display: flex; align-items: center; gap: 8px; margin-top: 2.2vh; font-size: 14px; color: var(--dim); letter-spacing: .2em; }
+.diffs button { font-family: var(--serif); font-weight: 900; font-size: 17px; min-width: 46px; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,.07); border: 1px solid var(--line); letter-spacing: 0; }
+.diffs button.on { background: var(--red); border-color: #e8a090; color: #fff; }
+.diffs button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.moves { margin-top: 2vh; font-size: 13px; gap: 4px 14px; border-left-color: var(--gold2); }
+.moves dt { font-size: 14px; }
 /* ---------- touch */
 #touch { position: fixed; inset: 0; z-index: 5; touch-action: none; }
 #stickBase { position: absolute; left: 90px; top: 62%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(255,240,210,.35); background: rgba(0,0,0,.18); opacity: .35; pointer-events: none; }
@@ -106,19 +115,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.sm { width: 40px; height: 40px; font-size: 13px; }
 /* ---------- menus */
 .menu { position: fixed; inset: 0; display: flex; pointer-events: auto; z-index: 10; }
-.menu .col { width: min(560px, 100vw); padding: 7vh 56px 4vh; display: flex; flex-direction: column;
+.menu .col { scrollbar-width: none; width: min(560px, 100vw); padding: 5vh 56px 3vh; display: flex; flex-direction: column;
   background: linear-gradient(90deg, rgba(18,10,6,.92) 0%, rgba(18,10,6,.78) 62%, rgba(18,10,6,0) 100%); overflow-y: auto; }
 .menu h1 { margin: 0; display: flex; align-items: flex-start; gap: 12px; }
-.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(76px, 13vh, 132px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
+.menu h1 b { font-family: var(--serif); font-weight: 900; font-size: clamp(64px, 11vh, 124px); line-height: .95; letter-spacing: 6px; color: #f7efdd; text-shadow: 0 5px 0 rgba(0,0,0,.45); }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
-.menu .tag2 { font-size: 20px; letter-spacing: .3em; margin: 3vh 0 2.4vh; color: #f0e2c4; }
-.ctl { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
+.menu .tag2 { font-size: 19px; letter-spacing: .3em; margin: 2.2vh 0 1.8vh; color: #f0e2c4; }
+.ctl { display: grid; grid-template-columns: auto 1fr; gap: 5px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
 .ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 17px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
 .ctl dd { margin: 0; color: #eadfc8; }
 .ctl kbd { font-family: var(--latin); font-size: 12px; background: #f3ead8; color: #2a1a10; border-radius: 3px; padding: 1px 6px; margin-right: 4px; font-weight: 800; box-shadow: 0 2px 0 #8a7a60; }
-.go { margin-top: 3.4vh; align-self: flex-start; display: inline-flex; align-items: baseline; gap: 14px; border: 0; padding: 14px 44px; border-radius: 4px;
+.go { margin-top: 2.2vh; align-self: flex-start; display: inline-flex; align-items: baseline; gap: 14px; border: 0; padding: 14px 44px; border-radius: 4px;
   background: linear-gradient(180deg, #f6d27a, #d49a36); color: #2a1608; font-family: var(--serif); font-weight: 900; font-size: 26px; letter-spacing: .3em;
   box-shadow: 0 4px 0 #7a4a14, 0 8px 24px rgba(0,0,0,.5); transition: transform .1s, filter .1s; }
 .go small { font-family: var(--latin); font-size: 13px; letter-spacing: .2em; }
@@ -127,8 +136,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .go:focus-visible, .btn2:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .btn2 { margin-top: 12px; align-self: flex-start; background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 4px; padding: 9px 22px; font-size: 16px; letter-spacing: .2em; }
 .btn2:hover { background: rgba(255,255,255,.14); }
-.foot { margin-top: auto; padding-top: 3vh; font-size: 12px; color: var(--dim); line-height: 1.8; }
-.opts { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--dim); align-items: center; }
+.foot { margin-top: auto; padding-top: 2vh; font-size: 12px; color: var(--dim); line-height: 1.8; }
+.opts { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 14px; color: var(--dim); align-items: center; }
 .opts label { display: flex; align-items: center; gap: 8px; }
 .opts input[type=range] { width: 110px; accent-color: #d49a36; }
 .res-rank { font-family: var(--serif); font-weight: 900; font-size: 120px; line-height: 1; color: var(--gold); text-shadow: 0 5px 0 #5a3a10, 0 0 30px rgba(255,190,80,.4); margin: 2vh 0 0; }
@@ -155,7 +164,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="h-title"><b>趙雲</b><i class="seal">常山</i><small>ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
-    <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>Q</kbd><kbd>E</kbd>視角 · <kbd>H</kbd>說明
+    <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>F</kbd>喚馬 · <kbd>Q</kbd><kbd>E</kbd>視角
   </div>
   <div class="h-obj"><div class="lbl">戰 目 標</div><div class="txt" id="obj">擊破魏軍 · 殺出重圍</div><div class="tm" id="tm">00:00</div></div>
   <div class="h-map"><div class="morale"><span style="color:#8ab8ff">蜀</span><div class="bar"><i id="morale"></i></div><span style="color:#ff8a70">魏</span></div><canvas id="map" width="188" height="188"></canvas></div>
@@ -167,6 +176,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="h-player">
     <div class="badge"><canvas id="face" width="20" height="20"></canvas></div>
     <div class="bars">
+      <div class="buffs" id="buffs"></div>
       <div class="name">趙雲 <em id="swordTag"></em></div>
       <div class="hp" id="hpBox"><u id="hpLag"></u><i id="hp"></i></div>
       <div style="position:relative"><div class="mu" id="muBox"><i id="mu"></i></div><div class="mu-lbl" id="muLbl">無雙</div></div>
@@ -183,6 +193,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="tb" data-k="jump" style="right:108px;bottom:228px">跳</div>
   <div class="tb" data-k="dodge" style="right:188px;bottom:120px">閃</div>
   <div class="tb mu" data-k="musou" style="right:26px;bottom:282px">無雙</div>
+  <div class="tb" data-k="mount" style="right:112px;bottom:316px">馬</div>
   <div class="tb sm" data-k="pause" style="left:50%;top:10px;margin-left:-20px">❚❚</div>
 </div>
 <div class="menu" id="title">
@@ -196,16 +207,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <dt>蓄力<small>CHARGE</small></dt><dd><kbd>K</kbd> / 右鍵 — 連擊中按出 C1–C6</dd>
       <dt>跳躍<small>JUMP</small></dt><dd><kbd>Space</kbd> — 空中可接 <kbd>J</kbd> / <kbd>K</kbd></dd>
       <dt>閃避<small>DODGE</small></dt><dd><kbd>L</kbd> / <kbd>Shift</kbd></dd>
+      <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · 馬上 <kbd>J</kbd>橫掃 <kbd>K</kbd>突擊</dd>
       <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> — 金色氣力滿時；瀕危時為真・無雙</dd>
       <dt>視角<small>CAMERA</small></dt><dd><kbd>Q</kbd><kbd>E</kbd> / 拖曳滑鼠</dd>
     </dl>
+    <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <button class="go" id="go">出陣 <small>START</small></button>
     <div class="opts">
       <label>音量 <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <label><input type="checkbox" id="lowq"> 低畫質</label>
     </div>
-    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避）<br>擊破四員魏將，奪青釭劍，向長坂橋突圍。</div>
+    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>擊破四員魏將，奪青釭劍，向長坂橋突圍。打碎木箱有肉包與強化道具；虎豹騎的紅色衝鋒線要讓開。</div>
   </div>
 </div>
 
@@ -213,7 +226,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="col">
     <h1><b style="font-size:84px">暫停</b></h1>
     <div class="sub">PAUSED</div>
-    <dl class="ctl" style="margin-top:4vh" id="pauseStats"></dl>
+    <dl class="ctl" style="margin-top:3vh" id="pauseStats"></dl>
+    <dl class="ctl moves">
+      <dt>連擊</dt><dd><kbd>J</kbd>×6 — 刺・挑・掃・連刺・劈・迴旋</dd>
+      <dt>C1</dt><dd><kbd>K</kbd> — 挑空</dd>
+      <dt>C2</dt><dd><kbd>J</kbd><kbd>K</kbd> — 旋挑，再追刺空中</dd>
+      <dt>C3</dt><dd><kbd>J</kbd><kbd>J</kbd><kbd>K</kbd> — 百烈突</dd>
+      <dt>C4</dt><dd><kbd>J</kbd>×3 <kbd>K</kbd> — 旋風，收招吹飛</dd>
+      <dt>C5</dt><dd><kbd>J</kbd>×4 <kbd>K</kbd> — 龍突進（可轉向）</dd>
+      <dt>C6</dt><dd><kbd>J</kbd>×5 <kbd>K</kbd> — 躍斬震地</dd>
+      <dt>空中</dt><dd><kbd>J</kbd> 連斬 ×3 · <kbd>K</kbd> 下刺</dd>
+      <dt>馬上</dt><dd><kbd>J</kbd> 左右橫掃 · <kbd>K</kbd> 挺槍突擊 · <kbd>Space</kbd> 躍下</dd>
+    </dl>
     <button class="go" id="resume">再戰 <small>RESUME</small></button>
     <button class="btn2" id="restart">重新出陣</button>
     <div class="opts">
@@ -1104,14 +1128,14 @@ function createWorld(scene) {
   place(P.arrows, spent, false);
   const rocks = [], crates = [], carts = [], racks = [], braz = [], tents = [];
   for (let i = 0; i < 26; i++) { const x = (rnd() - 0.5) * 120, z = -46 + rnd() * 100; if (!clear(x, z, 12)) continue; const s = 0.7 + rnd() * 1.1; rocks.push({ x, z, ry: rnd() * 6, s }); W.colliders.push({ x, z, r: 0.6 * s + 0.1 }); }
-  for (let i = 0; i < 16; i++) { const x = (rnd() - 0.5) * 100, z = -40 + rnd() * 90; if (!clear(x, z, 10)) continue; crates.push({ x, z, ry: rnd() * 6, s: 0.9 + rnd() * 0.3 }); W.colliders.push({ x, z, r: 0.55 }); }
+  for (let i = 0; i < 30; i++) { const x = (rnd() - 0.5) * 96, z = -42 + rnd() * 92; if (!clear(x, z, 9)) continue; const col = { x, z, r: 0.55 }; crates.push({ x, z, ry: rnd() * 6, s: 0.9 + rnd() * 0.3, col, alive: true }); W.colliders.push(col); }
   for (const [x, z, ry] of [[-22, 14, 0.7], [30, 22, 2.2], [-8, -30, 1.1], [44, -16, 0.3], [-44, 24, 2.8]]) { carts.push({ x, z, ry }); W.colliders.push({ x, z, r: 1.3 }); }
   for (const [x, z, ry] of [[-6, 52, 0], [8, 52, 0], [-34, 50, 0.3], [36, 50, -0.3]]) racks.push({ x, z, ry });
   const brazierPts = [[-8, 55], [8, 55], [-28, 40], [26, 42], [-44, 10], [44, 14], [-18, -20], [20, -18], [-5, -46], [5, -46]];
   for (const [x, z] of brazierPts) { braz.push({ x, z }); W.colliders.push({ x, z, r: 0.4 }); }
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; if (Math.sin(a) < -0.8) continue; tents.push({ x: Math.cos(a) * 92, z: 20 + Math.sin(a) * 78, ry: -a + Math.PI / 2, s: 1.5 + rnd() * 0.5 }); }
   for (let x = -70; x <= 70; x += 14) tents.push({ x, z: 76 + rnd() * 6, ry: rnd() * 0.4, s: 1.6 });
-  place(P.rock, rocks); place(P.crate, crates); place(P.cart, carts); place(P.rack, racks); place(P.brazier, braz); place(P.tent, tents, false);
+  place(P.rock, rocks); const crateIM = place(P.crate, crates); place(P.cart, carts); place(P.rack, racks); place(P.brazier, braz); place(P.tent, tents, false);
 
   // ---------------- fire sprites + smoke + motes
   const glowTex = radialTexture();
@@ -1152,16 +1176,22 @@ function createWorld(scene) {
   };
 
   // push a circle (pos {x,z}) out of world colliders and arena bounds; returns true if clamped
+  // crates can be smashed for pickups
+  const crateM0 = crates.map((_, i) => { const m = new THREE.Matrix4(); crateIM.getMatrixAt(i, m); return m; }), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  W.crates = crates;
+  W.breakCrate = (i) => { const k = crates[i]; if (!k.alive) return; k.alive = false; crateIM.setMatrixAt(i, ZERO); crateIM.instanceMatrix.needsUpdate = true; const ci = W.colliders.indexOf(k.col); if (ci >= 0) W.colliders.splice(ci, 1); };
+  W.resetCrates = () => { crates.forEach((k, i) => { if (!k.alive) { k.alive = true; W.colliders.push(k.col); } crateIM.setMatrixAt(i, crateM0[i]); }); crateIM.instanceMatrix.needsUpdate = true; };
   W.resolve = (o, r, hero) => {
     for (const c of W.colliders) {
       const dx = o.x - c.x, dz = o.z - c.z, d2 = dx * dx + dz * dz, rr = c.r + r;
       if (d2 < rr * rr && d2 > 1e-6) { const d = Math.sqrt(d2), k = (rr - d) / d; o.x += dx * k; o.z += dz * k; }
     }
-    const onBridge = Math.abs(o.x - BRIDGE.x) < BRIDGE.w;
+    // the bridge mouth is forgiving: anyone within 2.5 m of it at the bank is funnelled onto the deck
+    const bx = o.x - BRIDGE.x, onBridge = Math.abs(bx) < BRIDGE.w + 2.5;
     const zMin = hero && onBridge ? RIVER.z0 - 6 : ARENA.z0;
     o.x = Math.max(ARENA.x0, Math.min(ARENA.x1, o.x));
     o.z = Math.max(zMin, Math.min(ARENA.z1, o.z));
-    if (o.z < ARENA.z0) o.x = Math.max(BRIDGE.x - BRIDGE.w, Math.min(BRIDGE.x + BRIDGE.w, o.x));
+    if (hero && onBridge && o.z < ARENA.z0 + 1.5) { const tx = BRIDGE.x + Math.max(-BRIDGE.w + 0.3, Math.min(BRIDGE.w - 0.3, bx)); o.x += (tx - o.x) * (o.z < ARENA.z0 ? 0.5 : 0.15); }
   };
   return W;
 }
@@ -1327,9 +1357,135 @@ function weaponPoint(rig, z, out) {
 
 return { BASE, P, clonePose, lerpPose, sampleClip, approach, runPose, idlePose, applyPose, weaponPoint };
 })();
+// ---------------- horse.js ----------------
+const { HS, HORSE_PAL, buildHorse, poseHorse, itemGeos } = (() => {
+// Horses (4 cm voxels): Zhao Yun's white charger, the Tiger-Leopard cavalry mount with its rider, gait animation, and the pickup models.
+
+
+const HS = 0.04;
+const sh = (c, k) => { const r = Math.min(255, Math.round(((c >> 16) & 255) * k)), g = Math.min(255, Math.round(((c >> 8) & 255) * k)), b = Math.min(255, Math.round((c & 255) * k)); return (r << 16) | (g << 8) | b; };
+const mod = (a, n) => ((a % n) + n) % n;
+
+const HORSE_PAL = {
+  white: { coat: 0xf3f0ea, coat2: 0xe2ddd2, mane: 0xcfd6dc, hoof: 0x3a3632, tack: 0x1fa39a, tack2: 0xe6c664, saddle: 0x7a4a2a, tassel: 0x3d7fd6, sock: 0xf3f0ea },
+  black: { coat: 0x2e2622, coat2: 0x3a302a, mane: 0x121010, hoof: 0x141210, tack: 0x7a1e18, tack2: 0xc9a040, saddle: 0x3a2a1e, tassel: 0xc42c1e, sock: 0x2e2622 },
+};
+
+function horseVox(p) {
+  const coat = (x, y, z) => (hash3(x >> 1, y >> 1, z >> 1) < 0.28 ? p.coat2 : p.coat);
+  const body = new Vox();
+  body.ell(0, 0, 0, 6.6, 6.6, 15, coat);
+  body.ell(0, 1.0, 11, 6.2, 7.4, 7.5, coat);
+  body.ell(0, 1.2, -11, 6.9, 7.2, 8.5, coat);
+  body.recolor((x, y, z) => (z >= -8 && z <= 6 && y >= -2 ? (z === -8 || z === 6 || y === -2 ? p.tack2 : mod(x + z, 4) === 0 ? sh(p.tack, 0.82) : p.tack) : undefined));   // saddle cloth
+  body.recolor((x, y, z) => (z >= 14 && y >= 0 && y <= 2 ? p.tack2 : z <= -15 && y >= 2 && y <= 3 ? p.tack2 : undefined));                             // breast strap, crupper
+  body.ell(0, 7.2, -1, 4.6, 1.9, 6.5, p.saddle); body.ell(0, 8.8, -7, 3.6, 1.7, 1.5, sh(p.saddle, 0.75)); body.ell(0, 8.6, 5, 2.6, 1.5, 1.4, sh(p.saddle, 0.75));
+  body.ell(0, -3.4, 18.6, 1.5, 2.4, 1.3, p.tassel);
+  for (const s of [-7, 6]) { body.box(s, -8, 0, s, -2, 0, 0x2a2420); body.box(s + (s < 0 ? -1 : 1), -9, -1, s + (s < 0 ? -1 : 1), -9, 1, p.tack2); }                 // stirrups
+
+  const neck = new Vox();                                                                                                                              // pivot at the base of the neck
+  for (let k = 0; k <= 12; k++) { const t = k / 12; neck.ell(0, t * 15, t * 8 + Math.sin(t * 2) * 1.5, 4.6 - t * 1.6, 4.2 - t * 1.0, 4.8 - t * 1.6, coat); }
+  neck.ell(0, 17, 11, 3.0, 3.4, 4.2, coat);
+  neck.ell(0, 14.6, 16.5, 2.4, 2.5, 4.2, coat);
+  neck.ell(0, 13.6, 19.8, 2.0, 1.9, 1.5, sh(p.coat, 0.78));
+  neck.box(-3, 20, 8, -2, 22, 9, p.coat).box(1, 20, 8, 2, 22, 9, p.coat).set(-3, 23, 8, p.coat2).set(2, 23, 8, p.coat2);
+  neck.set(-3, 18, 12, 0x15100c).set(2, 18, 12, 0x15100c).set(-3, 18, 13, 0x15100c).set(2, 18, 13, 0x15100c);
+  neck.set(-2, 13, 20, 0x2a2018).set(1, 13, 20, 0x2a2018);
+  neck.recolor((x, y, z, c) => (z >= 15 && z <= 16 && y >= 12 && y <= 17 ? p.tack2 : (y === 19 && z >= 9 && z <= 14) ? p.tack : undefined));          // bridle
+  for (let k = 0; k <= 13; k++) { const t = k / 13; neck.ell(0, t * 15 + 3.6, t * 8 - 3.0 + Math.sin(t * 2) * 1.5, 1.2, 2.6, 2.2, (x, y, z) => (hash3(x, y, z) < 0.3 ? sh(p.mane, 0.85) : p.mane)); }
+  neck.ell(0, 20.4, 12.5, 1.4, 1.5, 2.2, p.mane);
+
+  const up = new Vox(); up.cylY(0, 0, -12, 0, 1.9, 2.2, 2.7, 3.5, coat);
+  const lo = new Vox(); lo.cylY(0, 0, -11, 0, 1.4, 1.5, 1.8, 2.0, (x, y, z) => (y < -6 ? p.sock : coat(x, y, z)));
+  lo.ell(0, -11.4, 0.2, 1.9, 1.5, 2.0, p.sock); lo.cylY(0, 0.3, -14, -13, 2.2, 2.4, 2.0, 2.2, p.hoof);
+  const tail = new Vox();
+  for (let k = 0; k <= 16; k++) { const t = k / 16; tail.ell(0, -t * 15, -t * 5 - Math.sin(t * 3) * 1.2, 1.5 + Math.sin(t * 3.1) * 0.9, 1.7, 1.5 + Math.sin(t * 3.1) * 0.9, (x, y, z) => (hash3(x, y, z) < 0.3 ? sh(p.mane, 0.85) : p.mane)); }
+  return { body, neck, up, lo, tail };
+}
+
+// 虎豹騎 rider, seated; pivot = saddle seat. Static mesh (leans into the charge), lance couched on the right.
+function riderVox() {
+  const v = new Vox();
+  const A = 0x23262e, PL = 0x444a56, G = 0xc9a040, SK = 0xdcb694, RED = 0x8a1e18;
+  for (let y = 0; y <= 17; y++) { const t = Math.min(1, y / 10); v.layer(y, 0, y * 0.12, 4.6 + 1.3 * t - (y > 15 ? 1.2 : 0), 3.3 + 0.8 * t, (x, yy, z) => (yy % 3 === 0 ? sh(A, 0.7) : mod(x + z, 3) === 0 ? PL : A), 3); }
+  v.recolor((x, y) => (y === 1 || y === 2 ? G : y === 15 ? G : undefined));
+  for (let x = -2; x <= 1; x++) for (let y = 8; y <= 12; y++) v.face(x, y, Math.hypot(x + 0.5, y - 10) < 1.3 ? 0xf0d27a : G, 1);
+  v.ell(0, 22, 2.6, 3.7, 4.1, 3.7, SK);                                                              // head
+  v.face(-2, 21, 0x15100c).face(1, 21, 0x15100c); for (let x = -3; x <= 2; x++) v.face(x, 19, 0x1a1512, 1);
+  v.ell(0, 23, 2.4, 4.6, 4.2, 4.6, (x, y, z) => (mod(Math.round(Math.atan2(z - 2, x + 0.5) * 4), 2) ? sh(A, 1.5) : PL), (x, y) => y >= 23);
+  v.ell(0, 23, 2.4, 5.4, 0.9, 5.4, G, (x, y, z) => y === 22 && Math.hypot(x + 0.5, z - 2) > 4);
+  v.ell(0, 20, 2, 5.0, 3, 5.0, (x, y) => (y % 2 ? A : PL), (x, y, z) => y >= 18 && y <= 22 && z < 2 && Math.hypot(x + 0.5, z - 2) > 3.8, true);
+  for (let k = 0; k <= 6; k++) v.ell(0, 27.5 + Math.sin(k / 6 * 2.6) * 2.4, 2 - k * 1.1, 1.8 - k * 0.15, 1.6, 1.8, k % 2 ? 0xc42c1e : 0x9a1e16);          // plume
+  for (const s of [-1, 1]) {
+    v.ell(s * 6.4, 14.5, 1.5, 2.6, 2.8, 2.8, (x, y) => (y === 12 ? G : PL));                           // pauldron
+    for (let k = 0; k <= 8; k++) v.ell(s * 6.2, 12.5 - k * 0.55, 2 + k * 0.9, 1.7, 1.7, 1.7, k > 6 ? SK : k > 3 ? PL : A);    // arm reaching forward
+    v.ell(s * 6.6, -1.5, 3, 2.3, 2.7, 6.0, A); v.cylY(s * 7.2, 5.5, -12, -3, 1.7, 1.8, 2.1, 2.3, 0x1a1816); v.box(Math.round(s * 7.2 - 0.5), -13, 5, Math.round(s * 7.2 - 0.5), -12, 8, 0x1a1816);   // leg + boot
+  }
+  for (let y = 1; y <= 15; y++) for (let x = -4; x <= 3; x++) v.set(x, y, -5 - (y < 6 ? 1 : 0), Math.abs(x + 0.5) > 3 || y === 1 ? G : mod(x, 3) === 0 ? sh(RED, 0.8) : RED);        // cape
+  v.box(-8, 8, -16, -8, 8, 48, 0x2a2420);                                                             // lance
+  for (let z = 49; z <= 58; z++) { const hw = z < 52 ? z - 49 : 2.4 * (1 - (z - 52) / 6.5); for (let x = -2; x <= 2; x++) if (Math.abs(x) <= hw) v.set(-8 + x, 8, z, 0xd8dce4); }
+  for (let z = 38; z <= 46; z++) for (let y = 9; y <= 13 - ((z - 38) >> 1); y++) v.set(-8, y, z, y === 9 || (z + y) % 4 === 0 ? G : 0xb8281c);                 // pennant
+  return v;
+}
+
+// A horse rig. o.pal = HORSE_PAL key, o.rider adds the cavalryman. Returns { root, j, mat, rider }.
+function buildHorse(o = {}) {
+  const p = HORSE_PAL[o.pal || 'white'], V = horseVox(p);
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.04 });
+  const geo = (v) => v.geometry({ s: HS, jit: 0.04 });
+  const mesh = (g) => { const m = new THREE.Mesh(g, mat); m.castShadow = true; m.frustumCulled = false; return m; };
+  const node = (parent, x, y, z, g) => { const n = new THREE.Group(); n.position.set(x * HS, y * HS, z * HS); if (g) n.add(mesh(g)); parent.add(n); return n; };
+  const root = new THREE.Group(), j = {};
+  j.body = node(root, 0, 30, 0, geo(V.body));
+  j.neck = node(j.body, 0, 4, 15, geo(V.neck));
+  j.tail = node(j.body, 0, 4.5, -19, geo(V.tail));
+  const up = geo(V.up), lo = geo(V.lo);
+  for (const [k, x, z] of [['FL', 3.6, 11], ['FR', -3.6, 11], ['HL', 4.0, -12], ['HR', -4.0, -12]]) { j['up' + k] = node(j.body, x, -4, z, up); j['lo' + k] = node(j['up' + k], 0, -12, 0, lo); }
+  let rider = null;
+  if (o.rider) { rider = node(j.body, 0, 8.2, -1, geo(riderVox())); rider.rotation.x = 0.16; }
+  return { root, j, mat, rider };
+}
+
+// gait: ph = stride phase (rad), g = 0 (standing) .. 1 (full gallop), t = seconds (idle motion)
+const LEG_OFF = { HL: 0, HR: 0.7, FL: Math.PI * 0.92, FR: Math.PI * 0.92 + 0.7 };
+function poseHorse(rig, ph, g, t, rear = 0) {
+  const j = rig.j;
+  j.body.position.y = 30 * HS + Math.sin(ph * 2 + 0.6) * 0.06 * g + rear * 0.25;
+  j.body.rotation.x = Math.sin(ph * 2) * 0.06 * g - rear * 0.55;
+  j.neck.rotation.x = 0.08 + Math.sin(ph * 2 + 1.2) * 0.1 * g + Math.sin(t * 1.3) * 0.03 * (1 - g) + g * 0.22 - rear * 0.3;
+  j.tail.rotation.x = 0.15 + g * 1.0 + Math.sin(ph * 2 + 2) * 0.12 * g + Math.sin(t * 2) * 0.05;
+  for (const k in LEG_OFF) {
+    const a = ph + LEG_OFF[k], front = k[0] === 'F';
+    const sw = Math.sin(a) * (0.12 + 0.8 * g), lift = Math.max(0, -Math.cos(a));
+    j['up' + k].rotation.x = -sw + (front ? -rear * 1.2 : rear * 0.35);
+    j['lo' + k].rotation.x = (front ? 1 : 0.8) * lift * 1.25 * g + (front ? rear * 1.5 : 0);
+  }
+}
+
+// pickup models (5 cm voxels)
+function itemGeos() {
+  const G = {};
+  const axe = new Vox();
+  axe.box(0, 0, 0, 0, 12, 0, 0x6a4a2a); axe.box(0, 0, 0, 0, 1, 0, 0xb8281c);
+  for (let y = 7; y <= 12; y++) for (let x = 1; x <= 4; x++) if (Math.abs(y - 9.5) <= 1 + x * 0.6) axe.set(x, y, 0, x === 4 ? 0xf0f4f8 : 0xb8bec8);
+  axe.set(-1, 9, 0, 0xb8bec8).set(-1, 10, 0, 0xb8bec8);
+  G.axe = axe.geometry({ s: 0.05, o: [0.5, 0, 0.5] });
+  const arm = new Vox();
+  for (let y = 0; y <= 8; y++) arm.layer(y, 0, 0, 3.2 + Math.min(1.4, y * 0.25), 2.2, (x, yy) => (yy % 3 === 0 ? 0x8a6a22 : 0xd8b04a), 3);
+  arm.ell(-4.6, 8, 0, 1.8, 1.5, 2, 0xc9a040); arm.ell(4.6, 8, 0, 1.8, 1.5, 2, 0xc9a040); arm.face(-1, 5, 0xb8281c, 1).face(0, 5, 0xb8281c, 1).face(-1, 4, 0xb8281c, 1).face(0, 4, 0xb8281c, 1);
+  G.armor = arm.geometry({ s: 0.05, o: [0, 0, 0] });
+  const boot = new Vox();
+  for (const ox of [-3, 2]) { boot.cylY(ox + 0.5, 0, 2, 9, 1.6, 1.6, 1.9, 1.9, 0x2a6ad0); boot.box(ox - 1, 0, -1, ox + 1, 1, 4, 0x2a6ad0); boot.box(ox - 1, 9, -2, ox + 1, 9, 1, 0xe6c664); boot.set(ox, 5, -2, 0xf4f8ff).set(ox, 6, -3, 0xf4f8ff).set(ox, 7, -4, 0xf4f8ff); }
+  G.boots = boot.geometry({ s: 0.05, o: [0, 0, 0] });
+  return G;
+}
+
+return { HS, HORSE_PAL, buildHorse, poseHorse, itemGeos };
+})();
 // ---------------- hero.js ----------------
-const { MOVES, HERO, createHero, createHeroView, turn } = (() => {
+const { MOVES, HERO, RIDE_ATK, createHero, createHeroView, turn } = (() => {
 // Zhao Yun: moveset data, state machine (60 Hz sim) and rig view.
+
 
 
 
@@ -1426,14 +1582,34 @@ const MOVES = {
 };
 for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
-const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100 };
+const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
+
+// ---- mounted: seat pose + two sweeps (J) and a couched charge (K)
+const RIDE_O = { rootY: 0, tx: 0.15, ty: 0.05, hx: -0.1, hy: 0, thL: 1.2, shL: -1.35, thR: 1.2, shR: -1.35, lzL: 0.5, lzR: -0.5,
+  w: W(-0.34, 0.18, 0.1, -0.55, -0.2), ikL: 0, aL: [0.85, 0, 0.15], cape: 0.3 };
+const RP = (o = {}) => P({ ...RIDE_O, ...o });
+const RIDE = RP();
+const couch = RP({ tx: 0.55, hx: -0.4, ty: -0.1, w: W(-0.22, 0.15, 0.5, 0.02, -0.1), cape: 1 });
+const RIDE_ATK = {
+  ra: { dur: 24, cancel: 13,      // sweep down the right flank
+    keys: [[0, RIDE], [5, RP({ ty: 0.35, w: W(-0.28, 0.32, 0.28, -0.1, 0.5) })], [11, RP({ ty: -0.9, tx: 0.2, w: W(-0.36, 0.2, 0.08, 0.28, -2.3) }), 'snap'], [16, RP({ ty: -0.95, tx: 0.2, w: W(-0.36, 0.2, 0.08, 0.3, -2.45) })], [24, RIDE]],
+    hits: [{ f: [7, 12], shape: 'circle', range: 3.4, dmg: 12, kb: 'push', force: 4, stop: 2 }] },
+  rb: { dur: 24, cancel: 13,      // and back across the left
+    keys: [[0, RIDE], [5, RP({ ty: -0.35, w: W(-0.3, 0.32, 0.25, -0.1, -0.9) })], [11, RP({ ty: 0.9, tx: 0.2, w: W(0.08, 0.2, 0.14, 0.28, 2.3) }), 'snap'], [16, RP({ ty: 0.95, tx: 0.2, w: W(0.08, 0.2, 0.14, 0.3, 2.45) })], [24, RIDE]],
+    hits: [{ f: [7, 12], shape: 'circle', range: 3.4, dmg: 13, kb: 'blow', force: 7, lift: 4, stop: 3 }] },
+  rc: { dur: 40, cancel: 35, armor: true,
+    keys: [[0, RIDE], [5, RP({ tx: 0.4, hx: -0.3, ty: 0.55, w: W(-0.3, 0.12, 0.0, -0.05, -0.65) })], [9, couch, 'snap'], [34, couch], [40, RIDE]],
+    hits: [{ f: [6, 34], every: 4, shape: 'line', len: 4.6, width: 2.8, dmg: 9, kb: 'launch', force: 5, lift: 6, stop: 1 }] },
+};
 
 function createHero(game) {
   const h = { x: 0, y: 0, z: -12, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0,
     move: null, mt: 0, serial: 1, buf: null, bufAge: 0, inv: 0, grounded: true, airChain: 0, spd: 0, ph: 0, landed: false,
-    dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false };
+    dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false, riding: false, ratk: null,
+    horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } };
   h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
-    grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null });
+    grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null, riding: false, ratk: null,
+    horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } });
 
   const setState = (s) => { h.state = s; h.t = 0; };
   const startMove = (id, inp) => {
@@ -1450,21 +1626,53 @@ function createHero(game) {
 
   h.hurt = (dmg, fx, fz, heavy, src = '?') => {
     if (h.dead || h.inv > 0 || h.state === 'musou' || h.state === 'down' || h.state === 'getup') return false;
-    const armored = h.state === 'move' && h.move.armor;
-    h.hp -= dmg * (armored ? 0.5 : 1);
+    const armored = (h.state === 'move' && h.move.armor) || (h.riding && h.ratk && h.ratk.id === 'rc');
+    dmg *= game.diff.dmg * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
+    h.hp -= dmg;
     h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
-    game.emit('heroHurt', { dmg: dmg * (armored ? 0.5 : 1), heavy, src });
-    if (h.hp <= 0) { h.hp = 0; h.dead = true; setState('down'); h.move = null; game.emit('heroDead'); return true; }
-    if (armored && !heavy) return true;
+    game.emit('heroHurt', { dmg, heavy, src });
+    if (h.hp <= 0) { h.hp = 0; h.dead = true; unhorse(); setState('down'); h.move = null; game.emit('heroDead'); return true; }
+    if ((armored || h.riding) && !heavy) return true;
     h.move = null; h.yaw = Math.atan2(fx - h.x, fz - h.z);
+    if (h.riding) unhorse();
     if (heavy) { setState('down'); h.vy = h.grounded ? 4 : h.vy; h.grounded = false; h.kx = -Math.sin(h.yaw) * 5; h.kz = -Math.cos(h.yaw) * 5; }
     else { setState('hurt'); h.kx = -Math.sin(h.yaw) * 2.5; h.kz = -Math.cos(h.yaw) * 2.5; }
     return true;
   };
 
+  // ---- the white horse
+  const mount = () => { const hz = h.horse; h.riding = true; h.ratk = null; h.move = null; setState('ride'); h.spd = Math.max(h.spd * 0.6, hz.spd * 0.6); h.ph = hz.ph; hz.state = 'idle'; game.emit('mount'); };
+  const leaveHorse = () => { const hz = h.horse; h.riding = false; h.ratk = null; hz.x = h.x; hz.z = h.z; hz.yaw = h.yaw; hz.spd = h.spd * 0.6; hz.state = 'idle'; hz.t = 0; };
+  const unhorse = () => { if (!h.riding) return; leaveHorse(); h.horse.state = 'flee'; h.horse.spd = 8; h.spd = 0; game.emit('unhorse'); };
+  h.mount = mount; h.leaveHorse = leaveHorse;
+  function horseStep(dt) {
+    const hz = h.horse; hz.t++;
+    if (h.riding) { hz.x = h.x; hz.z = h.z; hz.yaw = h.yaw; hz.spd = h.spd; hz.ph = h.ph; return; }
+    if (hz.state === 'come') {
+      const dx = h.x - hz.x, dz = h.z - hz.z, d = Math.hypot(dx, dz);
+      hz.yaw = turn(hz.yaw, Math.atan2(dx, dz), 0.14);
+      const want = d > 2.4 ? Math.min(16, 4 + d * 1.6) : 0;
+      hz.spd += Math.sign(want - hz.spd) * Math.min(Math.abs(want - hz.spd), 34 * dt);
+      if (d < 2.8 && (h.state === 'idle' || h.state === 'run')) { mount(); return; }
+      if (hz.t > 600) hz.state = 'idle';
+    } else if (hz.state === 'flee') { hz.spd += (7 - hz.spd) * 0.1; if (hz.t > 70) hz.state = 'idle'; }
+    else hz.spd *= 0.9;
+    hz.x += Math.sin(hz.yaw) * hz.spd * dt; hz.z += Math.cos(hz.yaw) * hz.spd * dt; hz.ph += hz.spd * dt * 0.8;
+    game.world.resolve(hz, 0.7, false);
+  }
+  const startRide = (id, inp) => {
+    h.ratk = { id, t: 0 }; h.serial++;
+    if (id === 'rc' && inp && inp.mag > 0.2) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.5);
+    game.emit('move', { id, hero: h });
+  };
+
   h.step = (inp) => {
     const dt = 1 / 60;
     h.t++; if (h.inv > 0) h.inv--;
+    for (const k in h.buff) if (h.buff[k] > 0) h.buff[k]--;
+    h.atkMul = (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
+    const runTop = HERO.run * (h.buff.boots > 0 ? 1.25 : 1);
+    horseStep(dt);
     // buffer presses
     if (inp.attack) { h.buf = 'a'; h.bufAge = 0; } else if (inp.charge) { h.buf = 'c'; h.bufAge = 0; }
     if (inp.jump) { h.bufJ = 8; } if (inp.dodge) { h.bufD = 8; }
@@ -1476,7 +1684,46 @@ function createHero(game) {
     if (S === 'musou') { game.musou.heroStep(h, inp); integrate(dt); return; }
 
     const canAct = S === 'idle' || S === 'run' || (S === 'land' && h.t > 4);
-    if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt')) { h.move = null; game.musou.start(h); return; }
+    if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt' || S === 'ride')) { if (h.riding) leaveHorse(); h.move = null; game.musou.start(h); return; }
+    if (inp.mount && !h.riding && canAct) {
+      const hz = h.horse;
+      if (Math.hypot(hz.x - h.x, hz.z - h.z) < 3) { hz.yaw = h.yaw; mount(); return integrate(dt); }
+      hz.state = 'come'; hz.t = 0; game.emit('whistle');
+    }
+
+    if (S === 'ride') {
+      let top = HERO.ride * (h.buff.boots > 0 ? 1.2 : 1), wantR = inp.mag > 0.1 ? inp.mag : 0;
+      const ra = h.ratk;
+      if (ra) {
+        const A = RIDE_ATK[ra.id]; ra.t++;
+        if (ra.id === 'rc' && ra.t > 5 && ra.t < 34) { top = 16.5; wantR = 1; h.spd = Math.max(h.spd, 14); }
+        A.hits.forEach((hd, i) => {
+          if (ra.t < hd.f[0] || ra.t > hd.f[1]) return;
+          if (hd.every && (ra.t - hd.f[0]) % hd.every !== 0) return;
+          const key = h.serial * 64 + i * 8 + ((hd.every ? Math.floor((ra.t - hd.f[0]) / hd.every) : 0) % 8);
+          game.crowd.heroHit(h, hd, key, 0, 0);
+        });
+        if (ra.id === 'rc' && ra.t === 34) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 2, z: h.z + Math.cos(h.yaw) * 2 });
+        if (ra.t >= A.cancel && h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : ra.id === 'ra' ? 'rb' : 'ra', inp); }
+        else if (ra.t >= A.dur) h.ratk = null;
+      } else if (h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : 'ra', inp); }
+      if (h.bufJ > 0) { h.bufJ = 0; leaveHorse(); startJump(inp); return integrate(dt); }
+      if (h.bufD > 0) { leaveHorse(); startDodge(inp); return integrate(dt); }
+      if (inp.mount && h.t > 20) { leaveHorse(); h.spd = 0; setState('idle'); return integrate(dt); }
+      const target = wantR * top;
+      h.spd += Math.sign(target - h.spd) * Math.min(Math.abs(target - h.spd), (target > h.spd ? HERO.rideAccel : 22) * dt);
+      if (inp.mag > 0.1) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), HERO.rideTurn * dt * (1.7 - Math.min(1, h.spd / 14) * 0.7));
+      h.x += Math.sin(h.yaw) * h.spd * dt; h.z += Math.cos(h.yaw) * h.spd * dt;
+      const ph0 = h.ph; h.ph += h.spd * dt * 0.8;
+      if (h.spd > 2 && Math.floor(h.ph / 1.57) !== Math.floor(ph0 / 1.57)) game.emit('hoof');
+      // trample whatever stands in front of the charger
+      if (h.spd > 5 && game.frame % 3 === 0) {
+        const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw);
+        game.crowd.heroHit({ x: h.x + fx * 1.2, z: h.z + fz * 1.2, y: h.y, yaw: h.yaw, atkMul: h.atkMul }, { shape: 'circle', range: 1.3, dmg: 8 + h.spd * 0.9, kb: 'blow', force: h.spd * 0.5, lift: 4.5, stop: 0 }, 700000 + ((game.frame / 12) | 0), 0, 0);
+      }
+      integrate(dt);
+      return;
+    }
 
     if (S === 'move') {
       const m = h.move; h.mt++;
@@ -1546,7 +1793,7 @@ function createHero(game) {
     if (h.bufD > 0) { startDodge(inp); return integrate(dt); }
     if (h.bufJ > 0) { h.bufJ = 0; startJump(inp); return integrate(dt); }
     if (h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return integrate(dt); }
-    const target = want * HERO.run;
+    const target = want * runTop;
     h.spd += Math.sign(target - h.spd) * Math.min(Math.abs(target - h.spd), HERO.accel * dt);
     if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), HERO.turn * dt);
     h.x += Math.sin(h.yaw) * h.spd * dt; h.z += Math.cos(h.yaw) * h.spd * dt;
@@ -1571,7 +1818,7 @@ function createHero(game) {
       if (h.y <= gy) { h.y = gy; h.vy = 0; if (!h.grounded) { h.grounded = true; h.airChain = 0; game.emit('land', { x: h.x, z: h.z }); } }
       else h.grounded = false;
     } else { h.y = gy; }
-    game.world.resolve(h, 0.45, true);
+    game.world.resolve(h, h.riding ? 0.75 : 0.45, true);
     game.crowd.pushHero(h);
   }
   return h;
@@ -1586,10 +1833,11 @@ function turn(a, b, k) {
 function createHeroView(scene, h) {
   const rig = buildWarrior(PAL.zhao, { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' });
   scene.add(rig.root);
-  const cur = clonePose(BASE), tgt = clonePose(BASE);
+  const horse = buildHorse({ pal: 'white' }); scene.add(horse.root);
+  const cur = clonePose(BASE), tgt = clonePose(BASE), rideT = clonePose(RIDE);
   const tip = new THREE.Vector3(), mid = new THREE.Vector3();
   let t = 0;
-  const v = { rig, cur, tip, mid, trailOn: false };
+  const v = { rig, horse, cur, tip, mid, trailOn: false };
   v.step = () => {   // once per sim frame
     t += 1 / 60;
     let k = 0.28;
@@ -1598,6 +1846,10 @@ function createHeroView(scene, h) {
       const m = h.state === 'musou' ? null : h.move;
       if (m) sampleClip(m.keys, h.mt, tgt); else h.musouPose(tgt);
       k = 0.6;
+    } else if (S === 'ride') {
+      const g = Math.min(1, h.spd / HERO.ride);
+      if (h.ratk) { sampleClip(RIDE_ATK[h.ratk.id].keys, h.ratk.t, tgt); k = 0.6; }
+      else { Object.assign(tgt, clonePose(RIDE)); tgt.tx = 0.12 + g * 0.3 + Math.sin(h.ph * 2) * 0.04 * g; tgt.hx = -0.1 - g * 0.25; tgt.cape = g; tgt.aL = [0.85 + Math.sin(h.ph * 2) * 0.08 * g, 0, 0.15]; k = 0.35; }
     } else if (S === 'run') { runPose(h.ph, h.spd, tgt); k = 0.3; }
     else if (S === 'jump') { Object.assign(tgt, clonePose(BASE), { tx: -0.1, thL: 0.9, shL: -1.4, thR: 0.2, shR: -1.0, rootY: 0, cape: 0.8, w: [-0.3, 0.1, 0.0, -0.3, Math.PI - 0.5, 0], ikL: 0, aL: [-0.8, 0, 0.6] }); k = 0.25; }
     else if (S === 'land') { Object.assign(tgt, clonePose(BASE), { rootY: -0.25, tx: 0.4, thL: 0.8, shL: -1.2, thR: -0.3, shR: -0.9 }); k = 0.4; }
@@ -1610,10 +1862,14 @@ function createHeroView(scene, h) {
     approach(cur, tgt, k);
     // secondary: cape follows speed
     cur.cape = Math.max(cur.cape, Math.min(1, h.spd / 7) * 0.8);
-    v.trailOn = S === 'musou' || (S === 'move' && h.move.hits.some((hd) => h.mt >= hd.f[0] - 2 && h.mt <= hd.f[1] + 2));
+    v.trailOn = S === 'musou' || (S === 'move' && h.move.hits.some((hd) => h.mt >= hd.f[0] - 2 && h.mt <= hd.f[1] + 2))
+      || (S === 'ride' && !!h.ratk && RIDE_ATK[h.ratk.id].hits.some((hd) => h.ratk.t >= hd.f[0] - 2 && h.ratk.t <= hd.f[1] + 2));
   };
   v.update = () => {
-    rig.root.position.set(h.x, h.y, h.z);
+    const hz = h.horse, g = Math.min(1, hz.spd / HERO.ride);
+    horse.root.position.set(hz.x, h.riding ? h.y : groundY(hz.x, hz.z), hz.z); horse.root.rotation.y = hz.yaw;
+    poseHorse(horse, hz.ph, g, t);
+    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y - 0.68 : 0), h.z);
     rig.root.rotation.y = h.yaw;
     applyPose(rig, cur);
     rig.root.updateMatrixWorld(true);
@@ -1623,10 +1879,10 @@ function createHeroView(scene, h) {
   return v;
 }
 
-return { MOVES, HERO, createHero, createHeroView, turn };
+return { MOVES, HERO, RIDE_ATK, createHero, createHeroView, turn };
 })();
 // ---------------- crowd.js ----------------
-const { ST, KIND, CROWD, OFFICERS, createCrowd } = (() => {
+const { ST, KIND, CROWD, OFFICERS, shapeHit, createCrowd } = (() => {
 // Wei army: struct-of-arrays sim for the grunts (instanced render), rigged officers, archers' arrows, hit reactions.
 
 
@@ -1655,6 +1911,25 @@ const OATK = {
   spin: [{ clip: 'n6', tele: 48, hit: { shape: 'circle', range: 3.8, dmg: 20, heavy: true } }],
   leap: [{ clip: 'c6', tele: 30, hit: { shape: 'circle', range: 4.6, dmg: 26, heavy: true }, leap: true }],
 };
+
+// does a hit shape cast from (hx, hz) facing yaw reach a target of radius r at (x, z)?
+function shapeHit(hd, hx, hz, yaw, x, z, r) {
+  const dx = x - hx, dz = z - hz, d = Math.hypot(dx, dz);
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  if (hd.shape === 'circle') return d < hd.range + r;
+  if (hd.shape === 'arc') {
+    if (d > hd.range + r) return false;
+    if (d < 0.9) return true;
+    const dir = (hd.dir || 0) * Math.PI / 180, a = Math.atan2(dx, dz) - (yaw + dir);
+    const w = Math.atan2(Math.sin(a), Math.cos(a));
+    return Math.abs(w) <= (hd.ang * Math.PI / 360) + r / d;
+  }
+  if (hd.shape === 'line') {
+    const along = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
+    return along > -0.6 && along < hd.len + r && side < hd.width / 2 + r;
+  }
+  return false;
+}
 
 function createCrowd(game, scene) {
   const N = CROWD.maxGrunts + OFFICERS.length;
@@ -1690,7 +1965,7 @@ function createCrowd(game, scene) {
   function spawnSoldier(kind, x, z, yaw, sq, st = ST.FORM) {
     const i = freeSlot(); if (i < 0) return -1;
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = yaw; c.kind[i] = kind; c.squad[i] = sq;
-    c.hpMax[i] = c.hp[i] = kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16;
+    c.hpMax[i] = c.hp[i] = (kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16) * game.diff.hp;
     c.st[i] = st; c.stT[i] = 0; c.lastKey[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 60 + (rnd() * 120) | 0; c.ph[i] = rnd() * TAU;
     c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0;
     c.spawned++;
@@ -1747,7 +2022,7 @@ function createCrowd(game, scene) {
   c.spawnOfficer = (k, x, z) => {
     const o = c.officers[k], i = o.idx, d = o.def;
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = Math.PI; c.kind[i] = KIND.OFFICER;
-    c.hpMax[i] = c.hp[i] = d.hp; c.st[i] = ST.ENGAGE; c.stT[i] = 0; c.lastKey[i] = 0; c.kod[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 90;
+    c.hpMax[i] = c.hp[i] = d.hp * game.diff.hp; c.st[i] = ST.ENGAGE; c.stT[i] = 0; c.lastKey[i] = 0; c.kod[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 90;
     o.active = true; o.dead = false; o.atk = null; o.think = 60; o.poise = 0; o.rig.root.visible = true;
     game.emit('officer', { o });
     return o;
@@ -1773,26 +2048,7 @@ function createCrowd(game, scene) {
   };
 
   // shape test in the hero's frame
-  function inShape(hd, hx, hz, yaw, i, u) {
-    const dx = c.x[i] - hx, dz = c.z[i] - hz, d = Math.hypot(dx, dz), r = CROWD.radius;
-    const fx = Math.sin(yaw), fz = Math.cos(yaw);
-    if (hd.shape === 'circle') {
-      if (hd.sweep) { const a = Math.atan2(dx * -fz + dz * fx, dx * fx + dz * fz); }
-      return d < hd.range + r;
-    }
-    if (hd.shape === 'arc') {
-      if (d > hd.range + r) return false;
-      if (d < 0.9) return true;
-      const dir = (hd.dir || 0) * Math.PI / 180, a = Math.atan2(dx, dz) - (yaw + dir);
-      const w = Math.atan2(Math.sin(a), Math.cos(a));
-      return Math.abs(w) <= (hd.ang * Math.PI / 360) + r / d;
-    }
-    if (hd.shape === 'line') {
-      const along = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
-      return along > -0.6 && along < hd.len + r && side < hd.width / 2 + r;
-    }
-    return false;
-  }
+  const inShape = (hd, hx, hz, yaw, i) => shapeHit(hd, hx, hz, yaw, c.x[i], c.z[i], CROWD.radius);
   c.inShape = inShape;
 
   // the hero's blow lands on everyone in shape; returns the number hit
@@ -1809,10 +2065,22 @@ function createCrowd(game, scene) {
       if (hd.shape === 'line') { ux = ux * 0.4 + Math.sin(h.yaw) * 0.6; uz = uz * 0.4 + Math.cos(h.yaw) * 0.6; }
       react(i, hd, ux, uz, mul, opts.musou);
     }
+    if (game.extraHit) n += game.extraHit(h, hd, key, mul);
     if (n) { stop = hd.stop || 0; game.hitstop = Math.max(game.hitstop, stop); game.emit('heroHit', { n, hd, key, list, musou: !!opts.musou }); }
     return n;
   };
 
+  c.shock = (x, z, r, force, lift) => {
+    for (let i = 0; i < N; i++) {
+      if (!alive(i)) continue;
+      const dx = c.x[i] - x, dz = c.z[i] - z, d = Math.hypot(dx, dz) || 1;
+      if (d > r) continue;
+      const k = 1 - d / r * 0.6, off = c.kind[i] === KIND.OFFICER;
+      c.st[i] = ST.AIR; c.stT[i] = 0; c.y[i] += 0.02; c.vy[i] = lift * k * rr(0.7, 1.2) * (off ? 0.6 : 1);
+      c.vx[i] = dx / d * force * k * rr(0.7, 1.3); c.vz[i] = dz / d * force * k * rr(0.7, 1.3); c.spinV[i] = rr(4, 10) * (rnd() < 0.5 ? -1 : 1); c.flash[i] = 0.6;
+      if (off) { const o = c.officers[i - offBase]; o.atk = null; o.danger = null; }
+    }
+  };
   function react(i, hd, ux, uz, mul, musou) {
     const off = c.kind[i] === KIND.OFFICER, o = off ? c.officers[i - offBase] : null;
     const dmg = hd.dmg * mul * (off ? (musou ? 0.7 : 1) : 1);
@@ -1975,7 +2243,7 @@ function createCrowd(game, scene) {
         if (d < want + 2) { vx += -dz / d * c.strafe[i] * 0.45; vz += dx / d * c.strafe[i] * 0.45; if (c.stT[i] % 240 === 0) c.strafe[i] *= -1; }
         move(vx, vz); faceTo(toHero);
         c.cd[i]--;
-        if (c.cd[i] <= 0 && d < 3.2 && c.tokensUsed < CROWD.tokens && !h.dead && h.state !== 'musou') {
+        if (c.cd[i] <= 0 && d < 3.2 && c.tokensUsed < game.diff.tokens && !h.dead && h.state !== 'musou') {
           c.st[i] = ST.WIND; c.stT[i] = 0; c.tokensUsed++;
         }
         break;
@@ -2259,7 +2527,90 @@ function createCrowd(game, scene) {
   return c;
 }
 
-return { ST, KIND, CROWD, OFFICERS, createCrowd };
+return { ST, KIND, CROWD, OFFICERS, shapeHit, createCrowd };
+})();
+// ---------------- cavalry.js ----------------
+const { CAV, createCavalry } = (() => {
+// 虎豹騎: a line of lancers telegraphs a lane, then charges straight across the field.
+// They knock Zhao Yun down unless he clears the lane; a launching blow (or enough damage) unseats a rider.
+
+
+
+const CAV = { tele: 95, speed: 21, dmg: 26, hp: 60, lane: 130, gap: 2.4 };
+
+function createCavalry(game, scene) {
+  const cav = { riders: [], lanes: [], tele: 0, waves: 0, unseated: 0 };
+  for (let i = 0; i < 6; i++) {
+    const rig = buildHorse({ pal: 'black', rider: true }); rig.root.visible = false; scene.add(rig.root);
+    cav.riders.push({ rig, on: false, rider: false, x: 0, z: 0, yaw: 0, spd: 0, ph: i * 1.3, hp: 0, lastKey: 0, t: 0 });
+  }
+  cav.reset = () => { for (const r of cav.riders) { r.on = false; r.rig.root.visible = false; } cav.lanes.length = 0; cav.tele = 0; cav.waves = 0; cav.unseated = 0; };
+  cav.busy = () => cav.riders.some((r) => r.on);
+
+  // n riders abreast, coming from the side of the field the hero is farther from
+  cav.launch = (n = 5) => {
+    if (cav.busy()) return false;
+    const h = game.hero, sign = h.x > 0 ? -1 : 1;
+    const sx = sign * (ARENA.x1 + 12), sz = Math.max(ARENA.z0 + 8, Math.min(ARENA.z1 - 10, h.z + (Math.random() - 0.5) * 30));
+    const yaw = Math.atan2(h.x - sx, h.z - sz), px = Math.cos(yaw), pz = -Math.sin(yaw);
+    cav.lanes.length = 0;
+    for (let i = 0; i < n; i++) {
+      const r = cav.riders[i], off = (i - (n - 1) / 2) * CAV.gap;
+      Object.assign(r, { on: true, rider: true, x: sx + px * off, z: sz + pz * off, yaw, spd: 0, hp: CAV.hp * game.diff.hp, lastKey: 0, t: 0 });
+      r.rig.root.visible = true; r.rig.rider.visible = true;
+      cav.lanes.push({ x: r.x, z: r.z, yaw, len: CAV.lane });
+    }
+    cav.tele = CAV.tele; cav.waves++;
+    game.emit('cavalry', { n, x: sx, z: sz, yaw });
+    return true;
+  };
+
+  cav.step = () => {
+    const h = game.hero, dt = 1 / 60;
+    if (cav.tele > 0) cav.tele--;
+    for (const r of cav.riders) {
+      if (!r.on) continue;
+      r.t++;
+      if (cav.tele > 0) continue;
+      r.spd += (CAV.speed - r.spd) * 0.09;
+      const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
+      r.x += fx * r.spd * dt; r.z += fz * r.spd * dt; r.ph += r.spd * dt * 0.8;
+      if (r.rider && Math.hypot(h.x - r.x, h.z - r.z) < 1.3 && h.y - groundY(h.x, h.z) < 1.3) h.hurt(CAV.dmg, r.x - fx * 2, r.z - fz * 2, true, 'cavalry');
+      if (r.t > CAV.tele + 90 && (Math.abs(r.x) > ARENA.x1 + 14 || r.z > ARENA.z1 + 4 || r.z < ARENA.z0 - 10)) { r.on = false; r.rig.root.visible = false; }
+    }
+    if (!cav.busy()) cav.lanes.length = 0;
+  };
+
+  // the hero's blow against the riders; returns how many it touched
+  cav.heroHit = (h, hd, key, mul) => {
+    let n = 0;
+    for (const r of cav.riders) {
+      if (!r.on || !r.rider || r.lastKey === key) continue;
+      if (!shapeHit(hd, h.x, h.z, h.yaw, r.x, r.z, 0.95)) continue;
+      r.lastKey = key; n++;
+      r.hp -= hd.dmg * mul;
+      const dx = r.x - h.x, dz = r.z - h.z, d = Math.hypot(dx, dz) || 1;
+      game.emit('hit', { i: -1, x: r.x, y: 1.9, z: r.z, dmg: hd.dmg * mul, off: false, kb: hd.kb, ux: dx / d, uz: dz / d });
+      if (r.hp <= 0 || hd.kb === 'launch' || hd.kb === 'blow') {
+        r.rider = false; r.rig.rider.visible = false; cav.unseated++; game.crowd.ko++;
+        game.emit('cavKo', { x: r.x, z: r.z, ux: dx / d, uz: dz / d });
+      }
+    }
+    return n;
+  };
+
+  cav.render = (t) => {
+    for (const r of cav.riders) {
+      if (!r.on) continue;
+      const rear = cav.tele > 0 ? Math.max(0, Math.sin((CAV.tele - cav.tele) * 0.07 + r.ph)) * 0.8 : 0;
+      r.rig.root.position.set(r.x, groundY(r.x, r.z), r.z); r.rig.root.rotation.y = r.yaw;
+      poseHorse(r.rig, r.ph, Math.min(1, r.spd / 13), t, rear);
+    }
+  };
+  return cav;
+}
+
+return { CAV, createCavalry };
 })();
 // ---------------- musou.js ----------------
 const { MU, createMusou, createMusouView } = (() => {
@@ -2486,6 +2837,7 @@ function createVfx(scene, game, camera) {
   const dEdge = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), dangerMat); dEdge.rotation.x = -Math.PI / 2;
   const dRect = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat); dRect.rotation.x = -Math.PI / 2;
   const dangers = []; for (let k = 0; k < 4; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
+  const lanes = []; for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat.clone()); m.rotation.order = 'YXZ'; m.visible = false; scene.add(m); lanes.push(m); }
   // pickup meshes (meat bun / wine jar)
   V.items = [];
 
@@ -2523,6 +2875,15 @@ function createVfx(scene, game, camera) {
   game.on('officerStrike', (e) => { if (e.heavy && e.shape === 'circle') { ring(e.x, 0.1, e.z, 0.4, e.r, 0.4, 0xff7050); V.shake = Math.max(V.shake, 0.5); } });
   game.on('land', (e) => { for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; dust.spawn({ x: e.x, y: 0.15, z: e.z, vx: Math.cos(a) * 2, vy: 0.3, vz: Math.sin(a) * 2, drag: 3, s: 0.6, grow: 1.5, life: 0.5, a0: 0.3, r: 0.65, gg: 0.55, b: 0.45 }); } });
   game.on('dodge', () => { const h = game.hero; for (let k = 0; k < 5; k++) dust.spawn({ x: h.x, y: 0.15, z: h.z, vx: (Math.random() - 0.5) * 2, vy: 0.4, vz: (Math.random() - 0.5) * 2, drag: 3, s: 0.6, grow: 1.4, life: 0.5, a0: 0.3, r: 0.65, gg: 0.55, b: 0.45 }); });
+  game.on('crate', (e) => { for (let k = 0; k < 16; k++) chunk(e.x + (Math.random() - 0.5) * 0.6, 0.2 + Math.random() * 0.6, e.z + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 5, 2 + Math.random() * 4, (Math.random() - 0.5) * 5, 0.08 + Math.random() * 0.12, [0x94704a, 0x7a5636, 0x56391f][k % 3], 1.3);
+    for (let k = 0; k < 4; k++) dust.spawn({ x: e.x, y: 0.3, z: e.z, vx: (Math.random() - 0.5) * 2, vy: 0.6, vz: (Math.random() - 0.5) * 2, drag: 2, s: 0.8, grow: 2, life: 0.7, a0: 0.3, r: 0.6, gg: 0.5, b: 0.4 }); });
+  game.on('cavKo', (e) => { for (let k = 0; k < 14; k++) chunk(e.x, 1.6 + Math.random() * 0.8, e.z, e.ux * 4 + (Math.random() - 0.5) * 5, 2 + Math.random() * 5, e.uz * 4 + (Math.random() - 0.5) * 5, 0.08 + Math.random() * 0.1, [0x23262e, 0x444a56, 0xc9a040, 0x8a1e18][k % 4]); V.shake = Math.max(V.shake, 0.4); });
+  game.on('cavalry', () => { V.shake = Math.max(V.shake, 0.3); });
+  game.on('roar', (e) => {
+    ring(e.x, 0.3, e.z, 1, 60, 1.2, 0xffe0a0, 1); ring(e.x, 0.5, e.z, 0.5, 34, 0.8, 0xffffff, 0.9); ring(e.x, 1.2, e.z, 0.5, 20, 0.5, 0xffb060, 0.8);
+    V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
+    for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
+  });
   game.on('pickup', (e) => { for (let k = 0; k < 20; k++) { const a = Math.random() * 6.28; glow.spawn({ x: e.x, y: 0.5 + Math.random(), z: e.z, vx: Math.cos(a) * 1.5, vy: 2 + Math.random() * 2, vz: Math.sin(a) * 1.5, drag: 1.5, s: 0.18, life: 0.8, r: e.col[0], gg: e.col[1], b: e.col[2] }); } });
 
   const tipP = new THREE.Vector3(), midP = new THREE.Vector3();
@@ -2563,6 +2924,16 @@ function createVfx(scene, game, camera) {
       r.life -= dt; const u = 1 - r.life / r.max, e = 1 - (1 - u) ** 3;
       r.m.position.set(r.x, r.y, r.z); r.m.scale.setScalar(r.r0 + (r.r1 - r.r0) * e); r.m.material.opacity = r.op * (1 - u);
     }
+    // cavalry lanes while the charge is telegraphed, and until the riders have passed
+    const cv = game.cav;
+    lanes.forEach((m, k) => {
+      const ln = cv.lanes[k]; if (!ln || !cv.riders[k].on) { m.visible = false; return; }
+      m.visible = true; m.position.set(ln.x + Math.sin(ln.yaw) * ln.len / 2, 0.07, ln.z + Math.cos(ln.yaw) * ln.len / 2); m.rotation.set(-Math.PI / 2, ln.yaw, 0);
+      m.scale.set(1.9, ln.len, 1); m.material.opacity = cv.tele > 0 ? 0.1 + 0.07 * Math.sin(game.frame * 0.4) : 0.06;
+    });
+    // hoof dust
+    if (h.riding && h.spd > 6 && Math.random() < 0.7) dust.spawn({ x: h.x - Math.sin(h.yaw) * 1.1 + (Math.random() - 0.5) * 0.6, y: 0.15, z: h.z - Math.cos(h.yaw) * 1.1 + (Math.random() - 0.5) * 0.6, vx: (Math.random() - 0.5), vy: 0.6, vz: (Math.random() - 0.5), drag: 2, s: 0.7, grow: 2.2, life: 0.7, a0: 0.32, r: 0.66, gg: 0.56, b: 0.46 });
+    for (const r of cv.riders) if (r.on && r.spd > 6 && Math.random() < 0.6) dust.spawn({ x: r.x - Math.sin(r.yaw) * 1.1, y: 0.15, z: r.z - Math.cos(r.yaw) * 1.1, vy: 0.6, drag: 2, s: 0.8, grow: 2.4, life: 0.8, a0: 0.34, r: 0.6, gg: 0.5, b: 0.42 });
     // danger decals
     let di = 0;
     for (const o of game.crowd.officers) {
@@ -2647,6 +3018,17 @@ function createAudio(game) {
     milestone() { const t = now(); drum(t, 1.1); tone(t, 1.2, 'sine', 220, 218, 0.2, sfxBus, 0.01, 0.6); },
     victory() { const t = now(); S.gong(1.2); [294, 392, 440, 587, 523, 587].forEach((f, k) => erhu(t + 0.4 + k * 0.28, 0.5, f, 0.2)); },
   };
+  S.whinny = () => { const t = now(); for (let k = 0; k < 5; k++) tone(t + k * 0.07, 0.12, 'sawtooth', 900 - k * 90 + Math.random() * 60, 620 - k * 60, 0.07, sfxBus, 0.01, 0.3); noise(t, 0.4, 'bandpass', 1800, 900, 3, 0.08); };
+  S.whistle = () => { const t = now(); tone(t, 0.18, 'sine', 1700, 2500, 0.1, sfxBus, 0.01, 0.4); tone(t + 0.2, 0.3, 'sine', 2500, 1900, 0.1, sfxBus, 0.01, 0.4); };
+  S.hoof = () => { const t = now(); tone(t, 0.05, 'sine', 150 + Math.random() * 40, 70, 0.16); noise(t, 0.04, 'lowpass', 1400, 400, 1, 0.1); };
+  S.horn = () => { const t = now(); for (const [d, f, len] of [[0, 147, 0.7], [0.75, 196, 1.3]]) { tone(t + d, len, 'sawtooth', f, f, 0.16, sfxBus, 0.08, 0.6); tone(t + d, len, 'sawtooth', f * 1.005, f * 1.005, 0.12, sfxBus, 0.08, 0.4, 7); tone(t + d, len, 'square', f / 2, f / 2, 0.08, sfxBus, 0.08); } };
+  S.crack = () => { const t = now(); noise(t, 0.18, 'bandpass', 1800, 500, 1.2, 0.5); tone(t, 0.1, 'triangle', 300, 110, 0.25); };
+  S.buff = () => { const t = now(); [392, 523, 659, 784].forEach((f, k) => tone(t + k * 0.05, 0.3, 'square', f, f, 0.06, sfxBus, 0.004, 0.4)); };
+  S.bellow = () => { const t = now();
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(95, t); o.frequency.linearRampToValueAtTime(150, t + 0.35); o.frequency.linearRampToValueAtTime(80, t + 2.2);
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4; f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1100, t + 0.4); f.frequency.linearRampToValueAtTime(420, t + 2.2);
+    const g = ctx.createGain(); env(g, t, 0.1, 0.8, 2.2); o.connect(f); f.connect(g); g.connect(sfxBus); const sg = ctx.createGain(); sg.gain.value = 0.7; g.connect(sg); sg.connect(verb); o.start(t); o.stop(t + 2.5);
+    noise(t, 2.0, 'bandpass', 900, 300, 1.2, 0.5, sfxBus, 0.6); S.slam(true); };
   A.S = S;
   function drum(t, v = 1, pitch = 1) { tone(t, 0.5, 'sine', 120 * pitch, 48 * pitch, 0.6 * v, musBus, 0.003); noise(t, 0.12, 'lowpass', 900, 200, 0.8, 0.25 * v, musBus); }
   function rim(t, v = 1) { noise(t, 0.05, 'highpass', 3000, 2500, 1, 0.12 * v, musBus); tone(t, 0.05, 'triangle', 900, 700, 0.05 * v, musBus); }
@@ -2696,6 +3078,8 @@ function createAudio(game) {
   on('officerTell', S.tell);
   on('arrow', () => { if (Math.random() < 0.5) S.arrow(); });
   on('pickup', S.pickup);
+  on('mount', S.whinny); on('whistle', S.whistle); on('hoof', S.hoof); on('unhorse', S.whinny);
+  on('cavalry', S.horn); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
   on('milestone', S.milestone);
   on('victory', S.victory);
   on('officer', () => S.gong(0.6));
@@ -2706,6 +3090,8 @@ return { createAudio };
 })();
 // ---------------- main.js ----------------
 // Boot, fixed 60 Hz loop, input, camera, battle director, pickups, HUD, menus, test hooks.
+
+
 
 
 
@@ -2767,10 +3153,26 @@ function applyQuality() {
 const game = { frame: 0, hitstop: 0, listeners: {}, reinforceOK: true };
 game.on = (n, f) => { (game.listeners[n] ||= []).push(f); };
 game.emit = (n, e) => { const l = game.listeners[n]; if (l) for (const f of l) { try { f(e); } catch (err) { console.error(n, err); } } };
+// difficulty: damage taken, enemy health, how many grunts may strike at once, cavalry frequency
+const DIFFS = {
+  easy: { zh: '易', en: 'EASY', dmg: 0.6, hp: 0.8, tokens: 1, cav: 0.6, heal: 1.3 },
+  normal: { zh: '普', en: 'NORMAL', dmg: 1, hp: 1, tokens: 2, cav: 1, heal: 1 },
+  hard: { zh: '難', en: 'HARD', dmg: 1.5, hp: 1.3, tokens: 3, cav: 1.4, heal: 0.8 },
+  chaos: { zh: '修羅', en: 'CHAOS', dmg: 2.2, hp: 1.6, tokens: 4, cav: 2, heal: 0.6 },
+};
+let diffKey = LS.get('diff', 'normal'); if (!DIFFS[diffKey]) diffKey = 'normal';
+game.diff = DIFFS[diffKey]; game.slow = 0;
 game.world = createWorld(scene);
 game.hero = createHero(game);
 game.crowd = createCrowd(game, scene);
 game.musou = createMusou(game);
+game.cav = createCavalry(game, scene);
+// blows also land on cavalry and smash crates
+game.extraHit = (h, hd, key, mul) => {
+  const W = game.world;
+  W.crates.forEach((k, i) => { if (k.alive && shapeHit(hd, h.x, h.z, h.yaw, k.x, k.z, 0.5)) { W.breakCrate(i); game.emit('crate', { x: k.x, z: k.z }); crateDrop(k.x, k.z); } });
+  return game.cav.heroHit(h, hd, key, mul);
+};
 game.hero.musouPose = (out) => game.musou.pose(game.hero, out);
 const heroView = createHeroView(scene, game.hero);
 const musouView = createMusouView(scene, game);
@@ -2781,8 +3183,13 @@ audio.setVol(LS.get('vol', 0.8)); audio.setMusic(LS.get('mus', 0.55));
 // 張飛 on the far bank + objective beacon
 const feiRig = buildWarrior(PAL.zhangfei, { beard: true, weapon: 'serpent', scale: 1.18, mirror: true });
 scene.add(feiRig.root);
-feiRig.root.position.set(BRIDGE.x, 0, RIVER.z0 - 3.2); feiRig.root.rotation.y = 0;
-const feiPose = P({ ty: 0.2, w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35, thL: 0.3, shL: -0.2, thR: -0.25, lzL: 0.2, lzR: -0.2 });
+feiRig.root.position.set(BRIDGE.x + 2.7, 0, RIVER.z0 - 2.2); feiRig.root.rotation.y = 0;
+const FEI = {
+  stand: P({ ty: 0.2, w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35, thL: 0.3, shL: -0.2, thR: -0.25, lzL: 0.2, lzR: -0.2 }),
+  raise: P({ ty: 0.1, tx: -0.3, hx: 0.35, w: [-0.1, 0.62, 0.05, -1.5, 0.1, 0], gL: 0.3, thL: 0.45, shL: -0.3, thR: -0.45, lzL: 0.3, lzR: -0.3 }),
+  roar: P({ ty: -0.3, tx: 0.3, hx: -0.25, rootY: -0.2, w: [-0.25, 0.15, 0.4, 0.1, -0.9, 0], gL: 0.4, thL: 0.75, shL: -0.6, thR: -0.6, shR: -0.3, lzL: 0.35, lzR: -0.35 }),
+};
+const feiPose = clonePose(FEI.stand);
 const beacon = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x7ac8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
 beacon.position.set(BRIDGE.x, 30, BRIDGE.z); scene.add(beacon);
 
@@ -2794,17 +3201,20 @@ const itemGeo = {};
   const jar = new Vox(); for (let y = 0; y <= 7; y++) { const r = y < 5 ? 3 - (y === 0 ? 1 : 0) : 1; jar.box(-r, y, -r, r - 1, y, r - 1, y === 6 ? 0xb8281e : 0x6a4a2a); } jar.box(-1, 8, -1, 0, 8, 0, 0xd8b04a);
   itemGeo.wine = jar.geometry({ s: 0.07, o: [0, 0, 0] });
 }
+Object.assign(itemGeo, itemGeos());
 const itemMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: 0x332200, roughness: 0.6 });
 const items = [];
 function dropItem(type, x, z) {
-  const m = new THREE.Mesh(itemGeo[type === 'wine' ? 'wine' : 'bun'], itemMat); m.castShadow = true;
+  const m = new THREE.Mesh(itemGeo[type === 'bigbun' ? 'bun' : type], itemMat); m.castShadow = true;
   if (type === 'bigbun') m.scale.setScalar(1.8);
   scene.add(m); items.push({ type, x, z, m, t: 0 });
 }
+const BUFFS = { axe: { zh: '攻', tip: '攻擊力 2 倍', col: '#ff8a5a', rgb: [1, 0.5, 0.3] }, armor: { zh: '防', tip: '防禦力 2 倍', col: '#ffd060', rgb: [1, 0.8, 0.3] }, boots: { zh: '速', tip: '移動速度上升', col: '#7ac8ff', rgb: [0.5, 0.8, 1] } };
+function crateDrop(x, z) { const r = Math.random(); dropItem(r < 0.34 ? 'bun' : r < 0.5 ? 'wine' : r < 0.67 ? 'axe' : r < 0.84 ? 'armor' : 'boots', x, z); }
 
 // ---------------------------------------------------------------- input
 const keys = new Set(), pressed = new Set();
-const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'] };
+const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'] };
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
   audio.resume();
@@ -2859,7 +3269,7 @@ const input = {
     if (keys.has('KeyD') || keys.has('ArrowRight')) sx += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) sx -= 1;
     let camX = (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0);
     const pr = (a) => KEYMAP[a].some((k) => pressed.has(k));
-    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou') };
+    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount') };
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find((p) => p && p.connected);
     if (gp) {
@@ -2867,12 +3277,12 @@ const input = {
       sx += ax(0); fx -= ax(1); camX += ax(2) * 1.2;
       const b = (i) => gp.buttons[i] && gp.buttons[i].pressed, was = (i) => padPrev[i];
       const edge = (i) => b(i) && !was(i);
-      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7) || edge(4)) o.dodge = true;
+      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4) || edge(6)) o.mount = true;
       if (edge(9)) togglePause();
       padPrev = gp.buttons.map((x) => x.pressed);
     }
     if (touch.id !== null) { const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.hypot(dx, dy); if (l > 8) { const k = Math.min(1, l / 50) / l; sx += dx * k; fx -= dy * k; } }
-    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou']) if (pressed.has('T_' + a)) o[a] = true;
+    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount']) if (pressed.has('T_' + a)) o[a] = true;
     const mag = Math.min(1, Math.hypot(fx, sx));
     const cy = cam.yaw, cfx = Math.sin(cy), cfz = Math.cos(cy);
     let mx = cfx * fx + -cfz * sx, mz = cfz * fx + cfx * sx;
@@ -2890,7 +3300,7 @@ function camStep(inp) {
   cam.yaw -= inp.camX * 2.4 / 60 + inp.dragX * 0.006;
   if (Math.abs(inp.camX) > 0.05 || inp.dragX) cam.manualT = 90; else cam.manualT--;
   const h = game.hero;
-  if (cam.manualT < 0 && h.state === 'run' && h.spd > 3) {
+  if (cam.manualT < 0 && (h.state === 'run' || h.state === 'ride') && h.spd > 3) {
     let d = h.yaw - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
     if (Math.abs(d) < 2.4) cam.yaw += d * 0.012;
   }
@@ -2901,7 +3311,11 @@ function camUpdate(dt) {
   cam.crowdK += (Math.min(1, crowdN / 14) - (cam.crowdK || 0)) * 0.03;
   const portrait = innerHeight > innerWidth * 1.1;
   let dist = cam.dist * (portrait ? 1.45 : 1) + cam.crowdK * 1.2, pitch = cam.pitch + (portrait ? 0.08 : 0) + cam.crowdK * 0.2, yaw = cam.yaw, lookY = 1.25, fov = portrait ? 64 : 52;
+  if (h.riding) { dist += 2.4; lookY = 1.75; fov += Math.min(1, h.spd / HERO.ride) * 5; }
   _t.set(h.x, h.y * 0.6 + lookY, h.z);
+  let ease = 0;
+  if (game.slow > 0 && DIR.koPos) { _t.lerp(_p.set(DIR.koPos.x, 1.3, DIR.koPos.z), 0.55); dist = 5.4; fov = 40; pitch = 0.2; }
+  if (DIR.phase === 7) { _t.set(BRIDGE.x + 1.2, 2.0, RIVER.z0 + 5); yaw = 0.34; dist = 16; pitch = 0.24; fov = 50; ease = 0.035; }
   if (mu.active) {
     const t = mu.t;
     if (t < MU.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.2; pitch = 0.08; lookY = 1.45; _t.set(h.x, h.y + lookY, h.z); fov = 44; }
@@ -2912,8 +3326,8 @@ function camUpdate(dt) {
   const cp = Math.cos(pitch);
   _p.set(_t.x - Math.sin(yaw) * dist * cp, _t.y + Math.sin(pitch) * dist, _t.z - Math.cos(yaw) * dist * cp);
   if (mu.active && mu.t === 1) cam.pos.copy(_p);
-  cam.pos.lerp(_p, mu.active ? 0.12 : Math.min(1, k * 1.2));
-  cam.look.lerp(_t, mu.active ? 0.2 : Math.min(1, k * 1.6));
+  cam.pos.lerp(_p, ease || (mu.active ? 0.12 : Math.min(1, k * 1.2)));
+  cam.look.lerp(_t, ease ? ease * 1.6 : mu.active ? 0.2 : Math.min(1, k * 1.6));
   cam.fov += (fov - cam.fov) * 0.1;
 }
 function applyCam() {
@@ -2963,7 +3377,7 @@ function directorStep() {
   } else if (DIR.phase === 1) {
     if (offs[0].dead) {
       DIR.phase = 2; DIR.t = 0; DIR.ko0 = ko;
-      h.sword = true; h.atkMul = 1.3;
+      h.sword = true;
       setTimeout(() => banner('獲得 <em>青釭劍</em>', 'QINGGANG SWORD OBTAINED · ATTACK UP', true), 1600);
       say('趙雲', '青釭之劍……削鐵如泥，好劍！', 'The Qinggang blade — it cuts iron like clay!');
       dropItem('wine', offs[0].rig.root.position.x, offs[0].rig.root.position.z);
@@ -2990,8 +3404,16 @@ function directorStep() {
       say('張飛', '子龍快走！此處交給俺老張！', 'Zilong, go! Leave this lot to me!', 240);
     }
   } else if (DIR.phase === 6) {
-    if (Math.abs(h.x - BRIDGE.x) < BRIDGE.w + 0.5 && h.z < RIVER.z1 - 1) finish(true);
+    if (Math.abs(h.x - BRIDGE.x) < BRIDGE.w + 0.5 && h.z < RIVER.z1 - 1) { DIR.phase = 7; DIR.t = 0; game.reinforceOK = false; h.inv = 99999; }
+  } else if (DIR.phase === 7) {   // 張飛據橋: he roars, the pursuit is thrown back
+    h.inv = 99999;
+    if (DIR.t === 40) say('張飛', '燕人張翼德在此！誰敢與我決一死戰！', 'I am Zhang Yide of Yan! Who dares fight me to the death?!', 250);
+    if (DIR.t === 120) { game.emit('roar', { x: BRIDGE.x, z: RIVER.z1 + 1 }); game.crowd.shock(BRIDGE.x, RIVER.z1 - 2, 60, 16, 10); }
+    if (DIR.t === 150) game.crowd.shock(BRIDGE.x, RIVER.z1 - 2, 40, 9, 6);
+    if (DIR.t >= 270) finish(true);
   }
+  // 虎豹騎 charges once the first officer is down
+  if (DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
   // KO milestones
   const mile = Math.floor(ko / 100) * 100;
   if (mile > DIR.lastMile && mile > 0) { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
@@ -3003,7 +3425,8 @@ function directorStep() {
     it.m.position.set(it.x, 0.25 + Math.sin(it.t * 0.08) * 0.08, it.z); it.m.rotation.y += 0.03;
     if (Math.hypot(h.x - it.x, h.z - it.z) < 1.2 && !h.dead) {
       if (it.type === 'wine') { h.musou = HERO.musouMax; game.emit('pickup', { x: it.x, z: it.z, col: [1, 0.8, 0.3] }); floatText('無雙全滿', '#ffd060'); }
-      else { const v = it.type === 'bigbun' ? h.hpMax : h.hpMax * 0.25; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
+      else if (BUFFS[it.type]) { const bf = BUFFS[it.type]; h.buff[it.type] = HERO.buffTime; game.emit('pickup', { x: it.x, z: it.z, col: bf.rgb }); floatText(bf.tip, bf.col); }
+      else { const v = it.type === 'bigbun' ? h.hpMax * Math.min(1, game.diff.heal) : h.hpMax * 0.25 * game.diff.heal; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
       scene.remove(it.m); items.splice(k, 1);
     } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
   }
@@ -3023,12 +3446,19 @@ game.on('heroHit', (e) => {
 });
 game.on('heroHurt', (e) => { DIR.dmg += e.dmg; DIR.src[e.src] = (DIR.src[e.src] || 0) + Math.round(e.dmg); DIR.combo = 0; hurtFlash = 1; });
 game.on('ko', (e) => {
-  if (e.off) { banner(`敵將 <em>${e.o.def.zh}</em> 擊破！`, `ENEMY OFFICER ${e.o.def.en} DEFEATED`); DIR.offDown++; game.hitstop = Math.max(game.hitstop, 14); dropItem('bigbun', e.x, e.z); return; }
+  if (e.off) { banner(`敵將 <em>${e.o.def.zh}</em> 擊破！`, `ENEMY OFFICER ${e.o.def.en} DEFEATED`); DIR.offDown++; game.hitstop = Math.max(game.hitstop, 6); game.slow = 66; DIR.koPos = { x: e.x, z: e.z }; dropItem('bigbun', e.x, e.z); return; }
   const r = Math.random();
-  if (e.kind === KIND.CAPTAIN && r < 0.55) dropItem('bun', e.x, e.z);
+  if (e.kind === KIND.CAPTAIN && r < 0.45) dropItem('bun', e.x, e.z);
+  else if (e.kind === KIND.CAPTAIN && r < 0.62) dropItem(['axe', 'armor', 'boots'][(Math.random() * 3) | 0], e.x, e.z);
   else if (e.kind === KIND.BEARER && r < 0.35) dropItem('wine', e.x, e.z);
   else if (r < 0.012) dropItem('bun', e.x, e.z);
 });
+game.on('cavalry', () => {
+  banner('<em>虎豹騎</em> 突擊！', 'TIGER-LEOPARD CAVALRY — CLEAR THE LANE');
+  if (game.cav.waves === 1) say('曹純', '虎豹騎，踏平他！', 'Tiger-Leopard riders — run him down!');
+});
+game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
+game.on('mount', () => { if (!DIR.rode) { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
 game.on('musouEnd', () => say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150));
 game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
 game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some((o) => o.active && !o.dead) || game.musou.active ? 2 : 1);
@@ -3037,7 +3467,7 @@ game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some
 const ui = { mode: 'title', shownKo: 0, hpLag: 1 };
 let comboPop = false, hurtFlash = 0;
 const hudEls = { hp: $('hp'), hpLag: $('hpLag'), hpBox: $('hpBox'), mu: $('mu'), muBox: $('muBox'), muLbl: $('muLbl'), ko: $('ko'), combo: $('combo'), comboN: $('comboN'),
-  obj: $('obj'), tm: $('tm'), morale: $('morale'), boss: $('boss'), bossName: $('bossName'), bossHp: $('bossHp'), dlg: $('dlg'), sword: $('swordTag') };
+  obj: $('obj'), tm: $('tm'), buffs: $('buffs'), morale: $('morale'), boss: $('boss'), bossName: $('bossName'), bossHp: $('bossHp'), dlg: $('dlg'), sword: $('swordTag') };
 const tagEls = OFFICERS.map((d) => { const e = document.createElement('div'); e.className = 'tag'; e.innerHTML = `<div class="nm">${d.zh}<small>${d.en}</small></div><div class="bar"><i></i></div><div class="mk">▼▼</div>`; e.style.display = 'none'; $('tags').appendChild(e); return e; });
 const floatLayer = document.createElement('div'); floatLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none'; $('hud').appendChild(floatLayer);
 function floatText(txt, color) {
@@ -3075,7 +3505,10 @@ function drawMap() {
     mctx.fillRect(mx(c.x[i]) - sz / 2, mz(c.z[i]) - sz / 2, sz, sz);
   }
   for (const o of c.officers) if (o.active && !o.dead) { const x = mx(c.x[o.idx]), y = mz(c.z[o.idx]); mctx.fillStyle = '#b8281e'; mctx.fillRect(x - 6, y - 6, 12, 12); mctx.fillStyle = '#fff'; mctx.font = '900 9px "Noto Serif TC", serif'; mctx.fillText('將', x, y + 3.5); }
-  for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
+  for (const ln of game.cav.lanes) if (game.cav.tele > 0) { mctx.strokeStyle = 'rgba(255,80,50,0.6)'; mctx.lineWidth = 2; mctx.beginPath(); mctx.moveTo(mx(ln.x), mz(ln.z)); mctx.lineTo(mx(ln.x + Math.sin(ln.yaw) * ln.len), mz(ln.z + Math.cos(ln.yaw) * ln.len)); mctx.stroke(); }
+  for (const r of game.cav.riders) if (r.on) { mctx.fillStyle = r.rider ? '#ffb030' : '#8a7a60'; mctx.fillRect(mx(r.x) - 3, mz(r.z) - 3, 6, 6); }
+  if (!h.riding) { const hz = h.horse; mctx.fillStyle = '#ffffff'; mctx.beginPath(); mctx.moveTo(mx(hz.x), mz(hz.z) - 4); mctx.lineTo(mx(hz.x) + 3.5, mz(hz.z)); mctx.lineTo(mx(hz.x), mz(hz.z) + 4); mctx.lineTo(mx(hz.x) - 3.5, mz(hz.z)); mctx.fill(); }
+  for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : BUFFS[it.type] ? BUFFS[it.type].col : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
   if (DIR.phase === 6) { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
   // hero + view cone
   const hx = mx(h.x), hz = mz(h.z);
@@ -3084,7 +3517,8 @@ function drawMap() {
   mctx.save(); mctx.translate(hx, hz); mctx.rotate(-h.yaw + Math.PI);
   mctx.fillStyle = '#5fe8d8'; mctx.strokeStyle = '#0a2a28'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.moveTo(0, 7); mctx.lineTo(-5, -5); mctx.lineTo(0, -2); mctx.lineTo(5, -5); mctx.closePath(); mctx.stroke(); mctx.fill(); mctx.restore();
 }
-const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！'];
+const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！', '張飛 據水斷橋'];
+let buffKey = '';
 const _v = new THREE.Vector3();
 let dlgCur = null, dlgT = 0, lastKoShown = -1, mapT = 0;
 function hudUpdate() {
@@ -3097,7 +3531,9 @@ function hudUpdate() {
   hudEls.mu.style.width = (h.musou / HERO.musouMax * 100).toFixed(1) + '%';
   const full = h.musou >= HERO.musouMax;
   hudEls.muBox.classList.toggle('full', full); hudEls.muLbl.textContent = full && hp < 0.25 ? '真・無雙' : '無雙'; hudEls.muLbl.classList.toggle('on', full);
-  hudEls.sword.textContent = h.sword ? '青釭劍' : '';
+  hudEls.sword.textContent = (h.sword ? '青釭劍' : '') + (h.riding ? ' · 騎乘' : '');
+  let bk = ''; for (const k in BUFFS) if (h.buff[k] > 0) bk += k + Math.ceil(h.buff[k] / 60) + ' ';
+  if (bk !== buffKey) { buffKey = bk; hudEls.buffs.innerHTML = Object.keys(BUFFS).filter((k) => h.buff[k] > 0).map((k) => `<span style="--c:${BUFFS[k].col}"><b>${BUFFS[k].zh}</b>${Math.ceil(h.buff[k] / 60)}</span>`).join(''); }
   if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
   hudEls.combo.classList.toggle('on', DIR.combo >= 2);
   if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
@@ -3135,8 +3571,9 @@ function startGame() {
   ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
 }
 function resetGame() {
-  game.hero.reset(); game.crowd.reset(); game.frame = 0; game.hitstop = 0; game.musou.active = false; game.crowd.freeze = 0;
-  Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {} });
+  game.hero.reset(); game.crowd.reset(); game.cav.reset(); game.world.resetCrates(); game.frame = 0; game.hitstop = 0; game.slow = 0; game.musou.active = false; game.crowd.freeze = 0; game.reinforceOK = true;
+  Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {}, cavT: 60 * 14, koPos: null, rode: false });
+  Object.assign(feiPose, clonePose(FEI.stand));
   for (const it of items) scene.remove(it.m); items.length = 0;
   game.crowd.spawnArmy();
   cam.yaw = 0; cam.pos.set(0, 4, -22); ui.hpLag = 1; lastKoShown = -1;
@@ -3155,11 +3592,11 @@ function showResult() {
   const rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
   $('resTitle').textContent = DIR.win ? '突圍' : '敗走'; $('resSub').textContent = DIR.win ? 'VICTORY · CHANGBAN' : 'DEFEAT';
   $('resRank').textContent = rank; $('resRank').style.display = DIR.win ? '' : 'none';
-  const best = LS.get('best', null);
+  const best = LS.get('best_' + diffKey, diffKey === 'normal' ? LS.get('best', null) : null);
   const rec = { time: s, ko, combo: DIR.maxCombo, rank };
-  if (DIR.win && (!best || s < best.time)) LS.set('best', rec);
-  $('resGrid').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
-  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄 ${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
+  if (DIR.win && (!best || s < best.time)) LS.set('best_' + diffKey, rec);
+  $('resGrid').innerHTML = `<dt>難度</dt><dd style="font-family:var(--serif)">${game.diff.zh}</dd><dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
+  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄（${game.diff.zh}）${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
 }
 $('go').onclick = startGame; $('again').onclick = startGame; $('resume').onclick = togglePause;
 $('restart').onclick = () => { startGame(); };
@@ -3168,20 +3605,28 @@ for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mu
   const h = (e) => { const v = +e.target.value; $(a).value = v; $(b).value = v; f(v); LS.set(k, v); };
   $(a).oninput = h; $(b).oninput = h;
 }
+function setDiff(k) { diffKey = k; game.diff = DIFFS[k]; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
+for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
+setDiff(diffKey);
 $('lowq').checked = lowQ; $('lowq').onchange = (e) => { lowQ = e.target.checked; LS.set('lowq', lowQ); applyQuality(); };
 
 // ---------------------------------------------------------------- loop
 let paused = false, manual = false;
 function step() {
-  const inp = input.sample(game.hitstop <= 0);
+  const skip = game.slow > 0 && game.slow % 3 !== 0;       // officer finisher plays at one-third speed
+  if (game.slow > 0) game.slow--;
+  const inp = input.sample(game.hitstop <= 0 && !skip);
   if (ui.mode === 'play') { camStep(inp); camUpdate(1 / 60); }
   if (ui.mode !== 'play' && ui.mode !== 'result') { heroView.step(); game.frame++; return; }
   if (game.hitstop > 0) { game.hitstop--; }
-  else {
-    const hin = DIR.over ? { mx: 0, mz: 0, mag: 0 } : (auto.on ? autoInput(inp) : inp);
+  else if (!skip) {
+    let hin = DIR.over ? { mx: 0, mz: 0, mag: 0 } : (auto.on ? autoInput(inp) : inp);
+    if (DIR.phase === 7 && !DIR.over) { const h = game.hero, tz = RIVER.z0 + 1.6, dx = BRIDGE.x - 0.5 - h.x, dz = tz - h.z, d = Math.hypot(dx, dz); hin = { mx: dx / (d || 1), mz: dz / (d || 1), mag: d > 1.2 ? 0.7 : 0 }; if (d <= 1.2) h.yaw += Math.atan2(Math.sin(-h.yaw), Math.cos(-h.yaw)) * 0.08; }
     game.hero.step(hin);
     game.crowd.step();
+    game.cav.step();
     directorStep();
+    approach(feiPose, DIR.phase === 7 ? (DIR.t < 60 ? FEI.stand : DIR.t < 118 ? FEI.raise : FEI.roar) : FEI.stand, DIR.phase === 7 && DIR.t >= 118 ? 0.5 : 0.12);
     heroView.step();
     heroView.update(); vfx.simStep(heroView); musouView.step();
   }
@@ -3193,12 +3638,13 @@ let lastT = 0;
 function render(dt) {
   heroView.update();
   game.crowd.render();
+  game.cav.render(game.frame / 60);
   vfx.update(dt, heroView);
   musouView.update();
   if (ui.mode === 'title') titleCam(performance.now() / 1000); else applyCam();
   game.world.update(dt, _v.set(game.hero.x, 0, game.hero.z));
   feiRig.root.position.y = bridgeDeck(feiRig.root.position.z);
-  idlePose(game.frame / 60, feiPose); Object.assign(feiPose, { w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35 }); applyPose(feiRig, feiPose);
+  applyPose(feiRig, feiPose);
   beacon.material.opacity += ((DIR.phase === 6 ? 0.22 + Math.sin(game.frame * 0.08) * 0.06 : 0) - beacon.material.opacity) * 0.05;
   beacon.visible = beacon.material.opacity > 0.01;
   grade.uniforms.flash.value = vfx.flash; grade.uniforms.flashCol.value.copy(vfx.flashCol);
@@ -3228,7 +3674,7 @@ function onResize() {
 addEventListener('resize', onResize);
 
 // ---------------------------------------------------------------- autopilot (testing / attract)
-const auto = { on: false, plan: [], t: 0 };
+const auto = { on: false, plan: [], t: 0, ride: true };
 function autoInput(real) {
   const h = game.hero, c = game.crowd;
   const o = { mx: 0, mz: 0, mag: 0, attack: false, charge: false, jump: false, dodge: false, musou: false };
@@ -3238,12 +3684,28 @@ function autoInput(real) {
     const dx = h.x - dd.x, dz = h.z - dd.z, d = Math.hypot(dx, dz) || 1;
     if ((dd.r && d < dd.r + 1) || (dd.line && d < 9)) { if (h.state !== 'dodge' && game.frame % 6 === 0) { o.dodge = true; o.mx = dx / d; o.mz = dz / d; o.mag = 1; return o; } }
   }
+  const cv = game.cav;
+  if (cv.busy()) {
+    let n = 0, cx = 0, cz = 0, yaw = 0;
+    for (const r of cv.riders) if (r.on && r.rider) { n++; cx += r.x; cz += r.z; yaw = r.yaw; }
+    if (n) {
+      cx /= n; cz /= n;
+      const fx = Math.sin(yaw), fz = Math.cos(yaw), dx = h.x - cx, dz = h.z - cz, along = dx * fx + dz * fz, side = dx * fz - dz * fx, half = n * 1.2 + 1.8;
+      if (along > -2 && Math.abs(side) < half && (cv.tele > 0 || along < 30)) {
+        const sg = side >= 0 ? 1 : -1; o.mx = fz * sg; o.mz = -fx * sg; o.mag = 1;
+        if (cv.tele === 0 && along < 8 && h.state !== 'dodge' && game.frame % 5 === 0) o.dodge = true;
+        return o;
+      }
+    }
+  }
   if (h.musou >= HERO.musouMax && c.alive > 20) { o.musou = true; }
   let tgt = null, td = 1e9;
   for (const of of c.officers) if (of.active && !of.dead) { const d = Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z); if (d < td) { td = d; tgt = { x: c.x[of.idx], z: c.z[of.idx] }; } }
   if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
   if (DIR.phase === 6) { tgt = { x: BRIDGE.x, z: BRIDGE.z - 3 }; td = 99; }
   if (tgt) { const dx = tgt.x - h.x, dz = tgt.z - h.z, d = Math.hypot(dx, dz) || 1; o.mx = dx / d; o.mz = dz / d; o.mag = td > 2.6 ? 1 : 0.3; }
+  if (auto.ride && !h.riding && td > 26 && game.frame % 90 === 0) o.mount = true;
+  if (h.riding && td < 4 && DIR.phase !== 6) { o.jump = true; return o; }
   if (td < 3.4 && game.frame % 7 === 0) {
     if (!auto.plan.length) { const n = (Math.random() * 6) | 0; auto.plan = [...Array(n).fill('a'), Math.random() < 0.8 ? 'c' : 'a']; }
     const k = auto.plan.shift(); if (k === 'a') o.attack = true; else o.charge = true;
@@ -3258,9 +3720,11 @@ window.__vm = {
   step(n = 1, dt = 1 / 60) { manual = true; for (let i = 0; i < n; i++) step(); render(dt); return this.info(); },
   run() { manual = false; lastT = 0; },
   simRun(sec) { manual = true; const n = sec * 60; for (let i = 0; i < n; i++) { step(); if (i % 30 === 0) { game.crowd.render(); vfx.update(1 / 2, heroView); } if (DIR.over && DIR.endT > 30) break; } render(1 / 60); return this.info(); },
-  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
+  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
+  ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
+  setDiff, dropItem, items,
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 

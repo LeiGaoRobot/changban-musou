@@ -7,12 +7,14 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { createWorld, BRIDGE, GATE, ARENA, RIVER, bridgeDeck, radialTexture } from './world.js';
 import { createHero, createHeroView, HERO } from './hero.js';
-import { createCrowd, OFFICERS, ST, KIND } from './crowd.js';
+import { createCrowd, OFFICERS, ST, KIND, shapeHit } from './crowd.js';
+import { createCavalry } from './cavalry.js';
+import { itemGeos } from './horse.js';
 import { createMusou, createMusouView, MU } from './musou.js';
 import { createVfx } from './vfx.js';
 import { createAudio } from './audio.js';
 import { buildWarrior, PAL, Vox } from './voxel.js';
-import { applyPose, idlePose, P } from './anim.js';
+import { applyPose, idlePose, P, approach, clonePose } from './anim.js';
 
 const $ = (id) => document.getElementById(id);
 const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('vm.' + k, JSON.stringify(v)); } catch {} } };
@@ -61,10 +63,26 @@ function applyQuality() {
 const game = { frame: 0, hitstop: 0, listeners: {}, reinforceOK: true };
 game.on = (n, f) => { (game.listeners[n] ||= []).push(f); };
 game.emit = (n, e) => { const l = game.listeners[n]; if (l) for (const f of l) { try { f(e); } catch (err) { console.error(n, err); } } };
+// difficulty: damage taken, enemy health, how many grunts may strike at once, cavalry frequency
+const DIFFS = {
+  easy: { zh: '易', en: 'EASY', dmg: 0.6, hp: 0.8, tokens: 1, cav: 0.6, heal: 1.3 },
+  normal: { zh: '普', en: 'NORMAL', dmg: 1, hp: 1, tokens: 2, cav: 1, heal: 1 },
+  hard: { zh: '難', en: 'HARD', dmg: 1.5, hp: 1.3, tokens: 3, cav: 1.4, heal: 0.8 },
+  chaos: { zh: '修羅', en: 'CHAOS', dmg: 2.2, hp: 1.6, tokens: 4, cav: 2, heal: 0.6 },
+};
+let diffKey = LS.get('diff', 'normal'); if (!DIFFS[diffKey]) diffKey = 'normal';
+game.diff = DIFFS[diffKey]; game.slow = 0;
 game.world = createWorld(scene);
 game.hero = createHero(game);
 game.crowd = createCrowd(game, scene);
 game.musou = createMusou(game);
+game.cav = createCavalry(game, scene);
+// blows also land on cavalry and smash crates
+game.extraHit = (h, hd, key, mul) => {
+  const W = game.world;
+  W.crates.forEach((k, i) => { if (k.alive && shapeHit(hd, h.x, h.z, h.yaw, k.x, k.z, 0.5)) { W.breakCrate(i); game.emit('crate', { x: k.x, z: k.z }); crateDrop(k.x, k.z); } });
+  return game.cav.heroHit(h, hd, key, mul);
+};
 game.hero.musouPose = (out) => game.musou.pose(game.hero, out);
 const heroView = createHeroView(scene, game.hero);
 const musouView = createMusouView(scene, game);
@@ -75,8 +93,13 @@ audio.setVol(LS.get('vol', 0.8)); audio.setMusic(LS.get('mus', 0.55));
 // 張飛 on the far bank + objective beacon
 const feiRig = buildWarrior(PAL.zhangfei, { beard: true, weapon: 'serpent', scale: 1.18, mirror: true });
 scene.add(feiRig.root);
-feiRig.root.position.set(BRIDGE.x, 0, RIVER.z0 - 3.2); feiRig.root.rotation.y = 0;
-const feiPose = P({ ty: 0.2, w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35, thL: 0.3, shL: -0.2, thR: -0.25, lzL: 0.2, lzR: -0.2 });
+feiRig.root.position.set(BRIDGE.x + 2.7, 0, RIVER.z0 - 2.2); feiRig.root.rotation.y = 0;
+const FEI = {
+  stand: P({ ty: 0.2, w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35, thL: 0.3, shL: -0.2, thR: -0.25, lzL: 0.2, lzR: -0.2 }),
+  raise: P({ ty: 0.1, tx: -0.3, hx: 0.35, w: [-0.1, 0.62, 0.05, -1.5, 0.1, 0], gL: 0.3, thL: 0.45, shL: -0.3, thR: -0.45, lzL: 0.3, lzR: -0.3 }),
+  roar: P({ ty: -0.3, tx: 0.3, hx: -0.25, rootY: -0.2, w: [-0.25, 0.15, 0.4, 0.1, -0.9, 0], gL: 0.4, thL: 0.75, shL: -0.6, thR: -0.6, shR: -0.3, lzL: 0.35, lzR: -0.35 }),
+};
+const feiPose = clonePose(FEI.stand);
 const beacon = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x7ac8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
 beacon.position.set(BRIDGE.x, 30, BRIDGE.z); scene.add(beacon);
 
@@ -88,17 +111,20 @@ const itemGeo = {};
   const jar = new Vox(); for (let y = 0; y <= 7; y++) { const r = y < 5 ? 3 - (y === 0 ? 1 : 0) : 1; jar.box(-r, y, -r, r - 1, y, r - 1, y === 6 ? 0xb8281e : 0x6a4a2a); } jar.box(-1, 8, -1, 0, 8, 0, 0xd8b04a);
   itemGeo.wine = jar.geometry({ s: 0.07, o: [0, 0, 0] });
 }
+Object.assign(itemGeo, itemGeos());
 const itemMat = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: 0x332200, roughness: 0.6 });
 const items = [];
 function dropItem(type, x, z) {
-  const m = new THREE.Mesh(itemGeo[type === 'wine' ? 'wine' : 'bun'], itemMat); m.castShadow = true;
+  const m = new THREE.Mesh(itemGeo[type === 'bigbun' ? 'bun' : type], itemMat); m.castShadow = true;
   if (type === 'bigbun') m.scale.setScalar(1.8);
   scene.add(m); items.push({ type, x, z, m, t: 0 });
 }
+const BUFFS = { axe: { zh: '攻', tip: '攻擊力 2 倍', col: '#ff8a5a', rgb: [1, 0.5, 0.3] }, armor: { zh: '防', tip: '防禦力 2 倍', col: '#ffd060', rgb: [1, 0.8, 0.3] }, boots: { zh: '速', tip: '移動速度上升', col: '#7ac8ff', rgb: [0.5, 0.8, 1] } };
+function crateDrop(x, z) { const r = Math.random(); dropItem(r < 0.34 ? 'bun' : r < 0.5 ? 'wine' : r < 0.67 ? 'axe' : r < 0.84 ? 'armor' : 'boots', x, z); }
 
 // ---------------------------------------------------------------- input
 const keys = new Set(), pressed = new Set();
-const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'] };
+const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'] };
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
   audio.resume();
@@ -153,7 +179,7 @@ const input = {
     if (keys.has('KeyD') || keys.has('ArrowRight')) sx += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) sx -= 1;
     let camX = (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0);
     const pr = (a) => KEYMAP[a].some((k) => pressed.has(k));
-    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou') };
+    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount') };
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find((p) => p && p.connected);
     if (gp) {
@@ -161,12 +187,12 @@ const input = {
       sx += ax(0); fx -= ax(1); camX += ax(2) * 1.2;
       const b = (i) => gp.buttons[i] && gp.buttons[i].pressed, was = (i) => padPrev[i];
       const edge = (i) => b(i) && !was(i);
-      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7) || edge(4)) o.dodge = true;
+      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4) || edge(6)) o.mount = true;
       if (edge(9)) togglePause();
       padPrev = gp.buttons.map((x) => x.pressed);
     }
     if (touch.id !== null) { const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.hypot(dx, dy); if (l > 8) { const k = Math.min(1, l / 50) / l; sx += dx * k; fx -= dy * k; } }
-    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou']) if (pressed.has('T_' + a)) o[a] = true;
+    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount']) if (pressed.has('T_' + a)) o[a] = true;
     const mag = Math.min(1, Math.hypot(fx, sx));
     const cy = cam.yaw, cfx = Math.sin(cy), cfz = Math.cos(cy);
     let mx = cfx * fx + -cfz * sx, mz = cfz * fx + cfx * sx;
@@ -184,7 +210,7 @@ function camStep(inp) {
   cam.yaw -= inp.camX * 2.4 / 60 + inp.dragX * 0.006;
   if (Math.abs(inp.camX) > 0.05 || inp.dragX) cam.manualT = 90; else cam.manualT--;
   const h = game.hero;
-  if (cam.manualT < 0 && h.state === 'run' && h.spd > 3) {
+  if (cam.manualT < 0 && (h.state === 'run' || h.state === 'ride') && h.spd > 3) {
     let d = h.yaw - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
     if (Math.abs(d) < 2.4) cam.yaw += d * 0.012;
   }
@@ -195,7 +221,11 @@ function camUpdate(dt) {
   cam.crowdK += (Math.min(1, crowdN / 14) - (cam.crowdK || 0)) * 0.03;
   const portrait = innerHeight > innerWidth * 1.1;
   let dist = cam.dist * (portrait ? 1.45 : 1) + cam.crowdK * 1.2, pitch = cam.pitch + (portrait ? 0.08 : 0) + cam.crowdK * 0.2, yaw = cam.yaw, lookY = 1.25, fov = portrait ? 64 : 52;
+  if (h.riding) { dist += 2.4; lookY = 1.75; fov += Math.min(1, h.spd / HERO.ride) * 5; }
   _t.set(h.x, h.y * 0.6 + lookY, h.z);
+  let ease = 0;
+  if (game.slow > 0 && DIR.koPos) { _t.lerp(_p.set(DIR.koPos.x, 1.3, DIR.koPos.z), 0.55); dist = 5.4; fov = 40; pitch = 0.2; }
+  if (DIR.phase === 7) { _t.set(BRIDGE.x + 1.2, 2.0, RIVER.z0 + 5); yaw = 0.34; dist = 16; pitch = 0.24; fov = 50; ease = 0.035; }
   if (mu.active) {
     const t = mu.t;
     if (t < MU.raise) { yaw = h.yaw + Math.PI + 0.5; dist = 3.2; pitch = 0.08; lookY = 1.45; _t.set(h.x, h.y + lookY, h.z); fov = 44; }
@@ -206,8 +236,8 @@ function camUpdate(dt) {
   const cp = Math.cos(pitch);
   _p.set(_t.x - Math.sin(yaw) * dist * cp, _t.y + Math.sin(pitch) * dist, _t.z - Math.cos(yaw) * dist * cp);
   if (mu.active && mu.t === 1) cam.pos.copy(_p);
-  cam.pos.lerp(_p, mu.active ? 0.12 : Math.min(1, k * 1.2));
-  cam.look.lerp(_t, mu.active ? 0.2 : Math.min(1, k * 1.6));
+  cam.pos.lerp(_p, ease || (mu.active ? 0.12 : Math.min(1, k * 1.2)));
+  cam.look.lerp(_t, ease ? ease * 1.6 : mu.active ? 0.2 : Math.min(1, k * 1.6));
   cam.fov += (fov - cam.fov) * 0.1;
 }
 function applyCam() {
@@ -257,7 +287,7 @@ function directorStep() {
   } else if (DIR.phase === 1) {
     if (offs[0].dead) {
       DIR.phase = 2; DIR.t = 0; DIR.ko0 = ko;
-      h.sword = true; h.atkMul = 1.3;
+      h.sword = true;
       setTimeout(() => banner('獲得 <em>青釭劍</em>', 'QINGGANG SWORD OBTAINED · ATTACK UP', true), 1600);
       say('趙雲', '青釭之劍……削鐵如泥，好劍！', 'The Qinggang blade — it cuts iron like clay!');
       dropItem('wine', offs[0].rig.root.position.x, offs[0].rig.root.position.z);
@@ -284,8 +314,16 @@ function directorStep() {
       say('張飛', '子龍快走！此處交給俺老張！', 'Zilong, go! Leave this lot to me!', 240);
     }
   } else if (DIR.phase === 6) {
-    if (Math.abs(h.x - BRIDGE.x) < BRIDGE.w + 0.5 && h.z < RIVER.z1 - 1) finish(true);
+    if (Math.abs(h.x - BRIDGE.x) < BRIDGE.w + 0.5 && h.z < RIVER.z1 - 1) { DIR.phase = 7; DIR.t = 0; game.reinforceOK = false; h.inv = 99999; }
+  } else if (DIR.phase === 7) {   // 張飛據橋: he roars, the pursuit is thrown back
+    h.inv = 99999;
+    if (DIR.t === 40) say('張飛', '燕人張翼德在此！誰敢與我決一死戰！', 'I am Zhang Yide of Yan! Who dares fight me to the death?!', 250);
+    if (DIR.t === 120) { game.emit('roar', { x: BRIDGE.x, z: RIVER.z1 + 1 }); game.crowd.shock(BRIDGE.x, RIVER.z1 - 2, 60, 16, 10); }
+    if (DIR.t === 150) game.crowd.shock(BRIDGE.x, RIVER.z1 - 2, 40, 9, 6);
+    if (DIR.t >= 270) finish(true);
   }
+  // 虎豹騎 charges once the first officer is down
+  if (DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
   // KO milestones
   const mile = Math.floor(ko / 100) * 100;
   if (mile > DIR.lastMile && mile > 0) { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
@@ -297,7 +335,8 @@ function directorStep() {
     it.m.position.set(it.x, 0.25 + Math.sin(it.t * 0.08) * 0.08, it.z); it.m.rotation.y += 0.03;
     if (Math.hypot(h.x - it.x, h.z - it.z) < 1.2 && !h.dead) {
       if (it.type === 'wine') { h.musou = HERO.musouMax; game.emit('pickup', { x: it.x, z: it.z, col: [1, 0.8, 0.3] }); floatText('無雙全滿', '#ffd060'); }
-      else { const v = it.type === 'bigbun' ? h.hpMax : h.hpMax * 0.25; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
+      else if (BUFFS[it.type]) { const bf = BUFFS[it.type]; h.buff[it.type] = HERO.buffTime; game.emit('pickup', { x: it.x, z: it.z, col: bf.rgb }); floatText(bf.tip, bf.col); }
+      else { const v = it.type === 'bigbun' ? h.hpMax * Math.min(1, game.diff.heal) : h.hpMax * 0.25 * game.diff.heal; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
       scene.remove(it.m); items.splice(k, 1);
     } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
   }
@@ -317,12 +356,19 @@ game.on('heroHit', (e) => {
 });
 game.on('heroHurt', (e) => { DIR.dmg += e.dmg; DIR.src[e.src] = (DIR.src[e.src] || 0) + Math.round(e.dmg); DIR.combo = 0; hurtFlash = 1; });
 game.on('ko', (e) => {
-  if (e.off) { banner(`敵將 <em>${e.o.def.zh}</em> 擊破！`, `ENEMY OFFICER ${e.o.def.en} DEFEATED`); DIR.offDown++; game.hitstop = Math.max(game.hitstop, 14); dropItem('bigbun', e.x, e.z); return; }
+  if (e.off) { banner(`敵將 <em>${e.o.def.zh}</em> 擊破！`, `ENEMY OFFICER ${e.o.def.en} DEFEATED`); DIR.offDown++; game.hitstop = Math.max(game.hitstop, 6); game.slow = 66; DIR.koPos = { x: e.x, z: e.z }; dropItem('bigbun', e.x, e.z); return; }
   const r = Math.random();
-  if (e.kind === KIND.CAPTAIN && r < 0.55) dropItem('bun', e.x, e.z);
+  if (e.kind === KIND.CAPTAIN && r < 0.45) dropItem('bun', e.x, e.z);
+  else if (e.kind === KIND.CAPTAIN && r < 0.62) dropItem(['axe', 'armor', 'boots'][(Math.random() * 3) | 0], e.x, e.z);
   else if (e.kind === KIND.BEARER && r < 0.35) dropItem('wine', e.x, e.z);
   else if (r < 0.012) dropItem('bun', e.x, e.z);
 });
+game.on('cavalry', () => {
+  banner('<em>虎豹騎</em> 突擊！', 'TIGER-LEOPARD CAVALRY — CLEAR THE LANE');
+  if (game.cav.waves === 1) say('曹純', '虎豹騎，踏平他！', 'Tiger-Leopard riders — run him down!');
+});
+game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
+game.on('mount', () => { if (!DIR.rode) { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
 game.on('musouEnd', () => say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150));
 game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
 game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some((o) => o.active && !o.dead) || game.musou.active ? 2 : 1);
@@ -331,7 +377,7 @@ game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some
 const ui = { mode: 'title', shownKo: 0, hpLag: 1 };
 let comboPop = false, hurtFlash = 0;
 const hudEls = { hp: $('hp'), hpLag: $('hpLag'), hpBox: $('hpBox'), mu: $('mu'), muBox: $('muBox'), muLbl: $('muLbl'), ko: $('ko'), combo: $('combo'), comboN: $('comboN'),
-  obj: $('obj'), tm: $('tm'), morale: $('morale'), boss: $('boss'), bossName: $('bossName'), bossHp: $('bossHp'), dlg: $('dlg'), sword: $('swordTag') };
+  obj: $('obj'), tm: $('tm'), buffs: $('buffs'), morale: $('morale'), boss: $('boss'), bossName: $('bossName'), bossHp: $('bossHp'), dlg: $('dlg'), sword: $('swordTag') };
 const tagEls = OFFICERS.map((d) => { const e = document.createElement('div'); e.className = 'tag'; e.innerHTML = `<div class="nm">${d.zh}<small>${d.en}</small></div><div class="bar"><i></i></div><div class="mk">▼▼</div>`; e.style.display = 'none'; $('tags').appendChild(e); return e; });
 const floatLayer = document.createElement('div'); floatLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none'; $('hud').appendChild(floatLayer);
 function floatText(txt, color) {
@@ -369,7 +415,10 @@ function drawMap() {
     mctx.fillRect(mx(c.x[i]) - sz / 2, mz(c.z[i]) - sz / 2, sz, sz);
   }
   for (const o of c.officers) if (o.active && !o.dead) { const x = mx(c.x[o.idx]), y = mz(c.z[o.idx]); mctx.fillStyle = '#b8281e'; mctx.fillRect(x - 6, y - 6, 12, 12); mctx.fillStyle = '#fff'; mctx.font = '900 9px "Noto Serif TC", serif'; mctx.fillText('將', x, y + 3.5); }
-  for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
+  for (const ln of game.cav.lanes) if (game.cav.tele > 0) { mctx.strokeStyle = 'rgba(255,80,50,0.6)'; mctx.lineWidth = 2; mctx.beginPath(); mctx.moveTo(mx(ln.x), mz(ln.z)); mctx.lineTo(mx(ln.x + Math.sin(ln.yaw) * ln.len), mz(ln.z + Math.cos(ln.yaw) * ln.len)); mctx.stroke(); }
+  for (const r of game.cav.riders) if (r.on) { mctx.fillStyle = r.rider ? '#ffb030' : '#8a7a60'; mctx.fillRect(mx(r.x) - 3, mz(r.z) - 3, 6, 6); }
+  if (!h.riding) { const hz = h.horse; mctx.fillStyle = '#ffffff'; mctx.beginPath(); mctx.moveTo(mx(hz.x), mz(hz.z) - 4); mctx.lineTo(mx(hz.x) + 3.5, mz(hz.z)); mctx.lineTo(mx(hz.x), mz(hz.z) + 4); mctx.lineTo(mx(hz.x) - 3.5, mz(hz.z)); mctx.fill(); }
+  for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : BUFFS[it.type] ? BUFFS[it.type].col : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
   if (DIR.phase === 6) { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
   // hero + view cone
   const hx = mx(h.x), hz = mz(h.z);
@@ -378,7 +427,8 @@ function drawMap() {
   mctx.save(); mctx.translate(hx, hz); mctx.rotate(-h.yaw + Math.PI);
   mctx.fillStyle = '#5fe8d8'; mctx.strokeStyle = '#0a2a28'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.moveTo(0, 7); mctx.lineTo(-5, -5); mctx.lineTo(0, -2); mctx.lineTo(5, -5); mctx.closePath(); mctx.stroke(); mctx.fill(); mctx.restore();
 }
-const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！'];
+const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！', '張飛 據水斷橋'];
+let buffKey = '';
 const _v = new THREE.Vector3();
 let dlgCur = null, dlgT = 0, lastKoShown = -1, mapT = 0;
 function hudUpdate() {
@@ -391,7 +441,9 @@ function hudUpdate() {
   hudEls.mu.style.width = (h.musou / HERO.musouMax * 100).toFixed(1) + '%';
   const full = h.musou >= HERO.musouMax;
   hudEls.muBox.classList.toggle('full', full); hudEls.muLbl.textContent = full && hp < 0.25 ? '真・無雙' : '無雙'; hudEls.muLbl.classList.toggle('on', full);
-  hudEls.sword.textContent = h.sword ? '青釭劍' : '';
+  hudEls.sword.textContent = (h.sword ? '青釭劍' : '') + (h.riding ? ' · 騎乘' : '');
+  let bk = ''; for (const k in BUFFS) if (h.buff[k] > 0) bk += k + Math.ceil(h.buff[k] / 60) + ' ';
+  if (bk !== buffKey) { buffKey = bk; hudEls.buffs.innerHTML = Object.keys(BUFFS).filter((k) => h.buff[k] > 0).map((k) => `<span style="--c:${BUFFS[k].col}"><b>${BUFFS[k].zh}</b>${Math.ceil(h.buff[k] / 60)}</span>`).join(''); }
   if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
   hudEls.combo.classList.toggle('on', DIR.combo >= 2);
   if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
@@ -429,8 +481,9 @@ function startGame() {
   ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
 }
 function resetGame() {
-  game.hero.reset(); game.crowd.reset(); game.frame = 0; game.hitstop = 0; game.musou.active = false; game.crowd.freeze = 0;
-  Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {} });
+  game.hero.reset(); game.crowd.reset(); game.cav.reset(); game.world.resetCrates(); game.frame = 0; game.hitstop = 0; game.slow = 0; game.musou.active = false; game.crowd.freeze = 0; game.reinforceOK = true;
+  Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {}, cavT: 60 * 14, koPos: null, rode: false });
+  Object.assign(feiPose, clonePose(FEI.stand));
   for (const it of items) scene.remove(it.m); items.length = 0;
   game.crowd.spawnArmy();
   cam.yaw = 0; cam.pos.set(0, 4, -22); ui.hpLag = 1; lastKoShown = -1;
@@ -449,11 +502,11 @@ function showResult() {
   const rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
   $('resTitle').textContent = DIR.win ? '突圍' : '敗走'; $('resSub').textContent = DIR.win ? 'VICTORY · CHANGBAN' : 'DEFEAT';
   $('resRank').textContent = rank; $('resRank').style.display = DIR.win ? '' : 'none';
-  const best = LS.get('best', null);
+  const best = LS.get('best_' + diffKey, diffKey === 'normal' ? LS.get('best', null) : null);
   const rec = { time: s, ko, combo: DIR.maxCombo, rank };
-  if (DIR.win && (!best || s < best.time)) LS.set('best', rec);
-  $('resGrid').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
-  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄 ${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
+  if (DIR.win && (!best || s < best.time)) LS.set('best_' + diffKey, rec);
+  $('resGrid').innerHTML = `<dt>難度</dt><dd style="font-family:var(--serif)">${game.diff.zh}</dd><dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / 4</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>`;
+  $('resNote').innerHTML = (DIR.win ? '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>' : '') + (best ? `最佳紀錄（${game.diff.zh}）${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
 }
 $('go').onclick = startGame; $('again').onclick = startGame; $('resume').onclick = togglePause;
 $('restart').onclick = () => { startGame(); };
@@ -462,20 +515,28 @@ for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mu
   const h = (e) => { const v = +e.target.value; $(a).value = v; $(b).value = v; f(v); LS.set(k, v); };
   $(a).oninput = h; $(b).oninput = h;
 }
+function setDiff(k) { diffKey = k; game.diff = DIFFS[k]; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
+for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
+setDiff(diffKey);
 $('lowq').checked = lowQ; $('lowq').onchange = (e) => { lowQ = e.target.checked; LS.set('lowq', lowQ); applyQuality(); };
 
 // ---------------------------------------------------------------- loop
 let paused = false, manual = false;
 function step() {
-  const inp = input.sample(game.hitstop <= 0);
+  const skip = game.slow > 0 && game.slow % 3 !== 0;       // officer finisher plays at one-third speed
+  if (game.slow > 0) game.slow--;
+  const inp = input.sample(game.hitstop <= 0 && !skip);
   if (ui.mode === 'play') { camStep(inp); camUpdate(1 / 60); }
   if (ui.mode !== 'play' && ui.mode !== 'result') { heroView.step(); game.frame++; return; }
   if (game.hitstop > 0) { game.hitstop--; }
-  else {
-    const hin = DIR.over ? { mx: 0, mz: 0, mag: 0 } : (auto.on ? autoInput(inp) : inp);
+  else if (!skip) {
+    let hin = DIR.over ? { mx: 0, mz: 0, mag: 0 } : (auto.on ? autoInput(inp) : inp);
+    if (DIR.phase === 7 && !DIR.over) { const h = game.hero, tz = RIVER.z0 + 1.6, dx = BRIDGE.x - 0.5 - h.x, dz = tz - h.z, d = Math.hypot(dx, dz); hin = { mx: dx / (d || 1), mz: dz / (d || 1), mag: d > 1.2 ? 0.7 : 0 }; if (d <= 1.2) h.yaw += Math.atan2(Math.sin(-h.yaw), Math.cos(-h.yaw)) * 0.08; }
     game.hero.step(hin);
     game.crowd.step();
+    game.cav.step();
     directorStep();
+    approach(feiPose, DIR.phase === 7 ? (DIR.t < 60 ? FEI.stand : DIR.t < 118 ? FEI.raise : FEI.roar) : FEI.stand, DIR.phase === 7 && DIR.t >= 118 ? 0.5 : 0.12);
     heroView.step();
     heroView.update(); vfx.simStep(heroView); musouView.step();
   }
@@ -487,12 +548,13 @@ let lastT = 0;
 function render(dt) {
   heroView.update();
   game.crowd.render();
+  game.cav.render(game.frame / 60);
   vfx.update(dt, heroView);
   musouView.update();
   if (ui.mode === 'title') titleCam(performance.now() / 1000); else applyCam();
   game.world.update(dt, _v.set(game.hero.x, 0, game.hero.z));
   feiRig.root.position.y = bridgeDeck(feiRig.root.position.z);
-  idlePose(game.frame / 60, feiPose); Object.assign(feiPose, { w: [-0.22, 0.2, 0.15, -1.25, -0.2, 0], gL: 0.35 }); applyPose(feiRig, feiPose);
+  applyPose(feiRig, feiPose);
   beacon.material.opacity += ((DIR.phase === 6 ? 0.22 + Math.sin(game.frame * 0.08) * 0.06 : 0) - beacon.material.opacity) * 0.05;
   beacon.visible = beacon.material.opacity > 0.01;
   grade.uniforms.flash.value = vfx.flash; grade.uniforms.flashCol.value.copy(vfx.flashCol);
@@ -522,7 +584,7 @@ function onResize() {
 addEventListener('resize', onResize);
 
 // ---------------------------------------------------------------- autopilot (testing / attract)
-const auto = { on: false, plan: [], t: 0 };
+const auto = { on: false, plan: [], t: 0, ride: true };
 function autoInput(real) {
   const h = game.hero, c = game.crowd;
   const o = { mx: 0, mz: 0, mag: 0, attack: false, charge: false, jump: false, dodge: false, musou: false };
@@ -532,12 +594,28 @@ function autoInput(real) {
     const dx = h.x - dd.x, dz = h.z - dd.z, d = Math.hypot(dx, dz) || 1;
     if ((dd.r && d < dd.r + 1) || (dd.line && d < 9)) { if (h.state !== 'dodge' && game.frame % 6 === 0) { o.dodge = true; o.mx = dx / d; o.mz = dz / d; o.mag = 1; return o; } }
   }
+  const cv = game.cav;
+  if (cv.busy()) {
+    let n = 0, cx = 0, cz = 0, yaw = 0;
+    for (const r of cv.riders) if (r.on && r.rider) { n++; cx += r.x; cz += r.z; yaw = r.yaw; }
+    if (n) {
+      cx /= n; cz /= n;
+      const fx = Math.sin(yaw), fz = Math.cos(yaw), dx = h.x - cx, dz = h.z - cz, along = dx * fx + dz * fz, side = dx * fz - dz * fx, half = n * 1.2 + 1.8;
+      if (along > -2 && Math.abs(side) < half && (cv.tele > 0 || along < 30)) {
+        const sg = side >= 0 ? 1 : -1; o.mx = fz * sg; o.mz = -fx * sg; o.mag = 1;
+        if (cv.tele === 0 && along < 8 && h.state !== 'dodge' && game.frame % 5 === 0) o.dodge = true;
+        return o;
+      }
+    }
+  }
   if (h.musou >= HERO.musouMax && c.alive > 20) { o.musou = true; }
   let tgt = null, td = 1e9;
   for (const of of c.officers) if (of.active && !of.dead) { const d = Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z); if (d < td) { td = d; tgt = { x: c.x[of.idx], z: c.z[of.idx] }; } }
   if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
   if (DIR.phase === 6) { tgt = { x: BRIDGE.x, z: BRIDGE.z - 3 }; td = 99; }
   if (tgt) { const dx = tgt.x - h.x, dz = tgt.z - h.z, d = Math.hypot(dx, dz) || 1; o.mx = dx / d; o.mz = dz / d; o.mag = td > 2.6 ? 1 : 0.3; }
+  if (auto.ride && !h.riding && td > 26 && game.frame % 90 === 0) o.mount = true;
+  if (h.riding && td < 4 && DIR.phase !== 6) { o.jump = true; return o; }
   if (td < 3.4 && game.frame % 7 === 0) {
     if (!auto.plan.length) { const n = (Math.random() * 6) | 0; auto.plan = [...Array(n).fill('a'), Math.random() < 0.8 ? 'c' : 'a']; }
     const k = auto.plan.shift(); if (k === 'a') o.attack = true; else o.charge = true;
@@ -552,9 +630,11 @@ window.__vm = {
   step(n = 1, dt = 1 / 60) { manual = true; for (let i = 0; i < n; i++) step(); render(dt); return this.info(); },
   run() { manual = false; lastT = 0; },
   simRun(sec) { manual = true; const n = sec * 60; for (let i = 0; i < n; i++) { step(); if (i % 30 === 0) { game.crowd.render(); vfx.update(1 / 2, heroView); } if (DIR.over && DIR.endT > 30) break; } render(1 / 60); return this.info(); },
-  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
+  info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
+  ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
+  setDiff, dropItem, items,
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 

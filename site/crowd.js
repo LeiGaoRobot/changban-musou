@@ -28,6 +28,25 @@ const OATK = {
   leap: [{ clip: 'c6', tele: 30, hit: { shape: 'circle', range: 4.6, dmg: 26, heavy: true }, leap: true }],
 };
 
+// does a hit shape cast from (hx, hz) facing yaw reach a target of radius r at (x, z)?
+export function shapeHit(hd, hx, hz, yaw, x, z, r) {
+  const dx = x - hx, dz = z - hz, d = Math.hypot(dx, dz);
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  if (hd.shape === 'circle') return d < hd.range + r;
+  if (hd.shape === 'arc') {
+    if (d > hd.range + r) return false;
+    if (d < 0.9) return true;
+    const dir = (hd.dir || 0) * Math.PI / 180, a = Math.atan2(dx, dz) - (yaw + dir);
+    const w = Math.atan2(Math.sin(a), Math.cos(a));
+    return Math.abs(w) <= (hd.ang * Math.PI / 360) + r / d;
+  }
+  if (hd.shape === 'line') {
+    const along = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
+    return along > -0.6 && along < hd.len + r && side < hd.width / 2 + r;
+  }
+  return false;
+}
+
 export function createCrowd(game, scene) {
   const N = CROWD.maxGrunts + OFFICERS.length;
   const F = () => new Float32Array(N), I = () => new Int32Array(N);
@@ -62,7 +81,7 @@ export function createCrowd(game, scene) {
   function spawnSoldier(kind, x, z, yaw, sq, st = ST.FORM) {
     const i = freeSlot(); if (i < 0) return -1;
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = yaw; c.kind[i] = kind; c.squad[i] = sq;
-    c.hpMax[i] = c.hp[i] = kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16;
+    c.hpMax[i] = c.hp[i] = (kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16) * game.diff.hp;
     c.st[i] = st; c.stT[i] = 0; c.lastKey[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 60 + (rnd() * 120) | 0; c.ph[i] = rnd() * TAU;
     c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0;
     c.spawned++;
@@ -119,7 +138,7 @@ export function createCrowd(game, scene) {
   c.spawnOfficer = (k, x, z) => {
     const o = c.officers[k], i = o.idx, d = o.def;
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = Math.PI; c.kind[i] = KIND.OFFICER;
-    c.hpMax[i] = c.hp[i] = d.hp; c.st[i] = ST.ENGAGE; c.stT[i] = 0; c.lastKey[i] = 0; c.kod[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 90;
+    c.hpMax[i] = c.hp[i] = d.hp * game.diff.hp; c.st[i] = ST.ENGAGE; c.stT[i] = 0; c.lastKey[i] = 0; c.kod[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 90;
     o.active = true; o.dead = false; o.atk = null; o.think = 60; o.poise = 0; o.rig.root.visible = true;
     game.emit('officer', { o });
     return o;
@@ -145,26 +164,7 @@ export function createCrowd(game, scene) {
   };
 
   // shape test in the hero's frame
-  function inShape(hd, hx, hz, yaw, i, u) {
-    const dx = c.x[i] - hx, dz = c.z[i] - hz, d = Math.hypot(dx, dz), r = CROWD.radius;
-    const fx = Math.sin(yaw), fz = Math.cos(yaw);
-    if (hd.shape === 'circle') {
-      if (hd.sweep) { const a = Math.atan2(dx * -fz + dz * fx, dx * fx + dz * fz); }
-      return d < hd.range + r;
-    }
-    if (hd.shape === 'arc') {
-      if (d > hd.range + r) return false;
-      if (d < 0.9) return true;
-      const dir = (hd.dir || 0) * Math.PI / 180, a = Math.atan2(dx, dz) - (yaw + dir);
-      const w = Math.atan2(Math.sin(a), Math.cos(a));
-      return Math.abs(w) <= (hd.ang * Math.PI / 360) + r / d;
-    }
-    if (hd.shape === 'line') {
-      const along = dx * fx + dz * fz, side = Math.abs(dx * fz - dz * fx);
-      return along > -0.6 && along < hd.len + r && side < hd.width / 2 + r;
-    }
-    return false;
-  }
+  const inShape = (hd, hx, hz, yaw, i) => shapeHit(hd, hx, hz, yaw, c.x[i], c.z[i], CROWD.radius);
   c.inShape = inShape;
 
   // the hero's blow lands on everyone in shape; returns the number hit
@@ -181,10 +181,22 @@ export function createCrowd(game, scene) {
       if (hd.shape === 'line') { ux = ux * 0.4 + Math.sin(h.yaw) * 0.6; uz = uz * 0.4 + Math.cos(h.yaw) * 0.6; }
       react(i, hd, ux, uz, mul, opts.musou);
     }
+    if (game.extraHit) n += game.extraHit(h, hd, key, mul);
     if (n) { stop = hd.stop || 0; game.hitstop = Math.max(game.hitstop, stop); game.emit('heroHit', { n, hd, key, list, musou: !!opts.musou }); }
     return n;
   };
 
+  c.shock = (x, z, r, force, lift) => {
+    for (let i = 0; i < N; i++) {
+      if (!alive(i)) continue;
+      const dx = c.x[i] - x, dz = c.z[i] - z, d = Math.hypot(dx, dz) || 1;
+      if (d > r) continue;
+      const k = 1 - d / r * 0.6, off = c.kind[i] === KIND.OFFICER;
+      c.st[i] = ST.AIR; c.stT[i] = 0; c.y[i] += 0.02; c.vy[i] = lift * k * rr(0.7, 1.2) * (off ? 0.6 : 1);
+      c.vx[i] = dx / d * force * k * rr(0.7, 1.3); c.vz[i] = dz / d * force * k * rr(0.7, 1.3); c.spinV[i] = rr(4, 10) * (rnd() < 0.5 ? -1 : 1); c.flash[i] = 0.6;
+      if (off) { const o = c.officers[i - offBase]; o.atk = null; o.danger = null; }
+    }
+  };
   function react(i, hd, ux, uz, mul, musou) {
     const off = c.kind[i] === KIND.OFFICER, o = off ? c.officers[i - offBase] : null;
     const dmg = hd.dmg * mul * (off ? (musou ? 0.7 : 1) : 1);
@@ -347,7 +359,7 @@ export function createCrowd(game, scene) {
         if (d < want + 2) { vx += -dz / d * c.strafe[i] * 0.45; vz += dx / d * c.strafe[i] * 0.45; if (c.stT[i] % 240 === 0) c.strafe[i] *= -1; }
         move(vx, vz); faceTo(toHero);
         c.cd[i]--;
-        if (c.cd[i] <= 0 && d < 3.2 && c.tokensUsed < CROWD.tokens && !h.dead && h.state !== 'musou') {
+        if (c.cd[i] <= 0 && d < 3.2 && c.tokensUsed < game.diff.tokens && !h.dead && h.state !== 'musou') {
           c.st[i] = ST.WIND; c.stT[i] = 0; c.tokensUsed++;
         }
         break;

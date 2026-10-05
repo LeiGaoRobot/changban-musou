@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { P, BASE, sampleClip, approach, runPose, idlePose, applyPose, clonePose, weaponPoint } from './anim.js';
 import { buildWarrior, PAL } from './voxel.js';
 import { groundY } from './world.js';
+import { buildHorse, poseHorse } from './horse.js';
 
 const TAU = Math.PI * 2;
 const W = (x, y, z, rx, ry, rz = 0) => [x, y, z, rx, ry, rz];
@@ -96,14 +97,34 @@ export const MOVES = {
 };
 for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
-export const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100 };
+export const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
+
+// ---- mounted: seat pose + two sweeps (J) and a couched charge (K)
+const RIDE_O = { rootY: 0, tx: 0.15, ty: 0.05, hx: -0.1, hy: 0, thL: 1.2, shL: -1.35, thR: 1.2, shR: -1.35, lzL: 0.5, lzR: -0.5,
+  w: W(-0.34, 0.18, 0.1, -0.55, -0.2), ikL: 0, aL: [0.85, 0, 0.15], cape: 0.3 };
+const RP = (o = {}) => P({ ...RIDE_O, ...o });
+const RIDE = RP();
+const couch = RP({ tx: 0.55, hx: -0.4, ty: -0.1, w: W(-0.22, 0.15, 0.5, 0.02, -0.1), cape: 1 });
+export const RIDE_ATK = {
+  ra: { dur: 24, cancel: 13,      // sweep down the right flank
+    keys: [[0, RIDE], [5, RP({ ty: 0.35, w: W(-0.28, 0.32, 0.28, -0.1, 0.5) })], [11, RP({ ty: -0.9, tx: 0.2, w: W(-0.36, 0.2, 0.08, 0.28, -2.3) }), 'snap'], [16, RP({ ty: -0.95, tx: 0.2, w: W(-0.36, 0.2, 0.08, 0.3, -2.45) })], [24, RIDE]],
+    hits: [{ f: [7, 12], shape: 'circle', range: 3.4, dmg: 12, kb: 'push', force: 4, stop: 2 }] },
+  rb: { dur: 24, cancel: 13,      // and back across the left
+    keys: [[0, RIDE], [5, RP({ ty: -0.35, w: W(-0.3, 0.32, 0.25, -0.1, -0.9) })], [11, RP({ ty: 0.9, tx: 0.2, w: W(0.08, 0.2, 0.14, 0.28, 2.3) }), 'snap'], [16, RP({ ty: 0.95, tx: 0.2, w: W(0.08, 0.2, 0.14, 0.3, 2.45) })], [24, RIDE]],
+    hits: [{ f: [7, 12], shape: 'circle', range: 3.4, dmg: 13, kb: 'blow', force: 7, lift: 4, stop: 3 }] },
+  rc: { dur: 40, cancel: 35, armor: true,
+    keys: [[0, RIDE], [5, RP({ tx: 0.4, hx: -0.3, ty: 0.55, w: W(-0.3, 0.12, 0.0, -0.05, -0.65) })], [9, couch, 'snap'], [34, couch], [40, RIDE]],
+    hits: [{ f: [6, 34], every: 4, shape: 'line', len: 4.6, width: 2.8, dmg: 9, kb: 'launch', force: 5, lift: 6, stop: 1 }] },
+};
 
 export function createHero(game) {
   const h = { x: 0, y: 0, z: -12, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0,
     move: null, mt: 0, serial: 1, buf: null, bufAge: 0, inv: 0, grounded: true, airChain: 0, spd: 0, ph: 0, landed: false,
-    dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false };
+    dodgeDir: [0, 1], atkMul: 1, sword: false, hitsThisMove: 0, dead: false, riding: false, ratk: null,
+    horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } };
   h.reset = () => Object.assign(h, { x: 0, y: 0, z: -14, vy: 0, vx: 0, vz: 0, yaw: 0, hp: HERO.hpMax, hpMax: HERO.hpMax, musou: 0, state: 'idle', t: 0, move: null, mt: 0, inv: 0,
-    grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null });
+    grounded: true, airChain: 0, spd: 0, sword: false, atkMul: 1, dead: false, buf: null, riding: false, ratk: null,
+    horse: { x: 4.2, z: -11.5, yaw: -0.5, spd: 0, ph: 0, state: 'idle', t: 0 }, buff: { axe: 0, armor: 0, boots: 0 } });
 
   const setState = (s) => { h.state = s; h.t = 0; };
   const startMove = (id, inp) => {
@@ -120,21 +141,53 @@ export function createHero(game) {
 
   h.hurt = (dmg, fx, fz, heavy, src = '?') => {
     if (h.dead || h.inv > 0 || h.state === 'musou' || h.state === 'down' || h.state === 'getup') return false;
-    const armored = h.state === 'move' && h.move.armor;
-    h.hp -= dmg * (armored ? 0.5 : 1);
+    const armored = (h.state === 'move' && h.move.armor) || (h.riding && h.ratk && h.ratk.id === 'rc');
+    dmg *= game.diff.dmg * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
+    h.hp -= dmg;
     h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
-    game.emit('heroHurt', { dmg: dmg * (armored ? 0.5 : 1), heavy, src });
-    if (h.hp <= 0) { h.hp = 0; h.dead = true; setState('down'); h.move = null; game.emit('heroDead'); return true; }
-    if (armored && !heavy) return true;
+    game.emit('heroHurt', { dmg, heavy, src });
+    if (h.hp <= 0) { h.hp = 0; h.dead = true; unhorse(); setState('down'); h.move = null; game.emit('heroDead'); return true; }
+    if ((armored || h.riding) && !heavy) return true;
     h.move = null; h.yaw = Math.atan2(fx - h.x, fz - h.z);
+    if (h.riding) unhorse();
     if (heavy) { setState('down'); h.vy = h.grounded ? 4 : h.vy; h.grounded = false; h.kx = -Math.sin(h.yaw) * 5; h.kz = -Math.cos(h.yaw) * 5; }
     else { setState('hurt'); h.kx = -Math.sin(h.yaw) * 2.5; h.kz = -Math.cos(h.yaw) * 2.5; }
     return true;
   };
 
+  // ---- the white horse
+  const mount = () => { const hz = h.horse; h.riding = true; h.ratk = null; h.move = null; setState('ride'); h.spd = Math.max(h.spd * 0.6, hz.spd * 0.6); h.ph = hz.ph; hz.state = 'idle'; game.emit('mount'); };
+  const leaveHorse = () => { const hz = h.horse; h.riding = false; h.ratk = null; hz.x = h.x; hz.z = h.z; hz.yaw = h.yaw; hz.spd = h.spd * 0.6; hz.state = 'idle'; hz.t = 0; };
+  const unhorse = () => { if (!h.riding) return; leaveHorse(); h.horse.state = 'flee'; h.horse.spd = 8; h.spd = 0; game.emit('unhorse'); };
+  h.mount = mount; h.leaveHorse = leaveHorse;
+  function horseStep(dt) {
+    const hz = h.horse; hz.t++;
+    if (h.riding) { hz.x = h.x; hz.z = h.z; hz.yaw = h.yaw; hz.spd = h.spd; hz.ph = h.ph; return; }
+    if (hz.state === 'come') {
+      const dx = h.x - hz.x, dz = h.z - hz.z, d = Math.hypot(dx, dz);
+      hz.yaw = turn(hz.yaw, Math.atan2(dx, dz), 0.14);
+      const want = d > 2.4 ? Math.min(16, 4 + d * 1.6) : 0;
+      hz.spd += Math.sign(want - hz.spd) * Math.min(Math.abs(want - hz.spd), 34 * dt);
+      if (d < 2.8 && (h.state === 'idle' || h.state === 'run')) { mount(); return; }
+      if (hz.t > 600) hz.state = 'idle';
+    } else if (hz.state === 'flee') { hz.spd += (7 - hz.spd) * 0.1; if (hz.t > 70) hz.state = 'idle'; }
+    else hz.spd *= 0.9;
+    hz.x += Math.sin(hz.yaw) * hz.spd * dt; hz.z += Math.cos(hz.yaw) * hz.spd * dt; hz.ph += hz.spd * dt * 0.8;
+    game.world.resolve(hz, 0.7, false);
+  }
+  const startRide = (id, inp) => {
+    h.ratk = { id, t: 0 }; h.serial++;
+    if (id === 'rc' && inp && inp.mag > 0.2) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.5);
+    game.emit('move', { id, hero: h });
+  };
+
   h.step = (inp) => {
     const dt = 1 / 60;
     h.t++; if (h.inv > 0) h.inv--;
+    for (const k in h.buff) if (h.buff[k] > 0) h.buff[k]--;
+    h.atkMul = (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
+    const runTop = HERO.run * (h.buff.boots > 0 ? 1.25 : 1);
+    horseStep(dt);
     // buffer presses
     if (inp.attack) { h.buf = 'a'; h.bufAge = 0; } else if (inp.charge) { h.buf = 'c'; h.bufAge = 0; }
     if (inp.jump) { h.bufJ = 8; } if (inp.dodge) { h.bufD = 8; }
@@ -146,7 +199,46 @@ export function createHero(game) {
     if (S === 'musou') { game.musou.heroStep(h, inp); integrate(dt); return; }
 
     const canAct = S === 'idle' || S === 'run' || (S === 'land' && h.t > 4);
-    if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt')) { h.move = null; game.musou.start(h); return; }
+    if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt' || S === 'ride')) { if (h.riding) leaveHorse(); h.move = null; game.musou.start(h); return; }
+    if (inp.mount && !h.riding && canAct) {
+      const hz = h.horse;
+      if (Math.hypot(hz.x - h.x, hz.z - h.z) < 3) { hz.yaw = h.yaw; mount(); return integrate(dt); }
+      hz.state = 'come'; hz.t = 0; game.emit('whistle');
+    }
+
+    if (S === 'ride') {
+      let top = HERO.ride * (h.buff.boots > 0 ? 1.2 : 1), wantR = inp.mag > 0.1 ? inp.mag : 0;
+      const ra = h.ratk;
+      if (ra) {
+        const A = RIDE_ATK[ra.id]; ra.t++;
+        if (ra.id === 'rc' && ra.t > 5 && ra.t < 34) { top = 16.5; wantR = 1; h.spd = Math.max(h.spd, 14); }
+        A.hits.forEach((hd, i) => {
+          if (ra.t < hd.f[0] || ra.t > hd.f[1]) return;
+          if (hd.every && (ra.t - hd.f[0]) % hd.every !== 0) return;
+          const key = h.serial * 64 + i * 8 + ((hd.every ? Math.floor((ra.t - hd.f[0]) / hd.every) : 0) % 8);
+          game.crowd.heroHit(h, hd, key, 0, 0);
+        });
+        if (ra.id === 'rc' && ra.t === 34) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 2, z: h.z + Math.cos(h.yaw) * 2 });
+        if (ra.t >= A.cancel && h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : ra.id === 'ra' ? 'rb' : 'ra', inp); }
+        else if (ra.t >= A.dur) h.ratk = null;
+      } else if (h.buf) { const b = h.buf; h.buf = null; startRide(b === 'c' ? 'rc' : 'ra', inp); }
+      if (h.bufJ > 0) { h.bufJ = 0; leaveHorse(); startJump(inp); return integrate(dt); }
+      if (h.bufD > 0) { leaveHorse(); startDodge(inp); return integrate(dt); }
+      if (inp.mount && h.t > 20) { leaveHorse(); h.spd = 0; setState('idle'); return integrate(dt); }
+      const target = wantR * top;
+      h.spd += Math.sign(target - h.spd) * Math.min(Math.abs(target - h.spd), (target > h.spd ? HERO.rideAccel : 22) * dt);
+      if (inp.mag > 0.1) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), HERO.rideTurn * dt * (1.7 - Math.min(1, h.spd / 14) * 0.7));
+      h.x += Math.sin(h.yaw) * h.spd * dt; h.z += Math.cos(h.yaw) * h.spd * dt;
+      const ph0 = h.ph; h.ph += h.spd * dt * 0.8;
+      if (h.spd > 2 && Math.floor(h.ph / 1.57) !== Math.floor(ph0 / 1.57)) game.emit('hoof');
+      // trample whatever stands in front of the charger
+      if (h.spd > 5 && game.frame % 3 === 0) {
+        const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw);
+        game.crowd.heroHit({ x: h.x + fx * 1.2, z: h.z + fz * 1.2, y: h.y, yaw: h.yaw, atkMul: h.atkMul }, { shape: 'circle', range: 1.3, dmg: 8 + h.spd * 0.9, kb: 'blow', force: h.spd * 0.5, lift: 4.5, stop: 0 }, 700000 + ((game.frame / 12) | 0), 0, 0);
+      }
+      integrate(dt);
+      return;
+    }
 
     if (S === 'move') {
       const m = h.move; h.mt++;
@@ -216,7 +308,7 @@ export function createHero(game) {
     if (h.bufD > 0) { startDodge(inp); return integrate(dt); }
     if (h.bufJ > 0) { h.bufJ = 0; startJump(inp); return integrate(dt); }
     if (h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return integrate(dt); }
-    const target = want * HERO.run;
+    const target = want * runTop;
     h.spd += Math.sign(target - h.spd) * Math.min(Math.abs(target - h.spd), HERO.accel * dt);
     if (want > 0.1) h.yaw = turn(h.yaw, Math.atan2(mvx, mvz), HERO.turn * dt);
     h.x += Math.sin(h.yaw) * h.spd * dt; h.z += Math.cos(h.yaw) * h.spd * dt;
@@ -241,7 +333,7 @@ export function createHero(game) {
       if (h.y <= gy) { h.y = gy; h.vy = 0; if (!h.grounded) { h.grounded = true; h.airChain = 0; game.emit('land', { x: h.x, z: h.z }); } }
       else h.grounded = false;
     } else { h.y = gy; }
-    game.world.resolve(h, 0.45, true);
+    game.world.resolve(h, h.riding ? 0.75 : 0.45, true);
     game.crowd.pushHero(h);
   }
   return h;
@@ -257,10 +349,11 @@ export { turn };
 export function createHeroView(scene, h) {
   const rig = buildWarrior(PAL.zhao, { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' });
   scene.add(rig.root);
-  const cur = clonePose(BASE), tgt = clonePose(BASE);
+  const horse = buildHorse({ pal: 'white' }); scene.add(horse.root);
+  const cur = clonePose(BASE), tgt = clonePose(BASE), rideT = clonePose(RIDE);
   const tip = new THREE.Vector3(), mid = new THREE.Vector3();
   let t = 0;
-  const v = { rig, cur, tip, mid, trailOn: false };
+  const v = { rig, horse, cur, tip, mid, trailOn: false };
   v.step = () => {   // once per sim frame
     t += 1 / 60;
     let k = 0.28;
@@ -269,6 +362,10 @@ export function createHeroView(scene, h) {
       const m = h.state === 'musou' ? null : h.move;
       if (m) sampleClip(m.keys, h.mt, tgt); else h.musouPose(tgt);
       k = 0.6;
+    } else if (S === 'ride') {
+      const g = Math.min(1, h.spd / HERO.ride);
+      if (h.ratk) { sampleClip(RIDE_ATK[h.ratk.id].keys, h.ratk.t, tgt); k = 0.6; }
+      else { Object.assign(tgt, clonePose(RIDE)); tgt.tx = 0.12 + g * 0.3 + Math.sin(h.ph * 2) * 0.04 * g; tgt.hx = -0.1 - g * 0.25; tgt.cape = g; tgt.aL = [0.85 + Math.sin(h.ph * 2) * 0.08 * g, 0, 0.15]; k = 0.35; }
     } else if (S === 'run') { runPose(h.ph, h.spd, tgt); k = 0.3; }
     else if (S === 'jump') { Object.assign(tgt, clonePose(BASE), { tx: -0.1, thL: 0.9, shL: -1.4, thR: 0.2, shR: -1.0, rootY: 0, cape: 0.8, w: [-0.3, 0.1, 0.0, -0.3, Math.PI - 0.5, 0], ikL: 0, aL: [-0.8, 0, 0.6] }); k = 0.25; }
     else if (S === 'land') { Object.assign(tgt, clonePose(BASE), { rootY: -0.25, tx: 0.4, thL: 0.8, shL: -1.2, thR: -0.3, shR: -0.9 }); k = 0.4; }
@@ -281,10 +378,14 @@ export function createHeroView(scene, h) {
     approach(cur, tgt, k);
     // secondary: cape follows speed
     cur.cape = Math.max(cur.cape, Math.min(1, h.spd / 7) * 0.8);
-    v.trailOn = S === 'musou' || (S === 'move' && h.move.hits.some((hd) => h.mt >= hd.f[0] - 2 && h.mt <= hd.f[1] + 2));
+    v.trailOn = S === 'musou' || (S === 'move' && h.move.hits.some((hd) => h.mt >= hd.f[0] - 2 && h.mt <= hd.f[1] + 2))
+      || (S === 'ride' && !!h.ratk && RIDE_ATK[h.ratk.id].hits.some((hd) => h.ratk.t >= hd.f[0] - 2 && h.ratk.t <= hd.f[1] + 2));
   };
   v.update = () => {
-    rig.root.position.set(h.x, h.y, h.z);
+    const hz = h.horse, g = Math.min(1, hz.spd / HERO.ride);
+    horse.root.position.set(hz.x, h.riding ? h.y : groundY(hz.x, hz.z), hz.z); horse.root.rotation.y = hz.yaw;
+    poseHorse(horse, hz.ph, g, t);
+    rig.root.position.set(h.x, h.y + (h.riding ? horse.j.body.position.y - 0.68 : 0), h.z);
     rig.root.rotation.y = h.yaw;
     applyPose(rig, cur);
     rig.root.updateMatrixWorld(true);

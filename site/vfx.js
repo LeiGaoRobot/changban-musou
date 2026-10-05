@@ -79,6 +79,7 @@ export function createVfx(scene, game, camera) {
   const dEdge = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), dangerMat); dEdge.rotation.x = -Math.PI / 2;
   const dRect = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat); dRect.rotation.x = -Math.PI / 2;
   const dangers = []; for (let k = 0; k < 4; k++) { const g = new THREE.Group(); const a = dCircle.clone(), b = dEdge.clone(), r = dRect.clone(); g.add(a, b, r); g.visible = false; scene.add(g); dangers.push({ g, a, b, r }); }
+  const lanes = []; for (let k = 0; k < 6; k++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), dangerMat.clone()); m.rotation.order = 'YXZ'; m.visible = false; scene.add(m); lanes.push(m); }
   // pickup meshes (meat bun / wine jar)
   V.items = [];
 
@@ -116,6 +117,15 @@ export function createVfx(scene, game, camera) {
   game.on('officerStrike', (e) => { if (e.heavy && e.shape === 'circle') { ring(e.x, 0.1, e.z, 0.4, e.r, 0.4, 0xff7050); V.shake = Math.max(V.shake, 0.5); } });
   game.on('land', (e) => { for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; dust.spawn({ x: e.x, y: 0.15, z: e.z, vx: Math.cos(a) * 2, vy: 0.3, vz: Math.sin(a) * 2, drag: 3, s: 0.6, grow: 1.5, life: 0.5, a0: 0.3, r: 0.65, gg: 0.55, b: 0.45 }); } });
   game.on('dodge', () => { const h = game.hero; for (let k = 0; k < 5; k++) dust.spawn({ x: h.x, y: 0.15, z: h.z, vx: (Math.random() - 0.5) * 2, vy: 0.4, vz: (Math.random() - 0.5) * 2, drag: 3, s: 0.6, grow: 1.4, life: 0.5, a0: 0.3, r: 0.65, gg: 0.55, b: 0.45 }); });
+  game.on('crate', (e) => { for (let k = 0; k < 16; k++) chunk(e.x + (Math.random() - 0.5) * 0.6, 0.2 + Math.random() * 0.6, e.z + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 5, 2 + Math.random() * 4, (Math.random() - 0.5) * 5, 0.08 + Math.random() * 0.12, [0x94704a, 0x7a5636, 0x56391f][k % 3], 1.3);
+    for (let k = 0; k < 4; k++) dust.spawn({ x: e.x, y: 0.3, z: e.z, vx: (Math.random() - 0.5) * 2, vy: 0.6, vz: (Math.random() - 0.5) * 2, drag: 2, s: 0.8, grow: 2, life: 0.7, a0: 0.3, r: 0.6, gg: 0.5, b: 0.4 }); });
+  game.on('cavKo', (e) => { for (let k = 0; k < 14; k++) chunk(e.x, 1.6 + Math.random() * 0.8, e.z, e.ux * 4 + (Math.random() - 0.5) * 5, 2 + Math.random() * 5, e.uz * 4 + (Math.random() - 0.5) * 5, 0.08 + Math.random() * 0.1, [0x23262e, 0x444a56, 0xc9a040, 0x8a1e18][k % 4]); V.shake = Math.max(V.shake, 0.4); });
+  game.on('cavalry', () => { V.shake = Math.max(V.shake, 0.3); });
+  game.on('roar', (e) => {
+    ring(e.x, 0.3, e.z, 1, 60, 1.2, 0xffe0a0, 1); ring(e.x, 0.5, e.z, 0.5, 34, 0.8, 0xffffff, 0.9); ring(e.x, 1.2, e.z, 0.5, 20, 0.5, 0xffb060, 0.8);
+    V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
+    for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
+  });
   game.on('pickup', (e) => { for (let k = 0; k < 20; k++) { const a = Math.random() * 6.28; glow.spawn({ x: e.x, y: 0.5 + Math.random(), z: e.z, vx: Math.cos(a) * 1.5, vy: 2 + Math.random() * 2, vz: Math.sin(a) * 1.5, drag: 1.5, s: 0.18, life: 0.8, r: e.col[0], gg: e.col[1], b: e.col[2] }); } });
 
   const tipP = new THREE.Vector3(), midP = new THREE.Vector3();
@@ -156,6 +166,16 @@ export function createVfx(scene, game, camera) {
       r.life -= dt; const u = 1 - r.life / r.max, e = 1 - (1 - u) ** 3;
       r.m.position.set(r.x, r.y, r.z); r.m.scale.setScalar(r.r0 + (r.r1 - r.r0) * e); r.m.material.opacity = r.op * (1 - u);
     }
+    // cavalry lanes while the charge is telegraphed, and until the riders have passed
+    const cv = game.cav;
+    lanes.forEach((m, k) => {
+      const ln = cv.lanes[k]; if (!ln || !cv.riders[k].on) { m.visible = false; return; }
+      m.visible = true; m.position.set(ln.x + Math.sin(ln.yaw) * ln.len / 2, 0.07, ln.z + Math.cos(ln.yaw) * ln.len / 2); m.rotation.set(-Math.PI / 2, ln.yaw, 0);
+      m.scale.set(1.9, ln.len, 1); m.material.opacity = cv.tele > 0 ? 0.1 + 0.07 * Math.sin(game.frame * 0.4) : 0.06;
+    });
+    // hoof dust
+    if (h.riding && h.spd > 6 && Math.random() < 0.7) dust.spawn({ x: h.x - Math.sin(h.yaw) * 1.1 + (Math.random() - 0.5) * 0.6, y: 0.15, z: h.z - Math.cos(h.yaw) * 1.1 + (Math.random() - 0.5) * 0.6, vx: (Math.random() - 0.5), vy: 0.6, vz: (Math.random() - 0.5), drag: 2, s: 0.7, grow: 2.2, life: 0.7, a0: 0.32, r: 0.66, gg: 0.56, b: 0.46 });
+    for (const r of cv.riders) if (r.on && r.spd > 6 && Math.random() < 0.6) dust.spawn({ x: r.x - Math.sin(r.yaw) * 1.1, y: 0.15, z: r.z - Math.cos(r.yaw) * 1.1, vy: 0.6, drag: 2, s: 0.8, grow: 2.4, life: 0.8, a0: 0.34, r: 0.6, gg: 0.5, b: 0.42 });
     // danger decals
     let di = 0;
     for (const o of game.crowd.officers) {

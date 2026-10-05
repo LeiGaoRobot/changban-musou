@@ -62,6 +62,17 @@ export function createAudio(game) {
     milestone() { const t = now(); drum(t, 1.1); tone(t, 1.2, 'sine', 220, 218, 0.2, sfxBus, 0.01, 0.6); },
     victory() { const t = now(); S.gong(1.2); [294, 392, 440, 587, 523, 587].forEach((f, k) => erhu(t + 0.4 + k * 0.28, 0.5, f, 0.2)); },
   };
+  S.whinny = () => { const t = now(); for (let k = 0; k < 5; k++) tone(t + k * 0.07, 0.12, 'sawtooth', 900 - k * 90 + Math.random() * 60, 620 - k * 60, 0.07, sfxBus, 0.01, 0.3); noise(t, 0.4, 'bandpass', 1800, 900, 3, 0.08); };
+  S.whistle = () => { const t = now(); tone(t, 0.18, 'sine', 1700, 2500, 0.1, sfxBus, 0.01, 0.4); tone(t + 0.2, 0.3, 'sine', 2500, 1900, 0.1, sfxBus, 0.01, 0.4); };
+  S.hoof = () => { const t = now(); tone(t, 0.05, 'sine', 150 + Math.random() * 40, 70, 0.16); noise(t, 0.04, 'lowpass', 1400, 400, 1, 0.1); };
+  S.horn = () => { const t = now(); for (const [d, f, len] of [[0, 147, 0.7], [0.75, 196, 1.3]]) { tone(t + d, len, 'sawtooth', f, f, 0.16, sfxBus, 0.08, 0.6); tone(t + d, len, 'sawtooth', f * 1.005, f * 1.005, 0.12, sfxBus, 0.08, 0.4, 7); tone(t + d, len, 'square', f / 2, f / 2, 0.08, sfxBus, 0.08); } };
+  S.crack = () => { const t = now(); noise(t, 0.18, 'bandpass', 1800, 500, 1.2, 0.5); tone(t, 0.1, 'triangle', 300, 110, 0.25); };
+  S.buff = () => { const t = now(); [392, 523, 659, 784].forEach((f, k) => tone(t + k * 0.05, 0.3, 'square', f, f, 0.06, sfxBus, 0.004, 0.4)); };
+  S.bellow = () => { const t = now();
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(95, t); o.frequency.linearRampToValueAtTime(150, t + 0.35); o.frequency.linearRampToValueAtTime(80, t + 2.2);
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.4; f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1100, t + 0.4); f.frequency.linearRampToValueAtTime(420, t + 2.2);
+    const g = ctx.createGain(); env(g, t, 0.1, 0.8, 2.2); o.connect(f); f.connect(g); g.connect(sfxBus); const sg = ctx.createGain(); sg.gain.value = 0.7; g.connect(sg); sg.connect(verb); o.start(t); o.stop(t + 2.5);
+    noise(t, 2.0, 'bandpass', 900, 300, 1.2, 0.5, sfxBus, 0.6); S.slam(true); };
   A.S = S;
   function drum(t, v = 1, pitch = 1) { tone(t, 0.5, 'sine', 120 * pitch, 48 * pitch, 0.6 * v, musBus, 0.003); noise(t, 0.12, 'lowpass', 900, 200, 0.8, 0.25 * v, musBus); }
   function rim(t, v = 1) { noise(t, 0.05, 'highpass', 3000, 2500, 1, 0.12 * v, musBus); tone(t, 0.05, 'triangle', 900, 700, 0.05 * v, musBus); }
@@ -111,6 +122,8 @@ export function createAudio(game) {
   on('officerTell', S.tell);
   on('arrow', () => { if (Math.random() < 0.5) S.arrow(); });
   on('pickup', S.pickup);
+  on('mount', S.whinny); on('whistle', S.whistle); on('hoof', S.hoof); on('unhorse', S.whinny);
+  on('cavalry', S.horn); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
   on('milestone', S.milestone);
   on('victory', S.victory);
   on('officer', () => S.gong(0.6));

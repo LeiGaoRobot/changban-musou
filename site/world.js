@@ -154,14 +154,14 @@ export function createWorld(scene) {
   place(P.arrows, spent, false);
   const rocks = [], crates = [], carts = [], racks = [], braz = [], tents = [];
   for (let i = 0; i < 26; i++) { const x = (rnd() - 0.5) * 120, z = -46 + rnd() * 100; if (!clear(x, z, 12)) continue; const s = 0.7 + rnd() * 1.1; rocks.push({ x, z, ry: rnd() * 6, s }); W.colliders.push({ x, z, r: 0.6 * s + 0.1 }); }
-  for (let i = 0; i < 16; i++) { const x = (rnd() - 0.5) * 100, z = -40 + rnd() * 90; if (!clear(x, z, 10)) continue; crates.push({ x, z, ry: rnd() * 6, s: 0.9 + rnd() * 0.3 }); W.colliders.push({ x, z, r: 0.55 }); }
+  for (let i = 0; i < 30; i++) { const x = (rnd() - 0.5) * 96, z = -42 + rnd() * 92; if (!clear(x, z, 9)) continue; const col = { x, z, r: 0.55 }; crates.push({ x, z, ry: rnd() * 6, s: 0.9 + rnd() * 0.3, col, alive: true }); W.colliders.push(col); }
   for (const [x, z, ry] of [[-22, 14, 0.7], [30, 22, 2.2], [-8, -30, 1.1], [44, -16, 0.3], [-44, 24, 2.8]]) { carts.push({ x, z, ry }); W.colliders.push({ x, z, r: 1.3 }); }
   for (const [x, z, ry] of [[-6, 52, 0], [8, 52, 0], [-34, 50, 0.3], [36, 50, -0.3]]) racks.push({ x, z, ry });
   const brazierPts = [[-8, 55], [8, 55], [-28, 40], [26, 42], [-44, 10], [44, 14], [-18, -20], [20, -18], [-5, -46], [5, -46]];
   for (const [x, z] of brazierPts) { braz.push({ x, z }); W.colliders.push({ x, z, r: 0.4 }); }
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; if (Math.sin(a) < -0.8) continue; tents.push({ x: Math.cos(a) * 92, z: 20 + Math.sin(a) * 78, ry: -a + Math.PI / 2, s: 1.5 + rnd() * 0.5 }); }
   for (let x = -70; x <= 70; x += 14) tents.push({ x, z: 76 + rnd() * 6, ry: rnd() * 0.4, s: 1.6 });
-  place(P.rock, rocks); place(P.crate, crates); place(P.cart, carts); place(P.rack, racks); place(P.brazier, braz); place(P.tent, tents, false);
+  place(P.rock, rocks); const crateIM = place(P.crate, crates); place(P.cart, carts); place(P.rack, racks); place(P.brazier, braz); place(P.tent, tents, false);
 
   // ---------------- fire sprites + smoke + motes
   const glowTex = radialTexture();
@@ -202,16 +202,22 @@ export function createWorld(scene) {
   };
 
   // push a circle (pos {x,z}) out of world colliders and arena bounds; returns true if clamped
+  // crates can be smashed for pickups
+  const crateM0 = crates.map((_, i) => { const m = new THREE.Matrix4(); crateIM.getMatrixAt(i, m); return m; }), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  W.crates = crates;
+  W.breakCrate = (i) => { const k = crates[i]; if (!k.alive) return; k.alive = false; crateIM.setMatrixAt(i, ZERO); crateIM.instanceMatrix.needsUpdate = true; const ci = W.colliders.indexOf(k.col); if (ci >= 0) W.colliders.splice(ci, 1); };
+  W.resetCrates = () => { crates.forEach((k, i) => { if (!k.alive) { k.alive = true; W.colliders.push(k.col); } crateIM.setMatrixAt(i, crateM0[i]); }); crateIM.instanceMatrix.needsUpdate = true; };
   W.resolve = (o, r, hero) => {
     for (const c of W.colliders) {
       const dx = o.x - c.x, dz = o.z - c.z, d2 = dx * dx + dz * dz, rr = c.r + r;
       if (d2 < rr * rr && d2 > 1e-6) { const d = Math.sqrt(d2), k = (rr - d) / d; o.x += dx * k; o.z += dz * k; }
     }
-    const onBridge = Math.abs(o.x - BRIDGE.x) < BRIDGE.w;
+    // the bridge mouth is forgiving: anyone within 2.5 m of it at the bank is funnelled onto the deck
+    const bx = o.x - BRIDGE.x, onBridge = Math.abs(bx) < BRIDGE.w + 2.5;
     const zMin = hero && onBridge ? RIVER.z0 - 6 : ARENA.z0;
     o.x = Math.max(ARENA.x0, Math.min(ARENA.x1, o.x));
     o.z = Math.max(zMin, Math.min(ARENA.z1, o.z));
-    if (o.z < ARENA.z0) o.x = Math.max(BRIDGE.x - BRIDGE.w, Math.min(BRIDGE.x + BRIDGE.w, o.x));
+    if (hero && onBridge && o.z < ARENA.z0 + 1.5) { const tx = BRIDGE.x + Math.max(-BRIDGE.w + 0.3, Math.min(BRIDGE.w - 0.3, bx)); o.x += (tx - o.x) * (o.z < ARENA.z0 ? 0.5 : 0.15); }
   };
   return W;
 }
