@@ -131,6 +131,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
 .menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
 .res-grid + .go + .foot .me, #resNote .me { color: var(--gold); } .h-time.warn, #tm.warn { color: #ff7a5a; }
+#tut { position: absolute; left: 50%; bottom: 17%; transform: translate(-50%, 12px); max-width: min(680px, 86vw); padding: 10px 18px 10px 20px; background: rgba(24,14,8,.86); border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 4px; font-size: 17px; color: #f3e8d2; line-height: 1.7; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; display: flex; gap: 16px; align-items: center; z-index: 6; }
+#tut.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; } #tut kbd { font-family: var(--latin); font-size: 13px; background: #f3ead8; color: #2a1a10; border-radius: 3px; padding: 1px 7px; margin: 0 2px; font-weight: 800; box-shadow: 0 2px 0 #8a7a60; }
+#tut small { display: flex; gap: 10px; align-items: center; color: var(--dim); font-size: 12px; white-space: nowrap; } #tut i { font-style: normal; } #tut u { text-decoration: none; cursor: pointer; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; } #tut u:hover { color: var(--gold); border-color: var(--gold); }
+@media (pointer: coarse) { #tut { left: 162px; bottom: 54px; transform: translateY(10px); max-width: min(290px, 40vw); font-size: 13px; line-height: 1.5; padding: 6px 10px; gap: 8px; } #tut.on { transform: none; } }
+.modal .box.wide { width: min(900px, 96vw); } img.card { width: 100%; display: block; border-radius: 4px; border: 1px solid var(--line); } a.qbtn { text-decoration: none; display: inline-block; }
+.lang-en .menu h1 b { font-size: clamp(40px, 7vh, 68px) !important; letter-spacing: 2px; line-height: 1.1; } .lang-en .h-title b { font-size: 30px; letter-spacing: 1px; } .lang-en .chars button b { letter-spacing: .02em; font-size: 18px; } .lang-en .chars button span, .lang-en .tag2, .lang-en .diffs { letter-spacing: .04em; }
+.lang-en .tb { font-size: 15px; letter-spacing: 0; font-family: var(--latin); } .lang-en .tb.big { font-size: 20px; } .lang-en .tb.md, .lang-en .tb.mu { font-size: 12px; } .lang-en .h-banner .main { font-size: clamp(20px, 3.4vw, 34px); letter-spacing: .06em; } .lang-en .h-obj .lbl { letter-spacing: .3em; }
+.lang-en .diffs button { font-size: 14px; padding: 6px 9px; white-space: nowrap; } .lang-en .diffs { gap: 6px; flex-wrap: nowrap; }
+.lang-en .ctl dt { font-size: 14px; font-family: var(--latin); letter-spacing: .06em; } .lang-en .go { letter-spacing: .08em; }
 .gorow { display: flex; align-items: flex-end; gap: 16px; } .metacol { display: flex; flex-direction: column; gap: 6px; padding-bottom: 2px; } .metacol b { color: var(--gold); }
 .modal { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(10,6,4,.74); pointer-events: auto; }
 .modal .box { width: min(640px, 94vw); max-height: 92vh; overflow-y: auto; background: #20140e; border: 1px solid var(--line); border-radius: 6px; padding: 22px 26px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
@@ -162,9 +171,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn2 { margin-top: 12px; align-self: flex-start; background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 4px; padding: 9px 22px; font-size: 16px; letter-spacing: .2em; }
 .btn2:hover { background: rgba(255,255,255,.14); }
 .foot { margin-top: auto; padding-top: 2vh; font-size: 12px; color: var(--dim); line-height: 1.8; }
-.opts { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 14px; color: var(--dim); align-items: center; }
+.opts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-size: 14px; color: var(--dim); align-items: center; }
 .opts label { display: flex; align-items: center; gap: 8px; }
-.opts input[type=range] { width: 110px; accent-color: #d49a36; }
+.opts input[type=range] { width: 76px; accent-color: #d49a36; }
 .res-rank { font-family: var(--serif); font-weight: 900; font-size: 120px; line-height: 1; color: var(--gold); text-shadow: 0 5px 0 #5a3a10, 0 0 30px rgba(255,190,80,.4); margin: 2vh 0 0; }
 .res-grid { display: grid; grid-template-columns: auto auto; gap: 8px 30px; margin-top: 2vh; font-size: 17px; border-left: 3px solid var(--red); padding-left: 16px; justify-content: start; }
 .res-grid dt { color: var(--gold); font-family: var(--serif); font-weight: 900; }
@@ -189,6 +198,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
 <div id="toast"></div>
+<div id="tut"><span id="tutTxt"></span><small><i id="tutN"></i><u id="tutSkip">✕</u></small></div>
   <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
@@ -248,9 +258,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <div class="gorow"><button class="go" id="go">出陣 <small>START</small></button><div class="metacol"><button class="qbtn" id="upBtn">強化</button><button class="qbtn" id="achBtn">成就</button></div></div>
     <div class="opts">
-      <label>音量 <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
-      <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
+      <label><span class="lb-vol">音量</span> <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
+      <label><span class="lb-mus">音樂</span> <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <button class="qbtn" id="qbtn">畫質 自動</button>
+      <button class="qbtn" id="langBtn">English</button>
     </div>
     <div class="foot"><span id="tFoot"></span><br><span id="tFoot2">Enter 出陣 · Esc 暫停與招式表 · 支援手柄與觸屏。木箱有肉包與強化；虎豹騎的紅線要讓開。</span></div>
   </div>
@@ -265,9 +276,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <button class="go" id="resume">再戰 <small>RESUME</small></button>
     <button class="btn2" id="restart">重新出陣</button>
     <div class="opts">
-      <label>音量 <input type="range" id="vol2" min="0" max="1" step="0.05" value="0.8"></label>
-      <label>音樂 <input type="range" id="mus2" min="0" max="1" step="0.05" value="0.55"></label>
+      <label><span class="lb-vol">音量</span> <input type="range" id="vol2" min="0" max="1" step="0.05" value="0.8"></label>
+      <label><span class="lb-mus">音樂</span> <input type="range" id="mus2" min="0" max="1" step="0.05" value="0.55"></label>
       <button class="qbtn" id="qbtn2">畫質 自動</button>
+      <button class="qbtn" id="langBtn2">English</button>
+      <button class="qbtn" id="tutBtn">重看教學</button>
     </div>
   </div>
 </div>
@@ -278,11 +291,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="sub" id="resSub">VICTORY</div>
     <div class="res-rank" id="resRank">S</div>
     <dl class="res-grid" id="resGrid"></dl>
-    <button class="go" id="again">再戰 <small>AGAIN</small></button>
+    <div class="gorow"><button class="go" id="again">再戰 <small>AGAIN</small></button><div class="metacol"><button class="qbtn" id="cardBtn">戰績圖</button></div></div>
     <div class="foot" id="resNote"></div>
   </div>
 </div>
-<div class="modal hidden" id="modal"><div class="box">
+<div class="modal hidden" id="modal"><div class="box" id="box">
   <h2 id="mTitle"></h2><div class="msub" id="mSub"></div><div id="mBody"></div>
   <button class="btn2" id="mClose">返回</button>
 </div></div>
@@ -3492,6 +3505,14 @@ return { createAudio };
 const $ = (id) => document.getElementById(id);
 const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('vm.' + k, JSON.stringify(v)); } catch {} } };
 
+// ---------------------------------------------------------------- language
+let lang = LS.get('lang', null); if (lang !== 'zh' && lang !== 'en') lang = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+const T = (zh, en) => (lang === 'en' ? en : zh);
+const L = (o, k = 'zh') => (lang !== 'en' ? o[k] : (k === 'zh' ? o.en : o[k + 'En']) ?? o[k]);   // {zh, en} / {tip, tipEn} / {d, dEn} …
+const cap = (s) => s.toLowerCase().replace(/(^|[\s-])\w/g, (m) => m.toUpperCase());
+const NAME_EN = { 趙雲: 'Zhao Yun', 張飛: 'Zhang Fei', 夏侯恩: 'Xiahou En', 晏明: 'Yan Ming', 淳于導: 'Chunyu Dao', 張郃: 'Zhang He', 文聘: 'Wen Pin', 許褚: 'Xu Chu', 曹純: 'Cao Chun', 簡雍: 'Jian Yong', 糜夫人: 'Lady Mi' };
+const plain = (h) => h.replace(/<[^>]+>/g, '');
+
 // ---------------------------------------------------------------- renderer / post
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
@@ -3534,7 +3555,7 @@ function applyQuality() {
   sun.castShadow = q.shadow > 0;
   if (q.shadow && sun.shadow.mapSize.x !== q.shadow) { sun.shadow.mapSize.set(q.shadow, q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   onResize();
-  for (const id of ['qbtn', 'qbtn2']) $(id).textContent = `畫質 ${qMode === 'auto' ? '自動 · ' + q.zh : q.zh}`;
+  for (const id of ['qbtn', 'qbtn2']) $(id).textContent = `${T('畫質', 'GFX')} ${qMode === 'auto' ? T('自動', 'Auto') + ' · ' + L(q) : L(q)}`;
 }
 const Q_ORDER = ['auto', 'high', 'mid', 'low', 'min'];
 function cycleQuality() { qMode = Q_ORDER[(Q_ORDER.indexOf(qMode) + 1) % Q_ORDER.length]; LS.set('q', qMode); applyQuality(); }
@@ -3612,7 +3633,7 @@ function dropItem(type, x, z) {
   if (type === 'bigbun') m.scale.setScalar(1.8);
   scene.add(m); items.push({ type, x, z, m, t: 0 });
 }
-const BUFFS = { axe: { zh: '攻', tip: '攻擊力 2 倍', col: '#ff8a5a', rgb: [1, 0.5, 0.3] }, armor: { zh: '防', tip: '防禦力 2 倍', col: '#ffd060', rgb: [1, 0.8, 0.3] }, boots: { zh: '速', tip: '移動速度上升', col: '#7ac8ff', rgb: [0.5, 0.8, 1] } };
+const BUFFS = { axe: { zh: '攻', en: 'ATK', tipEn: 'Attack ×2', tip: '攻擊力 2 倍', col: '#ff8a5a', rgb: [1, 0.5, 0.3] }, armor: { zh: '防', en: 'DEF', tipEn: 'Damage halved', tip: '防禦力 2 倍', col: '#ffd060', rgb: [1, 0.8, 0.3] }, boots: { zh: '速', en: 'SPD', tipEn: 'Speed up', tip: '移動速度上升', col: '#7ac8ff', rgb: [0.5, 0.8, 1] } };
 function crateDrop(x, z) { const r = Math.random(); dropItem(r < 0.34 ? 'bun' : r < 0.5 ? 'wine' : r < 0.67 ? 'axe' : r < 0.84 ? 'armor' : 'boots', x, z); }
 
 // ---------------------------------------------------------------- input
@@ -3775,7 +3796,7 @@ function titleCam(t) {
 // ---------------------------------------------------------------- director
 const DIR = { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [] };
 function say(who, zh, en, dur = 200) { DIR.dlgQ.push({ who, zh, en, dur }); }
-function banner(main, sub, blue) { const b = $('banner'); $('bannerMain').innerHTML = main; $('bannerSub').textContent = sub || ''; b.classList.toggle('blue', !!blue); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function banner(main, sub, blue) { const b = $('banner'); if (lang === 'en' && sub) { $('bannerMain').textContent = sub; $('bannerSub').textContent = plain(main); } else { $('bannerMain').innerHTML = main; $('bannerSub').textContent = sub || ''; } b.classList.toggle('blue', !!blue); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
 function spawnOfficerNear(k, dist = 16) {
   const h = game.hero;
   let a = Math.atan2(0 - h.x, 20 - h.z) + (Math.random() - 0.5) * 1.2;
@@ -3793,6 +3814,7 @@ function directorStep() {
   const c = game.crowd, h = game.hero, ko = c.ko;
   const offs = c.officers;
   if (auto.on) DIR.autoRun = true;
+  tutStep();
   if (h.sword) ach('sword');
   if (game.stage === 'bridge') bridgeDirector();
   else if (game.stage === 'endless') endlessDirector();
@@ -3858,9 +3880,9 @@ function directorStep() {
     const it = items[k]; it.t++;
     it.m.position.set(it.x, 0.25 + Math.sin(it.t * 0.08) * 0.08, it.z); it.m.rotation.y += 0.03;
     if (Math.hypot(h.x - it.x, h.z - it.z) < 1.2 && !h.dead) {
-      if (it.type === 'wine') { h.musou = HERO.musouMax; game.emit('pickup', { x: it.x, z: it.z, col: [1, 0.8, 0.3] }); floatText('無雙全滿', '#ffd060'); }
-      else if (BUFFS[it.type]) { const bf = BUFFS[it.type]; h.buff[it.type] = HERO.buffTime; game.emit('pickup', { x: it.x, z: it.z, col: bf.rgb }); floatText(bf.tip, bf.col); }
-      else { const v = it.type === 'bigbun' ? h.hpMax * Math.min(1, game.diff.heal) : h.hpMax * 0.25 * game.diff.heal; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? '體力全滿' : '體力回復', '#8af0b0'); }
+      if (it.type === 'wine') { h.musou = HERO.musouMax; game.emit('pickup', { x: it.x, z: it.z, col: [1, 0.8, 0.3] }); floatText(T('無雙全滿', 'Musou full'), '#ffd060'); }
+      else if (BUFFS[it.type]) { const bf = BUFFS[it.type]; h.buff[it.type] = HERO.buffTime; game.emit('pickup', { x: it.x, z: it.z, col: bf.rgb }); floatText(L(bf, 'tip'), bf.col); }
+      else { const v = it.type === 'bigbun' ? h.hpMax * Math.min(1, game.diff.heal) : h.hpMax * 0.25 * game.diff.heal; h.hp = Math.min(h.hpMax, h.hp + v); game.emit('pickup', { x: it.x, z: it.z, col: [0.5, 1, 0.6] }); floatText(it.type === 'bigbun' ? T('體力全滿', 'Health full') : T('體力回復', 'Health restored'), '#8af0b0'); }
       scene.remove(it.m); items.splice(k, 1);
     } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
   }
@@ -3963,7 +3985,7 @@ function bridgeDirector() {
 }
 game.on('cross', (e) => {
   if (DIR.over || DIR.endAt) return;
-  DIR.crossed += e.n; floatText(`渡橋 ${DIR.crossed} / ${CROSS_MAX}`, '#ff7a5a');
+  DIR.crossed += e.n; floatText(`${T('渡橋', 'Crossed')} ${DIR.crossed} / ${CROSS_MAX}`, '#ff7a5a');
   if (DIR.crossed >= CROSS_MAX) { banner('長坂橋 <em>失守</em>', 'THE BRIDGE IS LOST'); finish(false); }
 });
 
@@ -3995,11 +4017,11 @@ game.on('cavalry', () => {
 });
 game.on('parry', (e) => {
   const h = game.hero, f = e.from;
-  floatText('彈反！', '#fff2b0');
+  floatText(T('彈反！', 'PARRY!'), '#fff2b0');
   if (f && f.cav) game.cav.unseat(f.cav, Math.sin(h.yaw), Math.cos(h.yaw));
   else if (f && f.i != null) game.crowd.stagger(f.i, Math.sin(h.yaw), Math.cos(h.yaw));
 });
-game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
+game.on('cavKo', () => { floatText(T('騎兵 擊落', 'Rider down'), '#ffb070'); comboPop = true; });
 game.on('mount', () => { if (!DIR.rode && charKey === 'zhao') { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
 game.on('musouEnd', () => { if (charKey === 'fei') say('張飛', '燕人張翼德在此！', 'Zhang Yide of Yan stands here!', 150); else say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150); });
 game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
@@ -4008,7 +4030,7 @@ const counts = () => !DIR.autoRun || auto.count;
 function ach(k) {
   if (!counts()) return;
   const a = meta.unlock(k); if (!a) return;
-  toast(`成就 · ${a.zh}`, `${a.d} · 武勳 +${a.merit}`); game.emit('achieve', a); refreshMeta();
+  toast(`${T('成就', 'Achievement')} · ${L(a)}`, `${L(a, 'd')} · ${T('武勳', 'Merit')} +${a.merit}`); game.emit('achieve', a); refreshMeta();
 }
 game.on('officer', (e) => { DIR.offDmg[e.o.def.key] = DIR.dmg; });
 game.on('ko', (e) => {
@@ -4062,7 +4084,7 @@ function drawMap() {
   mctx.fillStyle = 'rgba(80,120,150,0.8)'; mctx.fillRect(0, mz(RIVER.z1), 188, mz(RIVER.z0) - mz(RIVER.z1));
   mctx.fillStyle = '#8a6a44'; mctx.fillRect(mx(1.8), mz(RIVER.z1 + 1), mx(-1.8) - mx(1.8), mz(RIVER.z0 - 1) - mz(RIVER.z1 + 1));
   mctx.font = '900 11px "Noto Serif TC", serif'; mctx.fillStyle = '#e8d8b8'; mctx.textAlign = 'center';
-  mctx.fillText('城門', mx(0), mz(GATE.z) + 14); mctx.fillText('長坂橋', mx(0), mz(RIVER.z0) + 14);
+  mctx.fillText(T('城門', 'Gate'), mx(0), mz(GATE.z) + 14); mctx.fillText(T('長坂橋', 'Bridge'), mx(0), mz(RIVER.z0) + 14);
   for (let i = 0; i < c.N; i++) {
     const s = c.st[i]; if (s === ST.OFF || s === ST.DEAD || c.kod[i] || c.kind[i] === KIND.OFFICER) continue;
     const cap = c.kind[i] === KIND.CAPTAIN;
@@ -4084,11 +4106,13 @@ function drawMap() {
   mctx.fillStyle = '#5fe8d8'; mctx.strokeStyle = '#0a2a28'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.moveTo(0, 7); mctx.lineTo(-5, -5); mctx.lineTo(0, -2); mctx.lineTo(5, -5); mctx.closePath(); mctx.stroke(); mctx.fill(); mctx.restore();
 }
 const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！', '張飛 據水斷橋'];
+const OBJ_EN = ['Cut through the Wei army', 'Defeat Xiahou En', 'The Qinggang sword is yours · press on', 'Defeat Yan Ming and Chunyu Dao', 'A famed general approaches…', 'Defeat Zhang He', 'Break through to Changban Bridge!', 'Zhang Fei holds the bridge'];
+const OBJ_X_EN = { 10: 'Find Jian Yong · ask after the ladies', 11: 'Reach the dry well · Lady Mi is in danger', 12: 'Take A Dou' };
 const OBJ_X = { 10: '尋找簡雍 · 打聽主母下落', 11: '趕往枯井 · 糜夫人危在旦夕', 12: '接過阿斗' };
 function objText() {
-  if (game.stage === 'bridge') return DIR.endAt ? '曹軍退卻' : DIR.wave ? `死守長坂橋 · 第 ${DIR.wave} / ${WAVES.length} 波` : '魏軍將至 · 死守長坂橋';
-  if (game.stage === 'endless') return `千人斬 · 第 ${DIR.lv} 陣 · 距下一陣 ${100 - game.crowd.ko % 100} 人`;
-  return OBJ_X[DIR.phase] || OBJ[Math.min(DIR.phase, OBJ.length - 1)];
+  if (game.stage === 'bridge') return DIR.endAt ? T('曹軍退卻', 'The Wei army falls back') : DIR.wave ? T(`死守長坂橋 · 第 ${DIR.wave} / ${WAVES.length} 波`, `Hold the bridge · Wave ${DIR.wave} / ${WAVES.length}`) : T('魏軍將至 · 死守長坂橋', 'The Wei army is coming · hold the bridge');
+  if (game.stage === 'endless') return T(`千人斬 · 第 ${DIR.lv} 陣 · 距下一陣 ${100 - game.crowd.ko % 100} 人`, `Thousand Slain · Rank ${DIR.lv} · ${100 - game.crowd.ko % 100} to the next`);
+  return (lang === 'en' ? OBJ_X_EN : OBJ_X)[DIR.phase] || (lang === 'en' ? OBJ_EN : OBJ)[Math.min(DIR.phase, OBJ.length - 1)];
 }
 let buffKey = '';
 const _v = new THREE.Vector3();
@@ -4102,15 +4126,15 @@ function hudUpdate() {
   hudEls.hpBox.classList.toggle('low', hp < 0.25);
   hudEls.mu.style.width = (h.musou / HERO.musouMax * 100).toFixed(1) + '%';
   const full = h.musou >= HERO.musouMax;
-  hudEls.muBox.classList.toggle('full', full); hudEls.muLbl.textContent = full && hp < 0.25 ? '真・無雙' : '無雙'; hudEls.muLbl.classList.toggle('on', full);
-  hudEls.sword.textContent = (h.sword ? '青釭劍' : '') + (h.riding ? ' · 騎乘' : '');
+  hudEls.muBox.classList.toggle('full', full); hudEls.muLbl.textContent = full && hp < 0.25 ? T('真・無雙', 'TRUE MUSOU') : T('無雙', 'MUSOU'); hudEls.muLbl.classList.toggle('on', full);
+  hudEls.sword.textContent = (h.sword ? T('青釭劍', 'Qinggang') : '') + (h.riding ? T(' · 騎乘', ' · Mounted') : '');
   let bk = ''; for (const k in BUFFS) if (h.buff[k] > 0) bk += k + Math.ceil(h.buff[k] / 60) + ' ';
-  if (bk !== buffKey) { buffKey = bk; hudEls.buffs.innerHTML = Object.keys(BUFFS).filter((k) => h.buff[k] > 0).map((k) => `<span style="--c:${BUFFS[k].col}"><b>${BUFFS[k].zh}</b>${Math.ceil(h.buff[k] / 60)}</span>`).join(''); }
+  if (bk !== buffKey) { buffKey = bk; hudEls.buffs.innerHTML = Object.keys(BUFFS).filter((k) => h.buff[k] > 0).map((k) => `<span style="--c:${BUFFS[k].col}"><b>${L(BUFFS[k])}</b>${Math.ceil(h.buff[k] / 60)}</span>`).join(''); }
   if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
   hudEls.combo.classList.toggle('on', DIR.combo >= 2);
   if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
   hudEls.obj.textContent = objText();
-  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` + (game.stage === 'bridge' ? ` · 渡橋 ${DIR.crossed} / ${CROSS_MAX}` : DIR.phase === 11 ? ` · 糜夫人 ${Math.floor(DIR.miT / 3600)}:${String(Math.floor(DIR.miT / 60) % 60).padStart(2, '0')}` : '');
+  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` + (game.stage === 'bridge' ? ` · ${T('渡橋', 'Crossed')} ${DIR.crossed} / ${CROSS_MAX}` : DIR.phase === 11 ? ` · ${T('糜夫人', 'Lady Mi')} ${Math.floor(DIR.miT / 3600)}:${String(Math.floor(DIR.miT / 60) % 60).padStart(2, '0')}` : '');
   hudEls.tm.classList.toggle('warn', DIR.phase === 11 && DIR.miT < 60 * 30);
   const wei = c.alive + 40, shu = 40 + c.ko * 0.8;
   hudEls.morale.style.width = Math.max(8, Math.min(92, shu / (shu + wei) * 100)).toFixed(1) + '%';
@@ -4130,10 +4154,10 @@ function hudUpdate() {
   });
   const showBoss = boss && bd < 16;
   hudEls.boss.classList.toggle('on', !!showBoss);
-  if (showBoss) { hudEls.bossName.textContent = boss.def.zh; hudEls.bossHp.style.width = (Math.max(0, c.hp[boss.idx] / c.hpMax[boss.idx]) * 100).toFixed(1) + '%'; }
+  if (showBoss) { hudEls.bossName.textContent = lang === 'en' ? cap(boss.def.en) : boss.def.zh; hudEls.bossHp.style.width = (Math.max(0, c.hp[boss.idx] / c.hpMax[boss.idx]) * 100).toFixed(1) + '%'; }
   // dialogue
   if (dlgCur) { if (--dlgT <= 0) { dlgCur = null; hudEls.dlg.classList.remove('on'); } }
-  else if (DIR.dlgQ.length) { dlgCur = DIR.dlgQ.shift(); dlgT = dlgCur.dur; $('dlgWho').textContent = dlgCur.who; $('dlgLine').textContent = dlgCur.zh; $('dlgEn').textContent = dlgCur.en; hudEls.dlg.classList.add('on'); }
+  else if (DIR.dlgQ.length) { dlgCur = DIR.dlgQ.shift(); dlgT = dlgCur.dur; $('dlgWho').textContent = lang === 'en' ? NAME_EN[dlgCur.who] || dlgCur.who : dlgCur.who; $('dlgLine').textContent = T(dlgCur.zh, dlgCur.en); $('dlgEn').textContent = T(dlgCur.en, dlgCur.zh); hudEls.dlg.classList.add('on'); }
   if (++mapT % 3 === 0) drawMap();
 }
 
@@ -4142,6 +4166,7 @@ function showMenu(id) { for (const m of ['title', 'pause', 'result']) $(m).class
 function startGame() {
   audio.resume();
   resetGame();
+  if (!LS.get('tut', 0) && !auto.on) tutStart(); else { tut.on = false; $('tut').classList.remove('on'); }
   ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
 }
 function resetGame() {
@@ -4166,20 +4191,20 @@ function resetGame() {
   cam.yaw = 0; cam.pos.set(0, 4, game.hero.z - 8); ui.hpLag = 1; lastKoShown = -1;
 }
 const K = (s) => s.split('').map((c) => `<kbd>${c}</kbd>`).join('');
-const MOVELIST = {
-  zhao: [['連擊', `${K('J')}×6 — 刺・挑・掃・連刺・劈・迴旋`], ['C1', `${K('K')} — 挑空`], ['C2', `${K('JK')} — 旋挑，再追刺空中`], ['C3', `${K('JJK')} — 百烈突`],
-    ['C4', `${K('J')}×3 ${K('K')} — 旋風，收招吹飛`], ['C5', `${K('J')}×4 ${K('K')} — 龍突進（可轉向）`], ['C6', `${K('J')}×5 ${K('K')} — 躍斬震地`]],
-  fei: [['連擊', `${K('J')}×5 — 橫掃・回掃・砸地・肩撞・迴旋`], ['C1', `${K('K')} — 頓矛震地（挑空）`], ['C2', `${K('JK')} — 上撩`], ['C3', `${K('JJK')} — 蛇矛亂舞（可轉向）`],
-    ['C4', `${K('J')}×3 ${K('K')} — 躍起砸地`], ['C5', `${K('J')}×4 ${K('K')} — 蠻牛衝撞（可轉向）`]],
-};
-const MOVE_COMMON = [['空中', `${K('J')} 連斬 ×3 · ${K('K')} 下刺`], ['馬上', `${K('J')} 左右橫掃 · ${K('K')} 挺槍突擊 · <kbd>Space</kbd> 躍下`],
-  ['格擋', `按住 ${K('U')} — 擋正面攻擊；剛按下的瞬間擋住即<b>彈反</b>，重擊會破防`], ['鎖定', `${K('R')} — 鎖定最近的敵將`]];
+const moveList = () => ({
+  zhao: [[T('連擊', 'String'), `${K('J')}×6 — ${T('刺・挑・掃・連刺・劈・迴旋', 'thrust · lift · sweep · flurry · chop · spin')}`], ['C1', `${K('K')} — ${T('挑空', 'launcher')}`], ['C2', `${K('JK')} — ${T('旋挑，再追刺空中', 'rising spin, then juggle')}`], ['C3', `${K('JJK')} — ${T('百烈突', 'hundred thrusts')}`],
+    ['C4', `${K('J')}×3 ${K('K')} — ${T('旋風，收招吹飛', 'whirlwind, blows them away')}`], ['C5', `${K('J')}×4 ${K('K')} — ${T('龍突進（可轉向）', 'dragon rush (steerable)')}`], ['C6', `${K('J')}×5 ${K('K')} — ${T('躍斬震地', 'leaping ground slam')}`]],
+  fei: [[T('連擊', 'String'), `${K('J')}×5 — ${T('橫掃・回掃・砸地・肩撞・迴旋', 'sweep · back sweep · smash · shoulder ram · spin')}`], ['C1', `${K('K')} — ${T('頓矛震地（挑空）', 'butt stomp (launcher)')}`], ['C2', `${K('JK')} — ${T('上撩', 'rising cut')}`], ['C3', `${K('JJK')} — ${T('蛇矛亂舞（可轉向）', 'serpent flurry (steerable)')}`],
+    ['C4', `${K('J')}×3 ${K('K')} — ${T('躍起砸地', 'leaping crush')}`], ['C5', `${K('J')}×4 ${K('K')} — ${T('蠻牛衝撞（可轉向）', 'bull rush (steerable)')}`]],
+  common: [[T('空中', 'Air'), `${K('J')} ${T('連斬 ×3', 'slash ×3')} · ${K('K')} ${T('下刺', 'plunge')}`], [T('馬上', 'Mounted'), `${K('J')} ${T('左右橫掃', 'sweeps')} · ${K('K')} ${T('挺槍突擊', 'lance charge')} · <kbd>Space</kbd> ${T('躍下', 'leap off')}`],
+    [T('格擋', 'Guard'), T(`按住 ${K('U')} — 擋正面攻擊；剛按下的瞬間擋住即<b>彈反</b>，重擊會破防`, `Hold ${K('U')} — blocks the front; a block in the first instant is a <b>parry</b>; heavy blows break it`)], [T('鎖定', 'Lock-on'), `${K('R')} — ${T('鎖定最近的敵將', 'lock on to the nearest officer')}`]],
+});
 function togglePause() {
   if (ui.mode === 'play') {
     ui.mode = 'pause'; showMenu('pause');
-    $('moveList').innerHTML = [...MOVELIST[charKey], ...MOVE_COMMON].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
+    { const ml = moveList(); $('moveList').innerHTML = [...ml[charKey], ...ml.common].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join(''); }
     const s = Math.floor(DIR.time / 60);
-    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown}${game.stage === 'endless' ? '' : ' / ' + (game.stage === 'bridge' ? 2 : 4)}</dd>`;
+    $('pauseStats').innerHTML = `<dt>${T('時間', 'Time')}</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>${T('擊破', 'K.O.')}</dt><dd>${game.crowd.ko}</dd><dt>${T('最大連擊', 'Max combo')}</dt><dd>${DIR.maxCombo}</dd><dt>${T('敵將', 'Officers')}</dt><dd>${DIR.offDown}${game.stage === 'endless' ? '' : ' / ' + (game.stage === 'bridge' ? 2 : 4)}</dd>`;
   } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
 }
 const fmtT = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -4191,20 +4216,21 @@ function showResult() {
   let rank, note = '';
   if (en) {
     rank = ko >= 1000 ? 'S' : ko >= 600 ? 'A' : ko >= 300 ? 'B' : 'C';
-    $('resTitle').textContent = ko >= 1000 ? '千人斬' : '力盡'; $('resSub').textContent = `${ko} SLAIN · RANK ${DIR.lv}`;
+    $('resTitle').textContent = ko >= 1000 ? T('千人斬', 'THOUSAND') : T('力盡', 'FALLEN'); $('resSub').textContent = `${ko} SLAIN · RANK ${DIR.lv}`;
     const key = 'board_' + charKey, me = { ko, time: s, diff: diffKey, lv: DIR.lv, at: Date.now() };
     const board = [...LS.get(key, []), me].sort((p, q) => q.ko - p.ko || p.time - q.time).slice(0, 5); LS.set(key, board);
-    note = '評價：300 人 B · 600 人 A · 千人斬 S<br>' + board.map((r, i) => `<span class="${r.at === me.at ? 'me' : ''}">${i + 1}. ${r.ko} 人 · 第 ${r.lv} 陣 · ${fmtT(r.time)} · ${DIFFS[r.diff] ? DIFFS[r.diff].zh : ''}</span>`).join('<br>');
+    note = T('評價：300 人 B · 600 人 A · 千人斬 S', 'Rank: 300 B · 600 A · 1000 S') + '<br>' + board.map((r, i) => `<span class="${r.at === me.at ? 'me' : ''}">${i + 1}. ${r.ko} ${T('人', 'K.O.')} · ${T(`第 ${r.lv} 陣`, `rank ${r.lv}`)} · ${fmtT(r.time)} · ${DIFFS[r.diff] ? T(DIFFS[r.diff].zh, cap(DIFFS[r.diff].en)) : ''}</span>`).join('<br>');
   } else {
     const pts = (DIR.win ? 1 : 0) + (br ? (DIR.crossed <= 5 ? 1 : 0) : (s < (st === 'xunzhu' ? 600 : 480) ? 1 : 0)) + (ko >= 300 ? 1 : 0) + (DIR.dmg < (br ? 500 : 400) ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
     rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
-    $('resTitle').textContent = DIR.win ? (br ? '斷橋' : '突圍') : DIR.lost ? '失散' : (br && DIR.crossed >= CROSS_MAX ? '失守' : '敗走');
+    $('resTitle').textContent = DIR.win ? (br ? T('斷橋', 'HELD') : T('突圍', 'VICTORY')) : DIR.lost ? T('失散', 'LOST') : (br && DIR.crossed >= CROSS_MAX ? T('失守', 'BREACHED') : T('敗走', 'DEFEATED'));
     $('resSub').textContent = DIR.win ? (br ? 'VICTORY · THE BRIDGE HOLDS' : st === 'xunzhu' ? 'VICTORY · THE HEIR IS SAFE' : 'VICTORY · CHANGBAN') : 'DEFEAT';
     const bkey = `best_${st}_${diffKey}`;
     const best = LS.get(bkey, st === 'changban' ? LS.get('best_' + diffKey, null) : br ? LS.get('bestB_' + diffKey, null) : null);
     const rec = { time: s, ko, combo: DIR.maxCombo, rank };
     if (DIR.win && (!best || (br ? ko > best.ko : s < best.time))) LS.set(bkey, rec);
-    note = (DIR.win ? (br ? '評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上<br>' : `評價：突圍・${st === 'xunzhu' ? 10 : 8} 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>`) : '') + (best ? `最佳紀錄（${game.diff.zh}）${fmtT(best.time)} · ${best.ko} 擊破 · ${best.rank}` : '');
+    note = (DIR.win ? (br ? T('評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上', 'Rank: hold · 5 or fewer across · 300 K.O. · under 500 damage · 60 combo') : T(`評價：突圍・${st === 'xunzhu' ? 10 : 8} 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上`, `Rank: break out · under ${st === 'xunzhu' ? 10 : 8} min · 300 K.O. · under 400 damage · 60 combo`)) + '<br>' : '')
+      + (best ? `${T('最佳紀錄（' + game.diff.zh + '）', 'Best (' + cap(game.diff.en) + ') ')}${fmtT(best.time)} · ${best.ko} ${T('擊破', 'K.O.')} · ${best.rank}` : '');
   }
   DIR.rank = rank;
   let gain = 0;
@@ -4215,10 +4241,11 @@ function showResult() {
     if (rank === 'S') ach('srank');
   }
   const fresh = meta.fresh.splice(0);
-  note = (fresh.length ? `<span class="me">成就達成：${fresh.map((a) => a.zh).join(' · ')}</span><br>` : '') + note;
+  note = (fresh.length ? `<span class="me">${T('成就達成：', 'Achievements: ')}${fresh.map((a) => L(a)).join(' · ')}</span><br>` : '') + note;
   refreshMeta();
   $('resRank').textContent = rank; $('resRank').style.display = DIR.win || en ? '' : 'none';
-  $('resGrid').innerHTML = `<dt>關卡</dt><dd style="font-family:var(--serif)">${STAGE_INFO[st].zh} · ${DIFFS[diffKey].zh}</dd><dt>時間</dt><dd>${fmtT(s)}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown}${en ? '' : ' / ' + (br ? 2 : 4)}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd><dt>武勳</dt><dd>${counts() ? `+${gain}（持有 ${meta.st.merit}）` : '自動演示不計'}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
+  DIR.card = { title: $('resTitle').textContent, rank: DIR.win || en ? rank : '', rows: [[T('時間', 'Time'), fmtT(s)], [T('擊破', 'K.O.'), ko], [T('最大連擊', 'Max combo'), DIR.maxCombo], [T('敵將', 'Officers'), DIR.offDown + (en ? '' : ' / ' + (br ? 2 : 4))]], stage: lang === 'en' ? `${cap(STAGE_INFO[st].en)} · ${cap(DIFFS[diffKey].en)}` : `${STAGE_INFO[st].zh} · ${DIFFS[diffKey].zh}` };
+  $('resGrid').innerHTML = `<dt>${T('關卡', 'Stage')}</dt><dd style="font-family:var(--serif)">${lang === 'en' ? cap(STAGE_INFO[st].en) + ' · ' + cap(DIFFS[diffKey].en) : STAGE_INFO[st].zh + ' · ' + DIFFS[diffKey].zh}</dd><dt>${T('時間', 'Time')}</dt><dd>${fmtT(s)}</dd><dt>${T('擊破數', 'K.O.')}</dt><dd>${ko}</dd><dt>${T('最大連擊', 'Max combo')}</dt><dd>${DIR.maxCombo}</dd><dt>${T('敵將擊破', 'Officers')}</dt><dd>${DIR.offDown}${en ? '' : ' / ' + (br ? 2 : 4)}</dd><dt>${T('受到傷害', 'Damage taken')}</dt><dd>${Math.round(DIR.dmg)}</dd><dt>${T('武勳', 'Merit')}</dt><dd>${counts() ? `+${gain}（${T('持有', 'held')} ${meta.st.merit}）` : T('自動演示不計', 'not counted on autopilot')}</dd>` + (br ? `<dt>${T('渡橋', 'Crossed')}</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
   $('resNote').innerHTML = note;
   game.emit('result', { win: DIR.win, stage: st, ko, time: s, rank });
 }
@@ -4231,26 +4258,27 @@ for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mu
 }
 const STAGES = { zhao: ['changban', 'xunzhu', 'endless'], fei: ['bridge', 'endless'] };
 const STAGE_INFO = {
-  changban: { zh: '長坂單騎', en: 'LONE RIDER', tag: '長坂坡 · 一杆長槍，單騎七進七出', foot: '擊破四員魏將，向長坂橋突圍。' },
-  xunzhu: { zh: '尋主', en: 'SEEK THE HEIR', tag: '亂軍之中 · 尋回糜夫人與阿斗', foot: '先找簡雍打聽下落，趕在糜夫人遇害前到枯井接過阿斗，再殺出重圍。' },
-  bridge: { zh: '據水斷橋', en: 'HOLD THE BRIDGE', tag: '長坂橋 · 據水斷橋，一夫當關', foot: '守住橋頭五波，放過二十人即失守。' },
-  endless: { zh: '千人斬', en: 'THOUSAND SLAIN', tag: '無盡魏軍 · 每百人更強一陣', foot: '沒有終點：每擊破一百人敵軍變強一陣，戰至力盡。目標千人斬。' },
+  changban: { zh: '長坂單騎', en: 'LONE RIDER', tag: '長坂坡 · 一杆長槍，單騎七進七出', foot: '擊破四員魏將，向長坂橋突圍。', tagEn: 'Changban Slope · one spear, seven charges', footEn: 'Defeat four Wei officers, then break through to Changban Bridge.' },
+  xunzhu: { zh: '尋主', en: 'SEEK THE HEIR', tag: '亂軍之中 · 尋回糜夫人與阿斗', foot: '先找簡雍打聽下落，趕在糜夫人遇害前到枯井接過阿斗，再殺出重圍。', tagEn: 'Lost in the rout · find Lady Mi and A Dou', footEn: 'Ask Jian Yong, reach the dry well before Lady Mi is lost, take A Dou, then break out.' },
+  bridge: { zh: '據水斷橋', en: 'HOLD THE BRIDGE', tag: '長坂橋 · 據水斷橋，一夫當關', foot: '守住橋頭五波，放過二十人即失守。', tagEn: 'Changban Bridge · one man holds the pass', footEn: 'Hold the bridge mouth through five waves. Twenty men across and it is lost.' },
+  endless: { zh: '千人斬', en: 'THOUSAND SLAIN', tag: '無盡魏軍 · 每百人更強一陣', foot: '沒有終點：每擊破一百人敵軍變強一陣，戰至力盡。目標千人斬。', tagEn: 'An endless army · stronger every hundred', footEn: 'No end: the army ranks up every 100 K.O. Fight until you fall — aim for a thousand.' },
 };
 let stageKey = 'changban';
 function setStage(k, refresh = true) {
   if (!STAGES[charKey].includes(k)) k = STAGES[charKey][0];
   stageKey = k; game.stage = k; LS.set('stage_' + charKey, k);
-  $('stages').innerHTML = '<span>關卡</span>' + STAGES[charKey].map((q) => `<button data-s="${q}" class="${q === k ? 'on' : ''}">${STAGE_INFO[q].zh}</button>`).join('');
+  $('stages').innerHTML = `<span>${T('關卡', 'Stage')}</span>` + STAGES[charKey].map((q) => `<button data-s="${q}" class="${q === k ? 'on' : ''}">${lang === 'en' ? cap(STAGE_INFO[q].en) : STAGE_INFO[q].zh}</button>`).join('');
   for (const b of document.querySelectorAll('#stages button')) b.onclick = () => setStage(b.dataset.s);
-  $('tTag').textContent = STAGE_INFO[k].tag; $('tFoot').textContent = STAGE_INFO[k].foot;
+  $('tTag').textContent = L(STAGE_INFO[k], 'tag'); $('tFoot').textContent = L(STAGE_INFO[k], 'foot');
   if (refresh && ui.mode === 'title') resetGame();
 }
 function setChar(k, refresh = true) {
   charKey = k; game.char = CHARS[k]; LS.set('char', k);
   heroView.setChar(k); drawFace(k);
   const ch = game.char;
-  $('tName').textContent = ch.zh; $('tSeal').textContent = ch.seal;
-  $('hName').textContent = ch.zh; $('hSeal').textContent = ch.seal; $('hEn').textContent = ch.en; $('pName').textContent = ch.zh;
+  const nm = lang === 'en' ? cap(ch.en) : ch.zh;
+  $('tName').textContent = nm; $('tSeal').textContent = ch.seal;
+  $('hName').textContent = nm; $('hSeal').textContent = ch.seal; $('hEn').textContent = lang === 'en' ? ch.zh : ch.en; $('pName').textContent = nm;
   for (const b of document.querySelectorAll('#chars button')) b.classList.toggle('on', b.dataset.c === k);
   setStage(LS.get('stage_' + k, ch.stage), refresh);
 }
@@ -4259,22 +4287,105 @@ function setDiff(k) { diffKey = k; game.diff = { ...DIFFS[k] }; LS.set('diff', k
 for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
 setDiff(diffKey);
 $('qbtn').onclick = cycleQuality; $('qbtn2').onclick = cycleQuality;
+// ---- static page text
+const HTML_EN = {
+  '#help': '<kbd>WASD</kbd>Move · <kbd>J</kbd>Attack · <kbd>K</kbd>Charge · <kbd>Space</kbd>Jump<br><kbd>L</kbd>Dodge · <kbd>U</kbd>Guard · <kbd>I</kbd>Musou<br><kbd>F</kbd>Horse · <kbd>R</kbd>Lock · <kbd>Q</kbd><kbd>E</kbd>Camera',
+  '.h-obj .lbl': 'OBJECTIVE', '#combo span': 'HITS', '.h-ko small': 'K.O. COUNT',
+  '.tb[data-k=attack]': 'ATK', '.tb[data-k=charge]': 'CHG', '.tb[data-k=dodge]': 'DGE', '.tb[data-k=guard]': 'GRD', '.tb[data-k=jump]': 'JMP', '.tb[data-k=musou]': 'MUSOU', '.tb[data-k=mount]': 'RIDE', '.tb[data-k=lock]': 'LOCK',
+  '#chars [data-c=zhao]': '<b>Zhao Yun</b><span>Spear · swift</span>', '#chars [data-c=fei]': '<b>Zhang Fei</b><span>Serpent spear · mighty</span>',
+  '#tCtl': '<dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd> jump · <kbd>L</kbd> dodge</dd><dt>Attack</dt><dd><kbd>J</kbd> string · <kbd>K</kbd> charge (mid-string) · <kbd>I</kbd> Musou</dd><dt>Guard</dt><dd>Hold <kbd>U</kbd> (instant block = parry) · <kbd>R</kbd> lock on</dd><dt>Horse</dt><dd><kbd>F</kbd> call / mount · <kbd>Q</kbd><kbd>E</kbd> / drag to turn</dd>',
+  '#diffs span': 'Difficulty', '#diffs [data-d=easy]': 'Easy', '#diffs [data-d=normal]': 'Normal', '#diffs [data-d=hard]': 'Hard', '#diffs [data-d=chaos]': 'Chaos',
+  '#go': 'Start <small>出陣</small>', '#resume': 'Resume <small>再戰</small>', '#restart': 'Restart', '#again': 'Again <small>再戰</small>', '#mClose': 'Back', '#pause h1 b': 'Paused',
+  '#tFoot2': 'Enter to start · Esc for pause and the move list · gamepad and touch supported. Crates hold buns and power-ups; step out of the red cavalry lanes.',
+  '.lb-vol': 'Volume', '.lb-mus': 'Music', '#cardBtn': 'Battle card', '#tutBtn': 'Replay tutorial',
+};
+const zhHTML = new Map();
+function applyLang() {
+  document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant'; document.body.classList.toggle('lang-en', lang === 'en');
+  document.title = T('長坂單騎 · 趙雲無雙', 'Changban Musou — Zhao Yun, Lone Rider');
+  for (const sel in HTML_EN) for (const e of document.querySelectorAll(sel)) { if (!zhHTML.has(e)) zhHTML.set(e, e.innerHTML); e.innerHTML = lang === 'en' ? HTML_EN[sel] : zhHTML.get(e); }
+  for (const id of ['langBtn', 'langBtn2']) $(id).textContent = lang === 'en' ? '中文' : 'English';
+  setChar(charKey, false); applyQuality(); refreshMeta(); buffKey = '~'; tut.shown = '';
+  if (ui.mode === 'pause') { ui.mode = 'play'; togglePause(); }
+}
+function setLang(k) { lang = k; LS.set('lang', k); applyLang(); }
+$('langBtn').onclick = $('langBtn2').onclick = () => setLang(lang === 'en' ? 'zh' : 'en');
+
+// ---- 戰績圖: the battle as a 1200×630 card (current frame + rank + numbers)
+function drawCard() {
+  const W = 1200, H = 630, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d'), d = DIR.card || { title: '', rank: '', rows: [], stage: '' };
+  render(0);   // the drawing buffer is only valid in the task that rendered it
+  const sw = canvas.width, sh = canvas.height, k = Math.max(W / sw, H / sh);
+  try { x.drawImage(canvas, (W - sw * k) / 2, (H - sh * k) / 2, sw * k, sh * k); } catch { x.fillStyle = '#2a1a10'; x.fillRect(0, 0, W, H); }
+  let g = x.createLinearGradient(0, 0, W * 0.62, 0); g.addColorStop(0, 'rgba(18,10,6,.94)'); g.addColorStop(0.7, 'rgba(18,10,6,.62)'); g.addColorStop(1, 'rgba(18,10,6,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  g = x.createLinearGradient(0, H - 120, 0, H); g.addColorStop(0, 'rgba(18,10,6,0)'); g.addColorStop(1, 'rgba(18,10,6,.85)'); x.fillStyle = g; x.fillRect(0, H - 120, W, 120);
+  const serif = '"Noto Serif TC", "Songti SC", serif', latin = '"Cinzel", Georgia, serif';
+  x.textBaseline = 'alphabetic'; x.fillStyle = '#b8281e'; x.fillRect(60, 64, 6, 150);
+  x.fillStyle = '#f7efdd'; x.font = `900 ${lang === 'en' ? 62 : 84}px ${serif}`; x.fillText(lang === 'en' ? cap(game.char.en) : game.char.zh, 86, 128);
+  x.fillStyle = '#e8c060'; x.font = `900 ${lang === 'en' ? 46 : 60}px ${serif}`; x.fillText(d.title, 86, 204);
+  x.fillStyle = '#cdbfa6'; x.font = `600 26px ${serif}`; x.fillText(d.stage, 86, 258);
+  x.font = `600 30px ${serif}`; d.rows.forEach(([a, b], i) => { const y = 330 + i * 54; x.fillStyle = '#cdbfa6'; x.fillText(a, 86, y); x.fillStyle = '#fff'; x.font = `700 40px ${latin}`; x.fillText(String(b), 300, y + 3); x.font = `600 30px ${serif}`; });
+  if (d.rank) { x.fillStyle = '#e8c060'; x.font = `900 230px ${serif}`; x.textAlign = 'right'; x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 24; x.fillText(d.rank, W - 70, 250); x.shadowBlur = 0; x.textAlign = 'left'; }
+  x.fillStyle = '#f7efdd'; x.font = `900 30px ${serif}`; x.fillText(T('長坂單騎 · 體素無雙', 'Changban Musou'), 60, H - 44);
+  x.fillStyle = '#cdbfa6'; x.font = `500 22px ${latin}`; x.textAlign = 'right'; x.fillText('leigaorobot.github.io/changban-musou', W - 60, H - 44); x.textAlign = 'left';
+  const url = cv.toDataURL('image/jpeg', 0.9); DIR.cardUrl = url;
+  $('mTitle').textContent = T('戰績圖', 'Battle card'); $('mSub').textContent = T('長按或右鍵可另存；下載與複製在部分嵌入頁面裡不可用', 'Long-press or right-click to save; download and copy may be blocked in embedded pages');
+  $('mBody').innerHTML = `<img class="card" src="${url}" alt="battle card"><div class="opts"><a class="qbtn" id="cardDl" download="changban-musou.jpg" href="${url}">${T('下載', 'Download')}</a><button class="qbtn" id="cardCp">${T('複製圖片', 'Copy image')}</button></div>`;
+  $('cardCp').onclick = async () => { try { const blob = await new Promise((r) => cv.toBlob(r, 'image/png')); await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); $('cardCp').textContent = T('已複製', 'Copied'); } catch { $('cardCp').textContent = T('此處無法複製', 'Copy unavailable here'); } };
+}
+$('cardBtn').onclick = () => openModal('card');
+
+// ---- first-battle tutorial: one hint at a time, each waits for the player to do the thing
+const KB = (s) => `<kbd>${s}</kbd>`;
+const TUT = [
+  { zh: () => (isTouch ? '用左側搖桿移動，拖曳空白處轉視角' : `${KB('W')}${KB('A')}${KB('S')}${KB('D')} 移動 · ${KB('Q')}${KB('E')} 或拖曳轉視角`), en: () => (isTouch ? 'Move with the left stick; drag elsewhere to turn the camera' : `${KB('W')}${KB('A')}${KB('S')}${KB('D')} to move · ${KB('Q')}${KB('E')} or drag to turn the camera`), done: (h, t) => t.moved > 5 },
+  { zh: () => `靠近敵兵，連按 ${isTouch ? '「攻」' : KB('J')} 打出連擊`, en: () => `Close in and tap ${isTouch ? 'ATK' : KB('J')} for a combo string`, done: (h, t) => t.hits >= 8 },
+  { zh: () => `連擊中途按 ${isTouch ? '「蓄」' : KB('K')}：蓄力技。在第幾下接，招式就不同`, en: () => `Press ${isTouch ? 'CHG' : KB('K')} mid-string for a charge attack — each step of the string gives a different one`, done: (h, t) => t.charged },
+  { zh: () => `${isTouch ? '「閃」' : KB('L')} 閃避（有無敵時間）· 按住 ${isTouch ? '「擋」' : KB('U')} 格擋，剛按下就擋住是彈反`, en: () => `${isTouch ? 'DGE' : KB('L')} dodges (brief invulnerability) · hold ${isTouch ? 'GRD' : KB('U')} to guard; block at the first instant to parry`, done: (h, t) => t.evaded },
+  { zh: () => `${isTouch ? '「馬」' : KB('F')} 喚馬，靠近後再按一次上馬——馬會踐踏敵兵`, en: () => `${isTouch ? 'RIDE' : KB('F')} calls your horse; press again beside it to mount — it tramples soldiers`, done: (h) => h.riding },
+  { zh: () => `擊中敵人會累積氣力。槽滿後按 ${isTouch ? '「無雙」' : KB('I')} 發動無雙`, en: () => `Hits fill the Musou gauge. When it is full, press ${isTouch ? 'MUSOU' : KB('I')}`, done: (h) => h.state === 'musou', wait: 60 * 70 },
+  { zh: () => `招式表在暫停頁（${isTouch ? '上方 ❚❚' : KB('Esc')}）。武運昌隆！`, en: () => `The move list is on the pause screen (${isTouch ? '❚❚ above' : KB('Esc')}). Good hunting!`, done: () => false, wait: 60 * 6 },
+];
+const tut = { on: false, i: 0, t: 0, gap: 0, moved: 0, hits: 0, charged: false, evaded: false, lx: 0, lz: 0, shown: '' };
+function tutStart() { Object.assign(tut, { on: true, i: 0, t: 0, gap: 40, moved: 0, hits: 0, charged: false, evaded: false, lx: game.hero.x, lz: game.hero.z, shown: '' }); }
+function tutEnd() { tut.on = false; $('tut').classList.remove('on'); LS.set('tut', 1); }
+function tutStep() {
+  if (!tut.on) return;
+  if (auto.on || DIR.over) { tut.on = false; $('tut').classList.remove('on'); return; }
+  const h = game.hero;
+  tut.moved += Math.hypot(h.x - tut.lx, h.z - tut.lz); tut.lx = h.x; tut.lz = h.z;
+  if (h.state === 'move' && h.move && /^f?c\d/.test(h.move.id || '')) tut.charged = true;
+  if (h.state === 'dodge' || h.state === 'guard') tut.evaded = true;
+  if (tut.gap > 0) { if (--tut.gap === 0) { tut.t = 0; } else return; }
+  const st = TUT[tut.i]; if (!st) { tutEnd(); return; }
+  const key = tut.i + lang;
+  if (tut.shown !== key) { tut.shown = key; $('tutTxt').innerHTML = (lang === 'en' ? st.en : st.zh)(); $('tutN').textContent = `${tut.i + 1} / ${TUT.length}`; $('tut').classList.add('on'); }
+  tut.t++;
+  if (st.done(h, tut) || tut.t > (st.wait || 60 * 45)) { tut.i++; tut.gap = 36; tut.hits = 0; $('tut').classList.remove('on'); game.emit('tutNext'); }
+}
+game.on('heroHit', (e) => { if (tut.on) tut.hits += e.n; });
+$('tutSkip').onclick = tutEnd;
+$('tutBtn').onclick = () => { if (ui.mode === 'pause') togglePause(); tutStart(); };
+
 // ---- 強化 / 成就 panels
 let modalKind = null;
 function refreshMeta() {
-  $('upBtn').innerHTML = `強化 · 武勳 <b>${meta.st.merit}</b>`; $('achBtn').innerHTML = `成就 <b>${meta.count()}</b> / ${ACHS.length}`;
+  $('upBtn').innerHTML = `${T('強化 · 武勳', 'Upgrades · Merit')} <b>${meta.st.merit}</b>`; $('achBtn').innerHTML = `${T('成就', 'Achievements')} <b>${meta.count()}</b> / ${ACHS.length}`;
   if (modalKind) openModal(modalKind);
 }
 function openModal(kind) {
   modalKind = kind; $('modal').classList.remove('hidden');
+  $('box').classList.toggle('wide', kind === 'card');
+  if (kind === 'card') { drawCard(); return; }
   if (kind === 'up') {
-    $('mTitle').textContent = '強化'; $('mSub').textContent = `持有武勳 ${meta.st.merit} · 每場戰鬥依擊破數、敵將與勝敗獲得，難度越高越多`;
+    $('mTitle').textContent = T('強化', 'Upgrades'); $('mSub').textContent = T(`持有武勳 ${meta.st.merit} · 每場戰鬥依擊破數、敵將與勝敗獲得，難度越高越多`, `Merit ${meta.st.merit} · earned each battle from K.O.s, officers and victory; more on higher difficulties`);
     $('mBody').innerHTML = '<div class="up">' + UPGRADES.map((u) => { const n = meta.lvl(u.key), c = meta.cost(u.key);
-      return `<div><b>${u.zh}</b><small>${u.tip}</small></div><div class="pips">${Array.from({ length: u.max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><button data-u="${u.key}" ${c == null || meta.st.merit < c ? 'disabled' : ''}>${c == null ? '已滿' : c + ' 武勳'}</button>`; }).join('') + '</div>';
+      return `<div><b>${L(u)}</b><small>${L(u, 'tip')}</small></div><div class="pips">${Array.from({ length: u.max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><button data-u="${u.key}" ${c == null || meta.st.merit < c ? 'disabled' : ''}>${c == null ? T('已滿', 'MAX') : c + T(' 武勳', ' merit')}</button>`; }).join('') + '</div>';
     for (const b of document.querySelectorAll('#mBody button')) b.onclick = () => { if (meta.buy(b.dataset.u)) { game.emit('buff'); refreshMeta(); if (ui.mode === 'title') resetGame(); } };
   } else {
-    $('mTitle').textContent = '成就'; $('mSub').textContent = `${meta.count()} / ${ACHS.length} · 達成即得武勳`;
-    $('mBody').innerHTML = '<div class="achs">' + ACHS.map((a) => `<div class="${meta.has(a.key) ? 'on' : ''}"><b>${a.zh}</b><i>+${a.merit}</i><small>${a.d}</small></div>`).join('') + '</div>';
+    $('mTitle').textContent = T('成就', 'Achievements'); $('mSub').textContent = `${meta.count()} / ${ACHS.length} · ${T('達成即得武勳', 'each pays merit once')}`;
+    $('mBody').innerHTML = '<div class="achs">' + ACHS.map((a) => `<div class="${meta.has(a.key) ? 'on' : ''}"><b>${L(a)}</b><i>+${a.merit}</i><small>${L(a, 'd')}</small></div>`).join('') + '</div>';
   }
 }
 function closeModal() { modalKind = null; $('modal').classList.add('hidden'); }
@@ -4409,7 +4520,7 @@ window.__vm = {
   gov, quality(m) { if (m) { qMode = m; applyQuality(); } return { mode: qMode, tier: TIERS[qTier()].key, pr: renderer.getPixelRatio() }; },
   hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
-  setDiff, setChar, setStage, STAGES, miRig, jianRig, meta, ach, openModal, closeModal, dropItem, items, startWave, result() { showResult(); },
+  setDiff, setChar, setStage, STAGES, miRig, jianRig, meta, ach, openModal, closeModal, setLang, tut, tutStart, lang: () => lang, dropItem, items, startWave, result() { showResult(); },
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 
@@ -4417,6 +4528,7 @@ window.__vm = {
 setChar(charKey, false);
 resetGame();
 applyQuality();
+applyLang();
 ui.mode = 'title'; showMenu('title'); $('hud').classList.add('hidden');
 $('loading').remove();
 onResize();
