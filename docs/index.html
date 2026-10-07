@@ -85,6 +85,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tag .nm small { font-family: var(--latin); font-size: 9px; letter-spacing: .2em; color: #e8c8a0; display: block; margin-top: -2px; }
 .tag .bar { width: 96px; height: 5px; margin: 2px auto 0; background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.3); }
 .tag .bar i { display: block; height: 100%; background: linear-gradient(180deg, #ff8a6a, #c02a18); width: 100%; }
+.tag.lock .nm { color: #ffe08a; } .tag.lock .mk { color: #ffe08a; text-shadow: 0 0 8px #ffb000; } .tag.lock .bar { border-color: #ffe08a; box-shadow: 0 0 8px rgba(255,200,80,.7); }
 .tag .mk { color: var(--red2); font-size: 12px; line-height: 1; margin-top: 2px; text-shadow: 0 0 4px #000; }
 .boss-bar { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: min(520px, 60vw); text-align: center; opacity: 0; transition: opacity .4s; }
 .boss-bar.on { opacity: 1; }
@@ -119,7 +120,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.on { background: rgba(232,192,96,.55); }
 .tb.big { width: 82px; height: 82px; font-size: 28px; }
 .tb.mu { font-size: 16px; border-color: #ffd060; }
-.tb.sm { width: 40px; height: 40px; font-size: 13px; }
+.tb.sm { width: 40px; height: 40px; font-size: 13px; } .tb.md { width: 48px; height: 48px; font-size: 17px; }
 /* ---------- menus */
 .menu { position: fixed; inset: 0; display: flex; pointer-events: auto; z-index: 10; }
 .menu .col { scrollbar-width: none; width: min(580px, 100vw); padding: 4vh 56px 2.5vh; display: flex; flex-direction: column;
@@ -129,8 +130,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
 .menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
-.ctl { display: grid; grid-template-columns: auto 1fr; gap: 5px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
-.ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 17px; white-space: nowrap; }
+.ctl { display: grid; grid-template-columns: auto 1fr; gap: 1px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 14px; align-items: center; }
+.ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 15px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
 .ctl dd { margin: 0; color: #eadfc8; }
 .ctl kbd { font-family: var(--latin); font-size: 12px; background: #f3ead8; color: #2a1a10; border-radius: 3px; padding: 1px 6px; margin-right: 4px; font-weight: 800; box-shadow: 0 2px 0 #8a7a60; }
@@ -152,11 +153,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .res-grid dt { color: var(--gold); font-family: var(--serif); font-weight: 900; }
 .res-grid dd { margin: 0; font-family: var(--latin); font-weight: 600; }
 .center-note { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 18px; color: var(--dim); }
-@media (pointer: coarse) { .h-ko { bottom: auto; top: 228px; } .h-help { display: none; } .h-combo { top: 330px; } .h-combo b { font-size: 40px; }
+#pad { position: absolute; right: 8px; bottom: 8px; width: 290px; height: 200px; transform: scale(var(--ts, 1)); transform-origin: 100% 100%; }
+:root { --mapw: 188px; }
+@media (pointer: coarse) { .h-ko { bottom: auto; top: 10px; right: calc(var(--mapw) + 30px); } .h-ko .num { font-size: 40px; } .h-help { display: none; } .h-combo { top: 118px; right: auto; left: 22px; text-align: left; } .h-combo b { font-size: 40px; }
   .h-dlg { bottom: auto; top: 136px; } .h-dlg .line { font-size: 17px; } .boss-bar { top: 150px; } }
 @media (max-width: 760px) {
   .h-title b { font-size: 40px; } .h-title small { top: 46px; } .h-help { display: none; }
-  .h-map { width: 120px; } .h-map canvas { width: 120px; height: 120px; }
+  :root { --mapw: 120px; } .h-map { width: 120px; } .h-map canvas { width: 120px; height: 120px; }
   .h-player .badge { width: 60px; height: 60px; } .h-ko .num { font-size: 40px; } .h-obj { top: 78px; left: 16px; transform: none; padding: 3px 14px; text-align: left; background: rgba(20,12,8,.6); } .h-obj .txt { font-size: 14px; } .h-obj .lbl { display: none; }
   .menu .col { padding: 5vh 20px 3vh; } .ctl { font-size: 13px; } .h-banner .main { font-size: 28px; padding: 6px 30px; }
 }
@@ -171,7 +174,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
-    <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>F</kbd>喚馬 · <kbd>Q</kbd><kbd>E</kbd>視角
+    <kbd>L</kbd>閃避 · <kbd>U</kbd>格擋 · <kbd>I</kbd>無雙<br>
+    <kbd>F</kbd>喚馬 · <kbd>R</kbd>鎖定 · <kbd>Q</kbd><kbd>E</kbd>視角
   </div>
   <div class="h-obj"><div class="lbl">戰 目 標</div><div class="txt" id="obj">擊破魏軍 · 殺出重圍</div><div class="tm" id="tm">00:00</div></div>
   <div class="h-map"><div class="morale"><span style="color:#8ab8ff">蜀</span><div class="bar"><i id="morale"></i></div><span style="color:#ff8a70">魏</span></div><canvas id="map" width="188" height="188"></canvas></div>
@@ -195,12 +199,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 <div id="touch" class="hidden">
   <div id="stickBase"><div id="knob"></div></div>
-  <div class="tb big" data-k="attack" style="right:96px;bottom:130px">攻</div>
-  <div class="tb" data-k="charge" style="right:20px;bottom:196px">蓄</div>
-  <div class="tb" data-k="jump" style="right:108px;bottom:228px">跳</div>
-  <div class="tb" data-k="dodge" style="right:188px;bottom:120px">閃</div>
-  <div class="tb mu" data-k="musou" style="right:26px;bottom:282px">無雙</div>
-  <div class="tb" data-k="mount" style="right:112px;bottom:316px">馬</div>
+  <div id="pad">
+    <div class="tb big" data-k="attack" style="right:84px;bottom:14px">攻</div>
+    <div class="tb" data-k="charge" style="right:10px;bottom:50px">蓄</div>
+    <div class="tb" data-k="dodge" style="right:176px;bottom:8px">閃</div>
+    <div class="tb" data-k="guard" style="right:190px;bottom:80px">擋</div>
+    <div class="tb" data-k="jump" style="right:104px;bottom:104px">跳</div>
+    <div class="tb mu" data-k="musou" style="right:26px;bottom:122px">無雙</div>
+    <div class="tb md" data-k="mount" style="right:178px;bottom:152px">馬</div>
+    <div class="tb md" data-k="lock" style="right:234px;bottom:152px">鎖</div>
+  </div>
   <div class="tb sm" data-k="pause" style="left:50%;top:10px;margin-left:-20px">❚❚</div>
 </div>
 <div class="menu" id="title">
@@ -214,11 +222,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="tag2" id="tTag">長坂坡 · 一杆長槍，單騎七進七出</div>
     <dl class="ctl">
       <dt>移動<small>MOVE</small></dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向鍵</dd>
-      <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 — 連按出六段連擊</dd>
-      <dt>蓄力<small>CHARGE</small></dt><dd><kbd>K</kbd> / 右鍵 — 連擊中按出 C1–C6</dd>
-      <dt>跳・閃<small>JUMP / DODGE</small></dt><dd><kbd>Space</kbd> 跳（空中可接 <kbd>J</kbd><kbd>K</kbd>）· <kbd>L</kbd> / <kbd>Shift</kbd> 閃避</dd>
+      <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 連擊 · <kbd>K</kbd> / 右鍵 蓄力（連擊中接出）</dd>
+      <dt>跳閃擋<small>EVADE</small></dt><dd><kbd>Space</kbd> 跳 · <kbd>L</kbd> / <kbd>Shift</kbd> 閃避 · 按住 <kbd>U</kbd> 格擋（瞬間擋住可彈反）</dd>
       <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · 馬上 <kbd>J</kbd>橫掃 <kbd>K</kbd>突擊</dd>
-      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）· 視角 <kbd>Q</kbd><kbd>E</kbd> / 拖曳</dd>
+      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）</dd>
+      <dt>視角<small>CAMERA</small></dt><dd><kbd>Q</kbd><kbd>E</kbd> / 拖曳 · <kbd>R</kbd> 鎖定敵將</dd>
     </dl>
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <button class="go" id="go">出陣 <small>START</small></button>
@@ -227,7 +235,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <label><input type="checkbox" id="lowq"> 低畫質</label>
     </div>
-    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
+    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬 L2格擋 R3鎖定）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
   </div>
 </div>
 
@@ -236,17 +244,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <h1><b style="font-size:84px">暫停</b></h1>
     <div class="sub">PAUSED</div>
     <dl class="ctl" style="margin-top:3vh" id="pauseStats"></dl>
-    <dl class="ctl moves">
-      <dt>連擊</dt><dd><kbd>J</kbd>×6 — 刺・挑・掃・連刺・劈・迴旋</dd>
-      <dt>C1</dt><dd><kbd>K</kbd> — 挑空</dd>
-      <dt>C2</dt><dd><kbd>J</kbd><kbd>K</kbd> — 旋挑，再追刺空中</dd>
-      <dt>C3</dt><dd><kbd>J</kbd><kbd>J</kbd><kbd>K</kbd> — 百烈突</dd>
-      <dt>C4</dt><dd><kbd>J</kbd>×3 <kbd>K</kbd> — 旋風，收招吹飛</dd>
-      <dt>C5</dt><dd><kbd>J</kbd>×4 <kbd>K</kbd> — 龍突進（可轉向）</dd>
-      <dt>C6</dt><dd><kbd>J</kbd>×5 <kbd>K</kbd> — 躍斬震地</dd>
-      <dt>空中</dt><dd><kbd>J</kbd> 連斬 ×3 · <kbd>K</kbd> 下刺</dd>
-      <dt>馬上</dt><dd><kbd>J</kbd> 左右橫掃 · <kbd>K</kbd> 挺槍突擊 · <kbd>Space</kbd> 躍下</dd>
-    </dl>
+    <dl class="ctl moves" id="moveList"></dl>
     <button class="go" id="resume">再戰 <small>RESUME</small></button>
     <button class="btn2" id="restart">重新出陣</button>
     <div class="opts">
@@ -1603,6 +1601,51 @@ const MOVES = {
       [16, P({ tx: 0.7, rootY: -0.4, w: W(-0.05, 0.05, 0.4, 1.2, 0), gL: 0.25, thL: 1.1, shL: -1.6, thR: -0.5, shR: -1.2 }), 'snap'], [40, BASE]],
     hits: [{ f: [14, 17], shape: 'circle', range: 4.0, dmg: 14, kb: 'launch', force: 3, lift: 6, stop: 5 }] },
 };
+// flags the state machine reads instead of move ids: steer = may turn during the lunge, fx = [[frame, event, radius]]
+Object.assign(MOVES.c3, { steer: true }); Object.assign(MOVES.c5, { steer: true, fx: [[28, 'burst', 1.2]] });
+Object.assign(MOVES.c6, { fx: [[30, 'slam', 5.6]] }); Object.assign(MOVES.ak, { fx: [[14, 'slam', 4]] });
+
+// ---- 張飛: heavier, wider swings with the serpent spear (five normals, five charges)
+const fSwingR = P({ ty: -0.85, tx: 0.2, rootY: -0.18, w: W(-0.32, 0.12, 0.25, 0.1, -1.5), gL: 0.5, thL: 0.55, shL: -0.6, thR: -0.4, shR: -0.4, lzL: 0.3, lzR: -0.3 });
+const fSwingL = P({ ty: 0.9, tx: 0.2, rootY: -0.2, w: W(-0.05, 0.14, 0.3, 0.08, 1.45), gL: 0.45, thL: 0.5, shL: -0.6, thR: -0.45, shR: -0.45, lzL: 0.32, lzR: -0.32 });
+const fRaise = P({ ty: 0.15, tx: -0.4, hx: 0.25, rootY: 0.02, w: W(-0.12, 0.55, 0.02, -1.55, -0.2), gL: 0.4, thL: 0.35, thR: -0.25 });
+const fSmash = P({ ty: 0.1, tx: 0.62, hx: -0.45, rootY: -0.32, w: W(-0.1, 0.02, 0.45, 0.5, -0.2), gL: 0.35, thL: 0.85, shL: -0.6, thR: -0.7, shR: -0.2 });
+const fRam = P({ ty: -0.7, tx: 0.6, hx: -0.3, hy: 0.5, rootY: -0.25, w: W(-0.3, 0.02, -0.02, -0.1, Math.PI - 0.4), ikL: 0, aL: [0.5, 0, 0.9], thL: 0.9, shL: -0.5, thR: -0.8, shR: -0.2, cape: 1 });
+const fStompUp = P({ ty: 0.1, tx: -0.2, hx: 0.2, rootY: 0.03, w: W(-0.14, 0.62, 0.18, -1.57, 0), gL: 0.35, thL: 1.3, shL: -1.5, thR: -0.1 });
+const fStompDown = P({ ty: 0.1, tx: 0.35, hx: -0.25, rootY: -0.3, w: W(-0.14, 0.3, 0.2, -1.57, 0), gL: 0.35, thL: 0.7, shL: -0.9, thR: -0.5, shR: -0.5, lzL: 0.35, lzR: -0.35 });
+Object.assign(MOVES, {
+  fn1: { dur: 32, cancel: 16, lunge: [[5, 13, 0.7]], next: 'fn2', charge: 'fc2',                    // right-to-left sweep
+    keys: [[0, BASE], [8, fSwingR], [14, fSwingL, 'snap'], [20, fSwingL], [32, BASE]],
+    hits: [{ f: [11, 15], shape: 'arc', range: 3.6, ang: 200, dmg: 14, kb: 'push', force: 3.5, stop: 4 }] },
+  fn2: { dur: 32, cancel: 16, lunge: [[4, 12, 0.7]], next: 'fn3', charge: 'fc3',                    // and back
+    keys: [[0, fSwingL], [5, fSwingL], [11, fSwingR, 'snap'], [18, fSwingR], [32, BASE]],
+    hits: [{ f: [8, 12], shape: 'arc', range: 3.6, ang: 210, dmg: 15, kb: 'push', force: 4, stop: 4 }] },
+  fn3: { dur: 38, cancel: 20, lunge: [[6, 14, 0.8]], next: 'fn4', charge: 'fc4', fx: [[14, 'slam', 2.6]],   // overhead smash
+    keys: [[0, BASE], [9, fRaise], [14, fSmash, 'snap'], [23, fSmash], [38, BASE]],
+    hits: [{ f: [13, 16], shape: 'arc', range: 3.8, ang: 90, dmg: 20, kb: 'down', force: 3, stop: 6 }] },
+  fn4: { dur: 32, cancel: 18, armor: true, lunge: [[4, 14, 2.4]], next: 'fn5', charge: 'fc5',       // shoulder ram
+    keys: [[0, BASE], [4, fRam, 'snap'], [15, fRam], [32, BASE]],
+    hits: [{ f: [5, 14], every: 3, shape: 'line', len: 2.0, width: 2.4, dmg: 8, kb: 'blow', force: 6, lift: 3.5, stop: 1 }] },
+  fn5: { dur: 50, cancel: 38, lunge: [[4, 22, 1.2]],                                                  // full turn
+    keys: [[0, BASE], [7, fSwingL], [23, P({ yawAdd: -TAU, ty: -0.85, tx: 0.2, rootY: -0.1, w: W(-0.32, 0.2, 0.25, 0.05, -1.5), gL: 0.5, thL: 0.5, shL: -0.9, thR: -0.3, shR: -0.7 }), 'out'],
+      [32, P({ yawAdd: -TAU, ty: -0.9, tx: 0.3, rootY: -0.28, w: W(-0.32, 0.1, 0.25, 0.15, -1.55), gL: 0.5, thL: 0.7, shL: -0.6, thR: -0.6, lzL: 0.32, lzR: -0.32 })], [50, P({ yawAdd: -TAU })]],
+    hits: [{ f: [10, 23], shape: 'circle', range: 4.0, dmg: 20, kb: 'blow', force: 9, lift: 5, stop: 7 }] },
+  fc1: { dur: 42, cancel: 34, armor: true, fx: [[15, 'slam', 3.8]],                                   // stamp the spear butt down
+    keys: [[0, BASE], [10, fStompUp], [15, fStompDown, 'snap'], [28, fStompDown], [42, BASE]],
+    hits: [{ f: [15, 18], shape: 'circle', range: 3.8, dmg: 14, kb: 'launch', force: 1, lift: 8.5, stop: 6 }] },
+  fc2: { dur: 38, cancel: 30, armor: true, lunge: [[4, 10, 0.6]], keys: MOVES.c1.keys,                // rip upward
+    hits: [{ f: [10, 14], shape: 'arc', range: 3.6, ang: 150, dmg: 17, kb: 'launch', force: 2, lift: 9.5, stop: 6 }] },
+  fc3: { dur: 58, cancel: 50, armor: true, steer: true, lunge: [[6, 44, 2.2, 'lin']], keys: MOVES.c4.keys,   // whirl forward
+    hits: [{ f: [8, 43], every: 7, shape: 'circle', range: 3.7, dmg: 8, kb: 'launch', force: -1, lift: 3.2, stop: 1 },
+      { f: [46, 49], shape: 'circle', range: 4.4, dmg: 22, kb: 'blow', force: 10, lift: 5, stop: 8 }] },
+  fc4: { dur: 60, cancel: 52, armor: true, leap: [8, 8.5], plunge: [20, -20], land: 30, fx: [[30, 'slam', 6.4]], keys: MOVES.c6.keys,   // leap and crush
+    hits: [{ f: [30, 33], shape: 'circle', range: 6.4, dmg: 34, kb: 'blow', force: 10, lift: 8, stop: 10, heavy: true }] },
+  fc5: { dur: 46, cancel: 38, armor: true, steer: true, lunge: [[6, 26, 8.5, 'lin']], fx: [[28, 'burst', 1.2]],   // bull rush
+    keys: [[0, BASE], [5, fRam, 'snap'], [26, fRam], [30, fSwingL, 'snap'], [46, BASE]],
+    hits: [{ f: [7, 26], every: 3, shape: 'line', len: 2.6, width: 3.0, dmg: 9, kb: 'blow', force: 7, lift: 5, stop: 1 },
+      { f: [28, 31], shape: 'circle', range: 4.2, dmg: 18, kb: 'blow', force: 9, lift: 5, stop: 6 }] },
+});
+const GUARD = P({ ty: 0.45, tx: 0.08, rootY: -0.16, w: W(-0.3, 0.32, 0.4, -0.12, 1.5), gL: 0.55, thL: 0.5, shL: -0.5, thR: -0.4, shR: -0.4, lzL: 0.28, lzR: -0.28 });
 for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
 const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
@@ -1612,7 +1655,7 @@ const CHARS = {
   zhao: { key: 'zhao', zh: '趙雲', en: 'ZHAO YUN', seal: '常山', pal: 'zhao', opts: { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' },
     horse: 'white', hp: 500, run: 7.4, atk: 1, reach: 1, tough: false, musou: 'dragon', tip: 2.15, stage: 'changban' },
   fei: { key: 'fei', zh: '張飛', en: 'ZHANG FEI', seal: '燕人', pal: 'zhangfei', opts: { beard: true, headband: true, topknot: true, weapon: 'serpent', scale: 1.16 },
-    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.15, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge' },
+    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.06, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge', mv: { n1: 'fn1', c1: 'fc1' } },
 };
 const reachHit = (hd, r) => (r === 1 ? hd : hd['_r' + r] || (hd['_r' + r] = { ...hd, range: hd.range && hd.range * r, len: hd.len && hd.len * r, width: hd.width && hd.width * (1 + (r - 1) * 0.5) }));
 
@@ -1645,19 +1688,34 @@ function createHero(game) {
 
   const setState = (s) => { h.state = s; h.t = 0; };
   const startMove = (id, inp) => {
+    id = (game.char.mv && game.char.mv[id]) || id;
     const m = MOVES[id];
     h.move = m; h.mt = 0; h.serial++; h.hitsThisMove = 0; setState('move');
     h.lungeDone = 0;
     // face the stick, else soft-lock the nearest enemy in front
     if (inp && inp.mag > 0.2) h.yaw = Math.atan2(inp.mx, inp.mz);
-    else { const e = game.crowd.nearest(h.x, h.z, 5.5, Math.sin(h.yaw), Math.cos(h.yaw), -0.2); if (e) h.yaw = Math.atan2(e.x - h.x, e.z - h.z); }
+    else { const lk = game.lockPos && game.lockPos(), e = lk && Math.hypot(lk.x - h.x, lk.z - h.z) < 9 ? lk : game.crowd.nearest(h.x, h.z, 5.5, Math.sin(h.yaw), Math.cos(h.yaw), -0.2); if (e) h.yaw = Math.atan2(e.x - h.x, e.z - h.z); }
     if (m.air) { h.airChain++; if (m.hover) h.vy = Math.max(h.vy, m.hover); }
     game.emit('move', { id, hero: h });
   };
   h.startMove = startMove;
 
-  h.hurt = (dmg, fx, fz, heavy, src = '?') => {
+  // from = who struck ({ i } crowd index, or { cav } rider) so a parry can answer it
+  h.hurt = (dmg, fx, fz, heavy, src = '?', from = null) => {
     if (h.dead || h.inv > 0 || h.state === 'musou' || h.state === 'down' || h.state === 'getup') return false;
+    if (h.state === 'guard' && Math.cos(Math.atan2(fx - h.x, fz - h.z) - h.yaw) > -0.2) {
+      if (h.guardT <= 10) {                                   // just guard: no damage, the attacker reels
+        h.musou = Math.min(HERO.musouMax, h.musou + 8); game.hitstop = Math.max(game.hitstop, 7); h.guardT = 0; h.parries = (h.parries || 0) + 1;
+        game.emit('parry', { x: h.x + Math.sin(h.yaw) * 0.8, z: h.z + Math.cos(h.yaw) * 0.8, from });
+        return false;
+      }
+      if (!heavy) {
+        h.hp = Math.max(1, h.hp - dmg * game.diff.dmg * 0.12); h.kx = -Math.sin(h.yaw) * 1.6; h.kz = -Math.cos(h.yaw) * 1.6; h.blockT = 8;
+        game.emit('block', { x: h.x + Math.sin(h.yaw) * 0.8, z: h.z + Math.cos(h.yaw) * 0.8 });
+        return false;
+      }
+      dmg *= 0.5; heavy = false; game.emit('guardBreak', { x: h.x, z: h.z });      // a heavy blow smashes through, but only staggers
+    }
     const armored = (h.state === 'move' && h.move.armor) || (h.riding && h.ratk && h.ratk.id === 'rc');
     dmg *= game.diff.dmg * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
     h.hp -= dmg;
@@ -1717,6 +1775,18 @@ function createHero(game) {
 
     const canAct = S === 'idle' || S === 'run' || (S === 'land' && h.t > 4);
     if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt' || S === 'ride')) { if (h.riding) leaveHorse(); h.move = null; game.musou.start(h); return; }
+    if (inp.guard && canAct && h.grounded) { setState('guard'); h.guardT = 0; h.spd = 0; h.kx = h.kz = 0; return integrate(dt); }
+    if (S === 'guard') {
+      h.guardT++;
+      const lk = game.lockPos && game.lockPos();
+      if (lk) h.yaw = turn(h.yaw, Math.atan2(lk.x - h.x, lk.z - h.z), 0.2);
+      if (h.blockT > 0) { h.blockT--; h.x += h.kx * dt; h.z += h.kz * dt; h.kx *= 0.85; h.kz *= 0.85; }
+      else if (inp.mag > 0.1) { h.x += inp.mx * 1.8 * dt; h.z += inp.mz * 1.8 * dt; h.ph += 1.8 * dt * 1.55; }
+      if (h.bufD > 0) { startDodge(inp); return integrate(dt); }
+      if (h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return integrate(dt); }
+      if (!inp.guard && h.guardT > 6) setState('idle');
+      return integrate(dt);
+    }
     if (inp.mount && !h.riding && canAct) {
       const hz = h.horse;
       if (Math.hypot(hz.x - h.x, hz.z - h.z) < 3) { hz.yaw = h.yaw; mount(); return integrate(dt); }
@@ -1763,7 +1833,7 @@ function createHero(game) {
       let adv = 0;
       if (m.lunge) for (const [a, b, d, e] of m.lunge) if (h.mt > a && h.mt <= b) { const u0 = (h.mt - 1 - a) / (b - a), u1 = (h.mt - a) / (b - a); const f = e === 'lin' ? (x) => x : (x) => 1 - (1 - x) ** 2; adv += (f(u1) - f(u0)) * d; }
       if (adv) {
-        if (inp.mag > 0.2 && (m.id === 'c5' || m.id === 'c3')) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.06);
+        if (inp.mag > 0.2 && m.steer) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.06);
         const e = game.crowd.blockedAhead(h.x, h.z, Math.sin(h.yaw), Math.cos(h.yaw));
         const k = m.armor ? 1 : e ? 0.35 : 1;
         h.x += Math.sin(h.yaw) * adv * k; h.z += Math.cos(h.yaw) * adv * k;
@@ -1782,14 +1852,12 @@ function createHero(game) {
         const n = game.crowd.heroHit(h, reachHit(hd, reach), key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
         h.hitsThisMove += n;
       });
-      if (m.id === 'c6' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 5.6 });
-      if (m.id === 'ak' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 4 });
-      if (m.id === 'c5' && h.mt === 28) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 1.2, z: h.z + Math.cos(h.yaw) * 1.2 });
+      if (m.fx) for (const [f, ev, r] of m.fx) if (h.mt === f) { if (ev === 'burst') game.emit('burst', { x: h.x + Math.sin(h.yaw) * r, z: h.z + Math.cos(h.yaw) * r }); else game.emit(ev, { x: h.x, z: h.z, r: r * reach }); }
       // chaining
       const canCancel = h.mt >= m.cancel;
       if (h.bufD > 0 && (h.mt < (m.hits[0]?.f[0] ?? 0) || canCancel) && !m.air && h.grounded) { startDodge(inp); return integrate(dt); }
       if (h.buf && canCancel) {
-        if (m.air) { if (h.buf === 'a' && h.airChain < 3 && !h.grounded) { h.buf = null; startMove('aj', inp); } else if (h.buf === 'c' && !h.grounded && m.id !== 'ak') { h.buf = null; startMove('ak', inp); } }
+        if (m.air) { if (h.buf === 'a' && h.airChain < 3 && !h.grounded) { h.buf = null; startMove('aj', inp); } else if (h.buf === 'c' && !h.grounded && !m.plunge) { h.buf = null; startMove('ak', inp); } }
         else if (h.buf === 'a' && m.next) { h.buf = null; startMove(m.next, inp); }
         else if (h.buf === 'c' && m.charge) { h.buf = null; startMove(m.charge, inp); }
         else if (h.buf === 'a' && !m.next && h.mt >= m.dur - 6) { h.buf = null; startMove('n1', inp); }
@@ -1894,6 +1962,7 @@ function createHeroView(scene, h) {
     else if (S === 'jump') { Object.assign(tgt, clonePose(BASE), { tx: -0.1, thL: 0.9, shL: -1.4, thR: 0.2, shR: -1.0, rootY: 0, cape: 0.8, w: [-0.3, 0.1, 0.0, -0.3, Math.PI - 0.5, 0], ikL: 0, aL: [-0.8, 0, 0.6] }); k = 0.25; }
     else if (S === 'land') { Object.assign(tgt, clonePose(BASE), { rootY: -0.25, tx: 0.4, thL: 0.8, shL: -1.2, thR: -0.3, shR: -0.9 }); k = 0.4; }
     else if (S === 'dodge') { Object.assign(tgt, clonePose(BASE), { rootY: -0.3, tx: 0.7, hx: -0.4, thL: 1.0, shL: -1.4, thR: -0.6, shR: -0.8, cape: 1, w: [-0.3, 0.0, -0.05, -0.1, Math.PI - 0.3, 0], ikL: 0, aL: [0.9, 0, 0.3] }); k = 0.45; }
+    else if (S === 'guard') { Object.assign(tgt, clonePose(GUARD)); if (h.blockT > 0) { tgt.tx = -0.12; tgt.rootY = -0.22; } k = 0.5; }
     else if (S === 'hurt') { Object.assign(tgt, clonePose(BASE), { tx: -0.45, hx: 0.4, rootY: -0.1, thL: 0.1, thR: -0.4, cape: 0.5 }); k = 0.5; }
     else if (S === 'down') { Object.assign(tgt, clonePose(BASE), { pitch: -1.45, rootY: 0.25, tx: -0.1, thL: 0.3, shL: -0.4, thR: 0.1, shR: -0.2, w: [-0.35, 0.0, 0.1, 0, 0.3, 0], ikL: 0, aL: [-0.3, 0, 1.2] }); k = 0.22; }
     else if (S === 'getup') { Object.assign(tgt, clonePose(BASE), { rootY: -0.35, tx: 0.5, thL: 1.0, shL: -1.6, thR: -0.2, shR: -1.4 }); k = 0.3; }
@@ -1979,7 +2048,7 @@ function createCrowd(game, scene) {
   const F = () => new Float32Array(N), I = () => new Int32Array(N);
   const c = { N, x: F(), z: F(), y: F(), vx: F(), vz: F(), vy: F(), yaw: F(), hp: F(), hpMax: F(), st: I(), stT: I(), kind: I(), squad: I(),
     lastKey: I(), flash: F(), spin: F(), spinV: F(), pitch: F(), cd: I(), ph: F(), pref: F(), kod: I(), strafe: F(), tele: F(), ox: F(), oz: F(),
-    squads: [], officers: [], arrows: [], ko: 0, alive: 0, spawned: 0, tokensUsed: 0, freeze: 0, lastHitBy: I() };
+    squads: [], officers: [], arrows: [], ko: 0, alive: 0, spawned: 0, tokensUsed: 0, freeze: 0, lastHitBy: I(), lx: F(), lz: F(), det: I(), detN: I() };
   const offBase = CROWD.maxGrunts;
   let rngS = 99;
   const rnd = () => ((rngS = Math.imul(rngS ^ (rngS >>> 15), 2246822519) + 0x6D2B79F5 | 0) >>> 0) / 4294967296;
@@ -2010,7 +2079,7 @@ function createCrowd(game, scene) {
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = yaw; c.kind[i] = kind; c.squad[i] = sq;
     c.hpMax[i] = c.hp[i] = (kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16) * game.diff.hp;
     c.st[i] = st; c.stT[i] = 0; c.lastKey[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 60 + (rnd() * 120) | 0; c.ph[i] = rnd() * TAU;
-    c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0;
+    c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0; c.det[i] = 0; c.detN[i] = 0;
     c.spawned++;
     return i;
   }
@@ -2113,6 +2182,12 @@ function createCrowd(game, scene) {
     return n;
   };
 
+  // a parried attacker is thrown off balance (officers lose their attack and their poise)
+  c.stagger = (i, ux, uz) => {
+    if (!alive(i)) return;
+    c.st[i] = ST.HURT; c.stT[i] = -18; c.vx[i] = ux * 5; c.vz[i] = uz * 5; c.flash[i] = 1; c.cd[i] = Math.max(c.cd[i], 120);
+    if (c.kind[i] === KIND.OFFICER) { const o = c.officers[i - offBase]; o.atk = null; o.danger = null; o.poise = 100; o.think = 70; c.stT[i] = -30; }
+  };
   c.shock = (x, z, r, force, lift) => {
     for (let i = 0; i < N; i++) {
       if (!alive(i)) continue;
@@ -2241,6 +2316,31 @@ function createCrowd(game, scene) {
     return best;
   }
 
+  // slide round props instead of walking into them (a row of 拒馬 used to hold men for good)
+  function avoid(i, vx, vz) {
+    const sp = Math.hypot(vx, vz); if (sp < 0.1) return [vx, vz];
+    const x = c.x[i], z = c.z[i], ux = vx / sp, uz = vz / sp;
+    for (const k of game.world.colliders) {
+      const dx = k.x - x, dz = k.z - z, d = Math.hypot(dx, dz) || 1;
+      if (d > k.r + CROWD.radius + 0.5 || (dx * ux + dz * uz) / d < 0.3) continue;
+      const sg = c.strafe[i] >= 0 ? 1 : -1;
+      return [-dz / d * sg * sp, dx / d * sg * sp];
+    }
+    return [vx, vz];
+  }
+  // men walking somewhere (in formation or to the bridge) who make no headway sidestep until they do:
+  // overlapping props (a row of 拒馬) form pockets that plain sliding never leaves
+  function travel(i, vx, vz) {
+    if (game.frame % 40 === i % 40) {
+      const m = Math.hypot(c.x[i] - c.lx[i], c.z[i] - c.lz[i]); c.lx[i] = c.x[i]; c.lz[i] = c.z[i];
+      if (m < 0.35) { c.det[i] = 70; if (++c.detN[i] % 3 === 0) c.strafe[i] *= -1; } else if (c.det[i] <= 0) c.detN[i] = 0;
+    }
+    if (c.det[i] > 0) {
+      c.det[i]--; const sp = Math.hypot(vx, vz) || 1, sg = c.strafe[i] >= 0 ? 1 : -1;
+      return [(-vz * sg * 0.95 - vx * 0.3) / sp * 3.4, (vx * sg * 0.95 - vz * 0.3) / sp * 3.4];
+    }
+    return avoid(i, vx, vz);
+  }
   function stepSoldier(i, h, dt) {
     c.stT[i]++;
     if (c.flash[i] > 0) c.flash[i] = Math.max(0, c.flash[i] - 0.12);
@@ -2265,7 +2365,7 @@ function createCrowd(game, scene) {
         const tx = sq.cx + rx * c.ox[i] + fx * c.oz[i], tz = sq.cz + rz * c.ox[i] + fz * c.oz[i];
         const ex = tx - c.x[i], ez = tz - c.z[i], ed = Math.hypot(ex, ez);
         const sp = Math.min(CROWD.run, ed * 3 + (sq.state === 'march' ? CROWD.march : 0));
-        if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
+        if (ed > 1.5) { const [ax, az] = travel(i, ex / ed * sp, ez / ed * sp); move(ax, az); } else if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
         faceTo(sq.yaw, 0.08);
         if (sq.state === 'hold') { c.st[i] = ST.FORM; }
         if (sq.state === 'engaged' || (sq.goal ? d < 4.4 && c.nearN < 30 : d < 5)) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
@@ -2276,7 +2376,7 @@ function createCrowd(game, scene) {
         if (game.goal && (d > (kind === KIND.ARCHER ? 27 : 12) || (c.nearN > 38 && d > 5.5 && c.pref[i] > 0.5 && kind !== KIND.ARCHER) || (game.rush && (kind === KIND.ARCHER || kind === KIND.BEARER)))) {   // nobody to fight here (or no room at him): make for the bridge
           const gx = game.goal.x - c.x[i], gz = game.goal.z - c.z[i], gd = Math.hypot(gx, gz) || 1;
           if (gd < 1.6) { c.st[i] = ST.OFF; game.emit('cross', { n: 1 }); break; }
-          move(gx / gd * 3.4, gz / gd * 3.4); faceTo(Math.atan2(gx, gz)); break;
+          const [ax, az] = travel(i, gx / gd * 3.4, gz / gd * 3.4); move(ax, az); faceTo(Math.atan2(ax, az)); break;
         }
         if (kind === KIND.ARCHER) {
           const want = 15 + c.pref[i] * 4;
@@ -2293,7 +2393,7 @@ function createCrowd(game, scene) {
         }
         const want = 2.3 + c.pref[i] * 2.4;
         let vx = 0, vz = 0;
-        if (d > want + 0.3) { const sp = d > 8 ? CROWD.run : CROWD.walk; vx = dx / d * sp; vz = dz / d * sp; }
+        if (d > want + 0.3) { const sp = d > 8 ? CROWD.run : CROWD.walk; [vx, vz] = avoid(i, dx / d * sp, dz / d * sp); }
         else if (d < want - 0.5) { vx = -dx / d * 1.2; vz = -dz / d * 1.2; }
         // slow strafe around the ring
         if (d < want + 2) { vx += -dz / d * c.strafe[i] * 0.45; vz += dx / d * c.strafe[i] * 0.45; if (c.stT[i] % 240 === 0) c.strafe[i] *= -1; }
@@ -2315,7 +2415,7 @@ function createCrowd(game, scene) {
         if (c.stT[i] === 4) {
           const reach = c.kind[i] === KIND.SWORD ? 2.0 : 2.5;
           const a = Math.atan2(Math.sin(toHero - c.yaw[i]), Math.cos(toHero - c.yaw[i]));
-          if (d < reach && Math.abs(a) < 0.9 && h.y < 1.2) h.hurt(CROWD.dmg * (c.kind[i] === KIND.CAPTAIN ? 1.6 : 1), c.x[i], c.z[i], false, 'grunt');
+          if (d < reach && Math.abs(a) < 0.9 && h.y < 1.2) h.hurt(CROWD.dmg * (c.kind[i] === KIND.CAPTAIN ? 1.6 : 1), c.x[i], c.z[i], false, 'grunt', { i });
         }
         if (c.stT[i] >= CROWD.strike) { c.st[i] = ST.RECOVER; c.stT[i] = 0; }
         break;
@@ -2373,11 +2473,12 @@ function createCrowd(game, scene) {
 
   // ------------------------------------------------ officer AI
   function officerStep(o, i, h, dt) {
-    c.stT[i]++; o.mt++;
+    c.stT[i]++;
     if (c.flash[i] > 0) c.flash[i] = Math.max(0, c.flash[i] - 0.1);
     const s = c.st[i];
     if (s === ST.DEAD) { if (c.stT[i] > 200) { o.rig.root.visible = false; c.st[i] = ST.OFF; } return; }
     if (c.freeze && s !== ST.AIR) return;
+    o.mt++;   // after the freeze check: the attack clock must not run while the world is held
     const dx = h.x - c.x[i], dz = h.z - c.z[i], d = Math.hypot(dx, dz) || 1, toHero = Math.atan2(dx, dz);
     const faceTo = (a, k = 0.12) => { let q = a - c.yaw[i]; q = Math.atan2(Math.sin(q), Math.cos(q)); c.yaw[i] += Math.sign(q) * Math.min(Math.abs(q), k); };
     o.poise = Math.max(0, o.poise - 0.25);
@@ -2421,14 +2522,14 @@ function createCrowd(game, scene) {
       if (t >= 0) {
         if (m.lunge) for (const [a, b, dd, e] of m.lunge) if (t > a && t <= b) { const u0 = (t - 1 - a) / (b - a), u1 = (t - a) / (b - a); const f = e === 'lin' ? (x) => x : (x) => 1 - (1 - x) ** 2; const adv = (f(u1) - f(u0)) * dd * (seg.clip === 'c5' ? 1.1 : 1); c.x[i] += Math.sin(c.yaw[i]) * adv; c.z[i] += Math.cos(c.yaw[i]) * adv; }
         if (seg.leap) {
-          if (t === 8) { o.leapTo = { x: h.x, z: h.z }; c.vy[i] = 9; }
+          if (t === 8 || (t > 8 && !o.leapTo)) { o.leapTo = { x: h.x, z: h.z }; c.vy[i] = 9; }
           if (t > 8 && t < 30) { const u = 0.08; c.x[i] += (o.leapTo.x - c.x[i]) * u; c.z[i] += (o.leapTo.z - c.z[i]) * u; o.danger = { x: o.leapTo.x, z: o.leapTo.z, r: seg.hit.range, k: t / 30 }; }
           c.vy[i] -= CROWD.g * dt; c.y[i] = Math.max(0, c.y[i] + c.vy[i] * dt); if (c.y[i] === 0) c.vy[i] = 0;
           if (t > 8 && t < 29 && c.y[i] <= 0.01 && t > 14) o.mt = seg.tele + 29;
         }
         const hf = seg.leap ? [30, 33] : m.hits[m.hits.length - 1].f;
         if (t >= hf[0] && t <= hf[1] && !o.hitDone) {
-          if (heroInShape(seg.hit, c.x[i], c.z[i], c.yaw[i], h)) { o.hitDone = true; h.hurt(seg.hit.dmg * d0.dmg, c.x[i], c.z[i], !!seg.hit.heavy, o.def.key + ':' + o.atkName); }
+          if (heroInShape(seg.hit, c.x[i], c.z[i], c.yaw[i], h)) { o.hitDone = true; h.hurt(seg.hit.dmg * d0.dmg, c.x[i], c.z[i], !!seg.hit.heavy, o.def.key + ':' + o.atkName, { i }); }
           if (t === hf[0]) { game.emit('officerStrike', { o, heavy: seg.hit.heavy, x: c.x[i], z: c.z[i], shape: seg.hit.shape, r: seg.hit.range }); o.danger = null; }
         }
         const end = Math.min(m.dur, m.cancel + 8);
@@ -2631,7 +2732,7 @@ function createCavalry(game, scene) {
       r.spd += (CAV.speed - r.spd) * 0.09;
       const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
       r.x += fx * r.spd * dt; r.z += fz * r.spd * dt; r.ph += r.spd * dt * 0.8;
-      if (r.rider && Math.hypot(h.x - r.x, h.z - r.z) < 1.3 && h.y - groundY(h.x, h.z) < 1.3) h.hurt(CAV.dmg, r.x - fx * 2, r.z - fz * 2, true, 'cavalry');
+      if (r.rider && Math.hypot(h.x - r.x, h.z - r.z) < 1.3 && h.y - groundY(h.x, h.z) < 1.3) h.hurt(CAV.dmg, r.x - fx * 2, r.z - fz * 2, true, 'cavalry', { cav: r });
       if (r.t > CAV.tele + 90 && (Math.abs(r.x) > ARENA.x1 + 14 || r.z > ARENA.z1 + 4 || r.z < ARENA.z0 - 10)) { r.on = false; r.rig.root.visible = false; }
     }
     if (!cav.busy()) cav.lanes.length = 0;
@@ -2655,6 +2756,7 @@ function createCavalry(game, scene) {
     return n;
   };
 
+  cav.unseat = (r, ux = 0, uz = 0) => { if (!r.on || !r.rider) return; r.rider = false; r.rig.rider.visible = false; cav.unseated++; game.crowd.ko++; game.emit('cavKo', { x: r.x, z: r.z, ux, uz }); };
   cav.render = (t) => {
     for (const r of cav.riders) {
       if (!r.on) continue;
@@ -2962,6 +3064,10 @@ function createVfx(scene, game, camera) {
     V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
     for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
   });
+  game.on('parry', (e) => { ring(e.x, 1.1, e.z, 0.2, 3.2, 0.3, 0xfff2b0, 1); V.flash = 0.5; V.flashCol.setRGB(1, 0.97, 0.8); V.shake = Math.max(V.shake, 0.5);
+    for (let k = 0; k < 18; k++) { const a = Math.random() * 6.28, v = 4 + Math.random() * 7; glow.spawn({ x: e.x, y: 1.2, z: e.z, vx: Math.cos(a) * v, vy: Math.random() * 5, vz: Math.sin(a) * v, g: 12, drag: 3, s: 0.16, life: 0.35, r: 1, gg: 0.95, b: 0.7 }); } });
+  game.on('block', (e) => { for (let k = 0; k < 6; k++) { const a = Math.random() * 6.28, v = 2 + Math.random() * 4; glow.spawn({ x: e.x, y: 1.2, z: e.z, vx: Math.cos(a) * v, vy: Math.random() * 3, vz: Math.sin(a) * v, g: 12, drag: 3, s: 0.1, life: 0.22, r: 0.9, gg: 0.92, b: 1 }); } });
+  game.on('guardBreak', (e) => { ring(e.x, 0.8, e.z, 0.3, 2.6, 0.3, 0xff5030, 0.9); V.shake = Math.max(V.shake, 0.6); });
   game.on('roarMini', (e) => {
     ring(e.x, 0.15, e.z, 0.6, e.r * 1.05, e.big ? 0.7 : 0.45, 0xffb060, 0.95); ring(e.x, 0.9, e.z, 0.4, e.r * 0.7, 0.35, 0xffffff, 0.8);
     V.shake = Math.max(V.shake, e.big ? 1.2 : 0.7); V.flash = e.big ? 0.8 : 0.35; V.flashCol.setRGB(1, 0.8, 0.55);
@@ -3162,6 +3268,7 @@ function createAudio(game) {
   on('arrow', () => { if (Math.random() < 0.5) S.arrow(); });
   on('pickup', S.pickup);
   on('mount', S.whinny); on('whistle', S.whistle); on('hoof', S.hoof); on('unhorse', S.whinny);
+  on('parry', () => { S.armor(); S.tell(); }); on('block', S.armor); on('guardBreak', () => S.hurt(true)); on('lockOn', S.tell);
   on('cavalry', S.horn); on('waveHorn', S.horn); on('roarMini', (e) => { S.roar(); S.slam(e.big); }); on('cross', () => S.hurt(true)); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
   on('milestone', S.milestone);
   on('victory', S.victory);
@@ -3299,7 +3406,8 @@ function crateDrop(x, z) { const r = Math.random(); dropItem(r < 0.34 ? 'bun' : 
 
 // ---------------------------------------------------------------- input
 const keys = new Set(), pressed = new Set();
-const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'] };
+const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'], lock: ['KeyR'] };
+const heldT = new Set();   // touch buttons that are held (guard)
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
   audio.resume();
@@ -3324,14 +3432,16 @@ let padPrev = [];
 // ---- touch: left joystick, right buttons, drag elsewhere to turn the camera
 const touch = { id: null, ox: 0, oy: 0, x: 0, y: 0, cam: null };
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const padScale = () => document.documentElement.style.setProperty('--ts', Math.max(0.68, Math.min(1.25, (innerHeight - 172) / 194)).toFixed(3));
 if (isTouch) {
+  padScale(); addEventListener('resize', padScale);
   const tc = $('touch'); tc.classList.remove('hidden');
   const knob = $('knob'), base = $('stickBase');
   tc.addEventListener('touchstart', (e) => {
     audio.resume();
     for (const t of e.changedTouches) {
       const b = t.target.closest && t.target.closest('[data-k]');
-      if (b) { const k = b.dataset.k; if (k === 'pause') togglePause(); else pressed.add('T_' + k); b.classList.add('on'); continue; }
+      if (b) { const k = b.dataset.k; if (k === 'pause') togglePause(); else if (k === 'guard') { heldT.add(k); b.dataset.tid = t.identifier; } else pressed.add('T_' + k); b.classList.add('on'); continue; }
       if (t.clientX < innerWidth * 0.45 && touch.id === null) { touch.id = t.identifier; touch.ox = touch.x = t.clientX; touch.oy = touch.y = t.clientY; base.style.cssText = `left:${t.clientX}px;top:${t.clientY}px;opacity:1`; }
       else if (!touch.cam) touch.cam = { id: t.identifier, x: t.clientX };
     }
@@ -3344,7 +3454,7 @@ if (isTouch) {
     }
     e.preventDefault();
   }, { passive: false });
-  const end = (e) => { for (const t of e.changedTouches) { if (t.identifier === touch.id) { touch.id = null; knob.style.transform = ''; base.style.opacity = '0.35'; } if (touch.cam && t.identifier === touch.cam.id) touch.cam = null; } tc.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); };
+  const end = (e) => { for (const t of e.changedTouches) { const gb = tc.querySelector('[data-k=guard]'); if (gb && gb.dataset.tid === String(t.identifier)) { heldT.delete('guard'); gb.dataset.tid = ''; } if (t.identifier === touch.id) { touch.id = null; knob.style.transform = ''; base.style.opacity = '0.35'; } if (touch.cam && t.identifier === touch.cam.id) touch.cam = null; } tc.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); };
   tc.addEventListener('touchend', end); tc.addEventListener('touchcancel', end);
 }
 const input = {
@@ -3354,7 +3464,8 @@ const input = {
     if (keys.has('KeyD') || keys.has('ArrowRight')) sx += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) sx -= 1;
     let camX = (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0);
     const pr = (a) => KEYMAP[a].some((k) => pressed.has(k));
-    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount') };
+    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount'), lock: pr('lock') };
+    let guard = keys.has('KeyU') || heldT.has('guard');
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find((p) => p && p.connected);
     if (gp) {
@@ -3362,26 +3473,41 @@ const input = {
       sx += ax(0); fx -= ax(1); camX += ax(2) * 1.2;
       const b = (i) => gp.buttons[i] && gp.buttons[i].pressed, was = (i) => padPrev[i];
       const edge = (i) => b(i) && !was(i);
-      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4) || edge(6)) o.mount = true;
+      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4)) o.mount = true; if (edge(11) || edge(10)) o.lock = true; if (b(6)) guard = true;
       if (edge(9)) togglePause();
       padPrev = gp.buttons.map((x) => x.pressed);
     }
     if (touch.id !== null) { const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.hypot(dx, dy); if (l > 8) { const k = Math.min(1, l / 50) / l; sx += dx * k; fx -= dy * k; } }
-    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount']) if (pressed.has('T_' + a)) o[a] = true;
+    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount', 'lock']) if (pressed.has('T_' + a)) o[a] = true;
     const mag = Math.min(1, Math.hypot(fx, sx));
     const cy = cam.yaw, cfx = Math.sin(cy), cfz = Math.cos(cy);
     let mx = cfx * fx + -cfz * sx, mz = cfz * fx + cfx * sx;
     const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l;
     if (consume) pressed.clear();
     const dx = camDX; camDX = 0;
-    return { mx, mz, mag, camX, dragX: dx, ...(consume ? o : {}) };
+    return { mx, mz, mag, camX, dragX: dx, guard, ...(consume ? o : {}) };
   },
 };
 
 // ---------------------------------------------------------------- camera
 const cam = { crowdK: 0, yaw: 0, pitch: 0.3, dist: 6.6, pos: new THREE.Vector3(0, 4, -20), look: new THREE.Vector3(), manualT: 0, fov: 52 };
 const _t = new THREE.Vector3(), _p = new THREE.Vector3();
+// lock-on: R picks the nearest officer; the camera keeps him in frame and neutral attacks face him
+const lock = { o: null };
+game.lockPos = () => { const o = lock.o; return o ? { x: game.crowd.x[o.idx], z: game.crowd.z[o.idx] } : null; };
+function toggleLock() {
+  if (lock.o) { lock.o = null; return; }
+  const c = game.crowd, h = game.hero; let best = null, bd = 38;
+  for (const o of c.officers) if (o.active && !o.dead) { const d = Math.hypot(c.x[o.idx] - h.x, c.z[o.idx] - h.z); if (d < bd) { bd = d; best = o; } }
+  lock.o = best; if (best) game.emit('lockOn');
+}
 function camStep(inp) {
+  if (inp.lock) toggleLock();
+  if (lock.o) {
+    const o = lock.o, c = game.crowd, hh = game.hero;
+    if (!o.active || o.dead || Math.hypot(c.x[o.idx] - hh.x, c.z[o.idx] - hh.z) > 46) lock.o = null;
+    else { let d = Math.atan2(c.x[o.idx] - hh.x, c.z[o.idx] - hh.z) - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * 0.07; cam.manualT = 30; }
+  }
   cam.yaw -= inp.camX * 2.4 / 60 + inp.dragX * 0.006;
   if (Math.abs(inp.camX) > 0.05 || inp.dragX) cam.manualT = 90; else cam.manualT--;
   const h = game.hero;
@@ -3552,7 +3678,7 @@ function bridgeDirector() {
   if (DIR.cavLeft > 0 && --DIR.cavT <= 0) { if (game.cav.launch(DIR.cavSize)) { DIR.cavLeft--; DIR.cavT = 60 * 20 / game.diff.cav; } else DIR.cavT = 120; }
   const offAlive = c.officers.some((o) => o.active && !o.dead);
   // once only archers and standard-bearers are left they make a run for the bridge themselves
-  if (DIR.t % 60 === 0) { let f = 0; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.ARCHER && c.kind[i] !== KIND.BEARER) f++; game.rush = f === 0 && DIR.waveLive > 60 * 12; }
+  if (DIR.t % 60 === 0) { let f = 0; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.ARCHER && c.kind[i] !== KIND.BEARER) f++; game.rush = (f === 0 && DIR.waveLive > 60 * 12) || (f <= 4 && DIR.waveLive > 60 * 50) || DIR.waveLive > 60 * 85; }
   if (DIR.waveLive > 60 * 5 && !offAlive && ((c.alive <= 2 && !game.cav.busy() && DIR.cavLeft === 0) || DIR.waveLive > 60 * (DIR.wave >= WAVES.length ? 180 : 100))) {
     if (DIR.wave >= WAVES.length) {
       DIR.endAt = DIR.t + 230; game.hero.inv = 99999;
@@ -3593,6 +3719,12 @@ game.on('ko', (e) => {
 game.on('cavalry', () => {
   banner('<em>虎豹騎</em> 突擊！', 'TIGER-LEOPARD CAVALRY — CLEAR THE LANE');
   if (game.cav.waves === 1) say('曹純', '虎豹騎，踏平他！', 'Tiger-Leopard riders — run him down!');
+});
+game.on('parry', (e) => {
+  const h = game.hero, f = e.from;
+  floatText('彈反！', '#fff2b0');
+  if (f && f.cav) game.cav.unseat(f.cav, Math.sin(h.yaw), Math.cos(h.yaw));
+  else if (f && f.i != null) game.crowd.stagger(f.i, Math.sin(h.yaw), Math.cos(h.yaw));
 });
 game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
 game.on('mount', () => { if (!DIR.rode && charKey === 'zhao') { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
@@ -3695,6 +3827,7 @@ function hudUpdate() {
     if (d < bd) { bd = d; boss = o; }
     _v.set(c.x[i], c.y[i] + 2.45 * (o.def.opts.scale || 1), c.z[i]).project(camera);
     if (_v.z > 1 || d > 45) { e.style.display = 'none'; return; }
+    e.classList.toggle('lock', lock.o === o);
     e.style.display = ''; e.style.left = ((_v.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px'; e.style.top = ((-_v.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px';
     e.querySelector('.bar i').style.width = (Math.max(0, c.hp[i] / c.hpMax[i]) * 100).toFixed(1) + '%';
     e.style.opacity = d > 38 ? ((45 - d) / 7).toFixed(2) : '1';
@@ -3716,6 +3849,7 @@ function startGame() {
   ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
 }
 function resetGame() {
+  lock.o = null;
   game.hero.reset(); game.crowd.reset(); game.cav.reset(); game.world.resetCrates(); game.frame = 0; game.hitstop = 0; game.slow = 0; game.musou.active = false; game.crowd.freeze = 0; game.reinforceOK = true;
   Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {}, cavT: 60 * 14, koPos: null, rode: false });
   Object.assign(feiPose, clonePose(FEI.stand));
@@ -3728,9 +3862,19 @@ function resetGame() {
   } else { game.goal = null; game.crowd.spawnArmy(); }
   cam.yaw = 0; cam.pos.set(0, 4, game.hero.z - 8); ui.hpLag = 1; lastKoShown = -1;
 }
+const K = (s) => s.split('').map((c) => `<kbd>${c}</kbd>`).join('');
+const MOVELIST = {
+  zhao: [['連擊', `${K('J')}×6 — 刺・挑・掃・連刺・劈・迴旋`], ['C1', `${K('K')} — 挑空`], ['C2', `${K('JK')} — 旋挑，再追刺空中`], ['C3', `${K('JJK')} — 百烈突`],
+    ['C4', `${K('J')}×3 ${K('K')} — 旋風，收招吹飛`], ['C5', `${K('J')}×4 ${K('K')} — 龍突進（可轉向）`], ['C6', `${K('J')}×5 ${K('K')} — 躍斬震地`]],
+  fei: [['連擊', `${K('J')}×5 — 橫掃・回掃・砸地・肩撞・迴旋`], ['C1', `${K('K')} — 頓矛震地（挑空）`], ['C2', `${K('JK')} — 上撩`], ['C3', `${K('JJK')} — 蛇矛亂舞（可轉向）`],
+    ['C4', `${K('J')}×3 ${K('K')} — 躍起砸地`], ['C5', `${K('J')}×4 ${K('K')} — 蠻牛衝撞（可轉向）`]],
+};
+const MOVE_COMMON = [['空中', `${K('J')} 連斬 ×3 · ${K('K')} 下刺`], ['馬上', `${K('J')} 左右橫掃 · ${K('K')} 挺槍突擊 · <kbd>Space</kbd> 躍下`],
+  ['格擋', `按住 ${K('U')} — 擋正面攻擊；剛按下的瞬間擋住即<b>彈反</b>，重擊會破防`], ['鎖定', `${K('R')} — 鎖定最近的敵將`]];
 function togglePause() {
   if (ui.mode === 'play') {
     ui.mode = 'pause'; showMenu('pause');
+    $('moveList').innerHTML = [...MOVELIST[charKey], ...MOVE_COMMON].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
     const s = Math.floor(DIR.time / 60);
     $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / ${game.stage === 'bridge' ? 2 : 4}</dd>`;
   } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
@@ -3817,7 +3961,7 @@ function render(dt) {
   composer.render();
   if (ui.mode === 'play' || ui.mode === 'result') hudUpdate();
 }
-let acc = 0;
+let acc = 0, shotW = 0, shotH = 0;   // test hook: fixed render size for captures
 function frame(now) {
   requestAnimationFrame(frame);
   if (manual) return;
@@ -3829,8 +3973,7 @@ function frame(now) {
   if (n === 4) acc = 0;
   render(dt);
 }
-function onResize() {
-  const w = innerWidth, h = innerHeight;
+function onResize(e, w = shotW || innerWidth, h = shotH || innerHeight) {
   renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
@@ -3867,8 +4010,8 @@ function autoInput(real) {
   if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
   if (game.goal) {
     const offNear = c.officers.some((of) => of.active && !of.dead && Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z) < 6);
-    let bd = 1e9, bi = -1; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.BEARER && c.kind[i] !== KIND.ARCHER) { const d = Math.hypot(c.x[i] - game.goal.x, c.z[i] - game.goal.z); if (d < bd) { bd = d; bi = i; } }
-    if (bi >= 0 && bd > 24) { bi = -1; if (!offNear) tgt = null; }   // hold the bridge mouth until they come
+    let bd = 1e9, bi = -1; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && (game.rush || (c.kind[i] !== KIND.BEARER && c.kind[i] !== KIND.ARCHER))) { const d = Math.hypot(c.x[i] - game.goal.x, c.z[i] - game.goal.z); if (d < bd) { bd = d; bi = i; } }
+    if (bi >= 0 && bd > 15) { bi = -1; if (!offNear) tgt = null; }   // hold the bridge mouth until they come
     if (bi >= 0 && offNear && bd > 9) bi = -2;                        // an officer is on him and nobody is near the bridge yet
     if (bi >= 0) { tgt = { x: c.x[bi], z: c.z[bi] }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z); } else if (!tgt) { tgt = { x: game.goal.x, z: game.goal.z + 7 }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z) > 2 ? 99 : 0; }
   }
@@ -3893,6 +4036,8 @@ window.__vm = {
   info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, char: charKey, wave: DIR.wave, crossed: DIR.crossed, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
+  size(w, h) { shotW = w; shotH = h; onResize(); },
+  hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
   setDiff, setChar, dropItem, items, startWave,
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },

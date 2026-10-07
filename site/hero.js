@@ -95,6 +95,51 @@ export const MOVES = {
       [16, P({ tx: 0.7, rootY: -0.4, w: W(-0.05, 0.05, 0.4, 1.2, 0), gL: 0.25, thL: 1.1, shL: -1.6, thR: -0.5, shR: -1.2 }), 'snap'], [40, BASE]],
     hits: [{ f: [14, 17], shape: 'circle', range: 4.0, dmg: 14, kb: 'launch', force: 3, lift: 6, stop: 5 }] },
 };
+// flags the state machine reads instead of move ids: steer = may turn during the lunge, fx = [[frame, event, radius]]
+Object.assign(MOVES.c3, { steer: true }); Object.assign(MOVES.c5, { steer: true, fx: [[28, 'burst', 1.2]] });
+Object.assign(MOVES.c6, { fx: [[30, 'slam', 5.6]] }); Object.assign(MOVES.ak, { fx: [[14, 'slam', 4]] });
+
+// ---- 張飛: heavier, wider swings with the serpent spear (five normals, five charges)
+const fSwingR = P({ ty: -0.85, tx: 0.2, rootY: -0.18, w: W(-0.32, 0.12, 0.25, 0.1, -1.5), gL: 0.5, thL: 0.55, shL: -0.6, thR: -0.4, shR: -0.4, lzL: 0.3, lzR: -0.3 });
+const fSwingL = P({ ty: 0.9, tx: 0.2, rootY: -0.2, w: W(-0.05, 0.14, 0.3, 0.08, 1.45), gL: 0.45, thL: 0.5, shL: -0.6, thR: -0.45, shR: -0.45, lzL: 0.32, lzR: -0.32 });
+const fRaise = P({ ty: 0.15, tx: -0.4, hx: 0.25, rootY: 0.02, w: W(-0.12, 0.55, 0.02, -1.55, -0.2), gL: 0.4, thL: 0.35, thR: -0.25 });
+const fSmash = P({ ty: 0.1, tx: 0.62, hx: -0.45, rootY: -0.32, w: W(-0.1, 0.02, 0.45, 0.5, -0.2), gL: 0.35, thL: 0.85, shL: -0.6, thR: -0.7, shR: -0.2 });
+const fRam = P({ ty: -0.7, tx: 0.6, hx: -0.3, hy: 0.5, rootY: -0.25, w: W(-0.3, 0.02, -0.02, -0.1, Math.PI - 0.4), ikL: 0, aL: [0.5, 0, 0.9], thL: 0.9, shL: -0.5, thR: -0.8, shR: -0.2, cape: 1 });
+const fStompUp = P({ ty: 0.1, tx: -0.2, hx: 0.2, rootY: 0.03, w: W(-0.14, 0.62, 0.18, -1.57, 0), gL: 0.35, thL: 1.3, shL: -1.5, thR: -0.1 });
+const fStompDown = P({ ty: 0.1, tx: 0.35, hx: -0.25, rootY: -0.3, w: W(-0.14, 0.3, 0.2, -1.57, 0), gL: 0.35, thL: 0.7, shL: -0.9, thR: -0.5, shR: -0.5, lzL: 0.35, lzR: -0.35 });
+Object.assign(MOVES, {
+  fn1: { dur: 32, cancel: 16, lunge: [[5, 13, 0.7]], next: 'fn2', charge: 'fc2',                    // right-to-left sweep
+    keys: [[0, BASE], [8, fSwingR], [14, fSwingL, 'snap'], [20, fSwingL], [32, BASE]],
+    hits: [{ f: [11, 15], shape: 'arc', range: 3.6, ang: 200, dmg: 14, kb: 'push', force: 3.5, stop: 4 }] },
+  fn2: { dur: 32, cancel: 16, lunge: [[4, 12, 0.7]], next: 'fn3', charge: 'fc3',                    // and back
+    keys: [[0, fSwingL], [5, fSwingL], [11, fSwingR, 'snap'], [18, fSwingR], [32, BASE]],
+    hits: [{ f: [8, 12], shape: 'arc', range: 3.6, ang: 210, dmg: 15, kb: 'push', force: 4, stop: 4 }] },
+  fn3: { dur: 38, cancel: 20, lunge: [[6, 14, 0.8]], next: 'fn4', charge: 'fc4', fx: [[14, 'slam', 2.6]],   // overhead smash
+    keys: [[0, BASE], [9, fRaise], [14, fSmash, 'snap'], [23, fSmash], [38, BASE]],
+    hits: [{ f: [13, 16], shape: 'arc', range: 3.8, ang: 90, dmg: 20, kb: 'down', force: 3, stop: 6 }] },
+  fn4: { dur: 32, cancel: 18, armor: true, lunge: [[4, 14, 2.4]], next: 'fn5', charge: 'fc5',       // shoulder ram
+    keys: [[0, BASE], [4, fRam, 'snap'], [15, fRam], [32, BASE]],
+    hits: [{ f: [5, 14], every: 3, shape: 'line', len: 2.0, width: 2.4, dmg: 8, kb: 'blow', force: 6, lift: 3.5, stop: 1 }] },
+  fn5: { dur: 50, cancel: 38, lunge: [[4, 22, 1.2]],                                                  // full turn
+    keys: [[0, BASE], [7, fSwingL], [23, P({ yawAdd: -TAU, ty: -0.85, tx: 0.2, rootY: -0.1, w: W(-0.32, 0.2, 0.25, 0.05, -1.5), gL: 0.5, thL: 0.5, shL: -0.9, thR: -0.3, shR: -0.7 }), 'out'],
+      [32, P({ yawAdd: -TAU, ty: -0.9, tx: 0.3, rootY: -0.28, w: W(-0.32, 0.1, 0.25, 0.15, -1.55), gL: 0.5, thL: 0.7, shL: -0.6, thR: -0.6, lzL: 0.32, lzR: -0.32 })], [50, P({ yawAdd: -TAU })]],
+    hits: [{ f: [10, 23], shape: 'circle', range: 4.0, dmg: 20, kb: 'blow', force: 9, lift: 5, stop: 7 }] },
+  fc1: { dur: 42, cancel: 34, armor: true, fx: [[15, 'slam', 3.8]],                                   // stamp the spear butt down
+    keys: [[0, BASE], [10, fStompUp], [15, fStompDown, 'snap'], [28, fStompDown], [42, BASE]],
+    hits: [{ f: [15, 18], shape: 'circle', range: 3.8, dmg: 14, kb: 'launch', force: 1, lift: 8.5, stop: 6 }] },
+  fc2: { dur: 38, cancel: 30, armor: true, lunge: [[4, 10, 0.6]], keys: MOVES.c1.keys,                // rip upward
+    hits: [{ f: [10, 14], shape: 'arc', range: 3.6, ang: 150, dmg: 17, kb: 'launch', force: 2, lift: 9.5, stop: 6 }] },
+  fc3: { dur: 58, cancel: 50, armor: true, steer: true, lunge: [[6, 44, 2.2, 'lin']], keys: MOVES.c4.keys,   // whirl forward
+    hits: [{ f: [8, 43], every: 7, shape: 'circle', range: 3.7, dmg: 8, kb: 'launch', force: -1, lift: 3.2, stop: 1 },
+      { f: [46, 49], shape: 'circle', range: 4.4, dmg: 22, kb: 'blow', force: 10, lift: 5, stop: 8 }] },
+  fc4: { dur: 60, cancel: 52, armor: true, leap: [8, 8.5], plunge: [20, -20], land: 30, fx: [[30, 'slam', 6.4]], keys: MOVES.c6.keys,   // leap and crush
+    hits: [{ f: [30, 33], shape: 'circle', range: 6.4, dmg: 34, kb: 'blow', force: 10, lift: 8, stop: 10, heavy: true }] },
+  fc5: { dur: 46, cancel: 38, armor: true, steer: true, lunge: [[6, 26, 8.5, 'lin']], fx: [[28, 'burst', 1.2]],   // bull rush
+    keys: [[0, BASE], [5, fRam, 'snap'], [26, fRam], [30, fSwingL, 'snap'], [46, BASE]],
+    hits: [{ f: [7, 26], every: 3, shape: 'line', len: 2.6, width: 3.0, dmg: 9, kb: 'blow', force: 7, lift: 5, stop: 1 },
+      { f: [28, 31], shape: 'circle', range: 4.2, dmg: 18, kb: 'blow', force: 9, lift: 5, stop: 6 }] },
+});
+const GUARD = P({ ty: 0.45, tx: 0.08, rootY: -0.16, w: W(-0.3, 0.32, 0.4, -0.12, 1.5), gL: 0.55, thL: 0.5, shL: -0.5, thR: -0.4, shR: -0.4, lzL: 0.28, lzR: -0.28 });
 for (const [k, m] of Object.entries(MOVES)) m.id = k;
 
 export const HERO = { run: 7.4, accel: 60, turn: 16, jumpV: 8.2, g: 26, dodge: 22, hpMax: 500, musouMax: 100, ride: 11.5, rideAccel: 12, rideTurn: 3.4, buffTime: 30 * 60 };
@@ -104,7 +149,7 @@ export const CHARS = {
   zhao: { key: 'zhao', zh: '趙雲', en: 'ZHAO YUN', seal: '常山', pal: 'zhao', opts: { cape: true, adou: true, headband: true, topknot: true, scarf: true, weapon: 'spear' },
     horse: 'white', hp: 500, run: 7.4, atk: 1, reach: 1, tough: false, musou: 'dragon', tip: 2.15, stage: 'changban' },
   fei: { key: 'fei', zh: '張飛', en: 'ZHANG FEI', seal: '燕人', pal: 'zhangfei', opts: { beard: true, headband: true, topknot: true, weapon: 'serpent', scale: 1.16 },
-    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.15, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge' },
+    horse: 'black', hp: 700, run: 6.6, atk: 1.35, reach: 1.06, tough: true, musou: 'roar', tip: 2.6, stage: 'bridge', mv: { n1: 'fn1', c1: 'fc1' } },
 };
 const reachHit = (hd, r) => (r === 1 ? hd : hd['_r' + r] || (hd['_r' + r] = { ...hd, range: hd.range && hd.range * r, len: hd.len && hd.len * r, width: hd.width && hd.width * (1 + (r - 1) * 0.5) }));
 
@@ -137,19 +182,34 @@ export function createHero(game) {
 
   const setState = (s) => { h.state = s; h.t = 0; };
   const startMove = (id, inp) => {
+    id = (game.char.mv && game.char.mv[id]) || id;
     const m = MOVES[id];
     h.move = m; h.mt = 0; h.serial++; h.hitsThisMove = 0; setState('move');
     h.lungeDone = 0;
     // face the stick, else soft-lock the nearest enemy in front
     if (inp && inp.mag > 0.2) h.yaw = Math.atan2(inp.mx, inp.mz);
-    else { const e = game.crowd.nearest(h.x, h.z, 5.5, Math.sin(h.yaw), Math.cos(h.yaw), -0.2); if (e) h.yaw = Math.atan2(e.x - h.x, e.z - h.z); }
+    else { const lk = game.lockPos && game.lockPos(), e = lk && Math.hypot(lk.x - h.x, lk.z - h.z) < 9 ? lk : game.crowd.nearest(h.x, h.z, 5.5, Math.sin(h.yaw), Math.cos(h.yaw), -0.2); if (e) h.yaw = Math.atan2(e.x - h.x, e.z - h.z); }
     if (m.air) { h.airChain++; if (m.hover) h.vy = Math.max(h.vy, m.hover); }
     game.emit('move', { id, hero: h });
   };
   h.startMove = startMove;
 
-  h.hurt = (dmg, fx, fz, heavy, src = '?') => {
+  // from = who struck ({ i } crowd index, or { cav } rider) so a parry can answer it
+  h.hurt = (dmg, fx, fz, heavy, src = '?', from = null) => {
     if (h.dead || h.inv > 0 || h.state === 'musou' || h.state === 'down' || h.state === 'getup') return false;
+    if (h.state === 'guard' && Math.cos(Math.atan2(fx - h.x, fz - h.z) - h.yaw) > -0.2) {
+      if (h.guardT <= 10) {                                   // just guard: no damage, the attacker reels
+        h.musou = Math.min(HERO.musouMax, h.musou + 8); game.hitstop = Math.max(game.hitstop, 7); h.guardT = 0; h.parries = (h.parries || 0) + 1;
+        game.emit('parry', { x: h.x + Math.sin(h.yaw) * 0.8, z: h.z + Math.cos(h.yaw) * 0.8, from });
+        return false;
+      }
+      if (!heavy) {
+        h.hp = Math.max(1, h.hp - dmg * game.diff.dmg * 0.12); h.kx = -Math.sin(h.yaw) * 1.6; h.kz = -Math.cos(h.yaw) * 1.6; h.blockT = 8;
+        game.emit('block', { x: h.x + Math.sin(h.yaw) * 0.8, z: h.z + Math.cos(h.yaw) * 0.8 });
+        return false;
+      }
+      dmg *= 0.5; heavy = false; game.emit('guardBreak', { x: h.x, z: h.z });      // a heavy blow smashes through, but only staggers
+    }
     const armored = (h.state === 'move' && h.move.armor) || (h.riding && h.ratk && h.ratk.id === 'rc');
     dmg *= game.diff.dmg * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
     h.hp -= dmg;
@@ -209,6 +269,18 @@ export function createHero(game) {
 
     const canAct = S === 'idle' || S === 'run' || (S === 'land' && h.t > 4);
     if (inp.musou && h.musou >= HERO.musouMax && (canAct || S === 'move' || S === 'jump' || S === 'hurt' || S === 'ride')) { if (h.riding) leaveHorse(); h.move = null; game.musou.start(h); return; }
+    if (inp.guard && canAct && h.grounded) { setState('guard'); h.guardT = 0; h.spd = 0; h.kx = h.kz = 0; return integrate(dt); }
+    if (S === 'guard') {
+      h.guardT++;
+      const lk = game.lockPos && game.lockPos();
+      if (lk) h.yaw = turn(h.yaw, Math.atan2(lk.x - h.x, lk.z - h.z), 0.2);
+      if (h.blockT > 0) { h.blockT--; h.x += h.kx * dt; h.z += h.kz * dt; h.kx *= 0.85; h.kz *= 0.85; }
+      else if (inp.mag > 0.1) { h.x += inp.mx * 1.8 * dt; h.z += inp.mz * 1.8 * dt; h.ph += 1.8 * dt * 1.55; }
+      if (h.bufD > 0) { startDodge(inp); return integrate(dt); }
+      if (h.buf) { const b = h.buf; h.buf = null; startMove(b === 'a' ? 'n1' : 'c1', inp); return integrate(dt); }
+      if (!inp.guard && h.guardT > 6) setState('idle');
+      return integrate(dt);
+    }
     if (inp.mount && !h.riding && canAct) {
       const hz = h.horse;
       if (Math.hypot(hz.x - h.x, hz.z - h.z) < 3) { hz.yaw = h.yaw; mount(); return integrate(dt); }
@@ -255,7 +327,7 @@ export function createHero(game) {
       let adv = 0;
       if (m.lunge) for (const [a, b, d, e] of m.lunge) if (h.mt > a && h.mt <= b) { const u0 = (h.mt - 1 - a) / (b - a), u1 = (h.mt - a) / (b - a); const f = e === 'lin' ? (x) => x : (x) => 1 - (1 - x) ** 2; adv += (f(u1) - f(u0)) * d; }
       if (adv) {
-        if (inp.mag > 0.2 && (m.id === 'c5' || m.id === 'c3')) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.06);
+        if (inp.mag > 0.2 && m.steer) h.yaw = turn(h.yaw, Math.atan2(inp.mx, inp.mz), 0.06);
         const e = game.crowd.blockedAhead(h.x, h.z, Math.sin(h.yaw), Math.cos(h.yaw));
         const k = m.armor ? 1 : e ? 0.35 : 1;
         h.x += Math.sin(h.yaw) * adv * k; h.z += Math.cos(h.yaw) * adv * k;
@@ -274,14 +346,12 @@ export function createHero(game) {
         const n = game.crowd.heroHit(h, reachHit(hd, reach), key, h.mt - hd.f[0], hd.f[1] - hd.f[0]);
         h.hitsThisMove += n;
       });
-      if (m.id === 'c6' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 5.6 });
-      if (m.id === 'ak' && h.mt === m.land) game.emit('slam', { x: h.x, z: h.z, r: 4 });
-      if (m.id === 'c5' && h.mt === 28) game.emit('burst', { x: h.x + Math.sin(h.yaw) * 1.2, z: h.z + Math.cos(h.yaw) * 1.2 });
+      if (m.fx) for (const [f, ev, r] of m.fx) if (h.mt === f) { if (ev === 'burst') game.emit('burst', { x: h.x + Math.sin(h.yaw) * r, z: h.z + Math.cos(h.yaw) * r }); else game.emit(ev, { x: h.x, z: h.z, r: r * reach }); }
       // chaining
       const canCancel = h.mt >= m.cancel;
       if (h.bufD > 0 && (h.mt < (m.hits[0]?.f[0] ?? 0) || canCancel) && !m.air && h.grounded) { startDodge(inp); return integrate(dt); }
       if (h.buf && canCancel) {
-        if (m.air) { if (h.buf === 'a' && h.airChain < 3 && !h.grounded) { h.buf = null; startMove('aj', inp); } else if (h.buf === 'c' && !h.grounded && m.id !== 'ak') { h.buf = null; startMove('ak', inp); } }
+        if (m.air) { if (h.buf === 'a' && h.airChain < 3 && !h.grounded) { h.buf = null; startMove('aj', inp); } else if (h.buf === 'c' && !h.grounded && !m.plunge) { h.buf = null; startMove('ak', inp); } }
         else if (h.buf === 'a' && m.next) { h.buf = null; startMove(m.next, inp); }
         else if (h.buf === 'c' && m.charge) { h.buf = null; startMove(m.charge, inp); }
         else if (h.buf === 'a' && !m.next && h.mt >= m.dur - 6) { h.buf = null; startMove('n1', inp); }
@@ -387,6 +457,7 @@ export function createHeroView(scene, h) {
     else if (S === 'jump') { Object.assign(tgt, clonePose(BASE), { tx: -0.1, thL: 0.9, shL: -1.4, thR: 0.2, shR: -1.0, rootY: 0, cape: 0.8, w: [-0.3, 0.1, 0.0, -0.3, Math.PI - 0.5, 0], ikL: 0, aL: [-0.8, 0, 0.6] }); k = 0.25; }
     else if (S === 'land') { Object.assign(tgt, clonePose(BASE), { rootY: -0.25, tx: 0.4, thL: 0.8, shL: -1.2, thR: -0.3, shR: -0.9 }); k = 0.4; }
     else if (S === 'dodge') { Object.assign(tgt, clonePose(BASE), { rootY: -0.3, tx: 0.7, hx: -0.4, thL: 1.0, shL: -1.4, thR: -0.6, shR: -0.8, cape: 1, w: [-0.3, 0.0, -0.05, -0.1, Math.PI - 0.3, 0], ikL: 0, aL: [0.9, 0, 0.3] }); k = 0.45; }
+    else if (S === 'guard') { Object.assign(tgt, clonePose(GUARD)); if (h.blockT > 0) { tgt.tx = -0.12; tgt.rootY = -0.22; } k = 0.5; }
     else if (S === 'hurt') { Object.assign(tgt, clonePose(BASE), { tx: -0.45, hx: 0.4, rootY: -0.1, thL: 0.1, thR: -0.4, cape: 0.5 }); k = 0.5; }
     else if (S === 'down') { Object.assign(tgt, clonePose(BASE), { pitch: -1.45, rootY: 0.25, tx: -0.1, thL: 0.3, shL: -0.4, thR: 0.1, shR: -0.2, w: [-0.35, 0.0, 0.1, 0, 0.3, 0], ikL: 0, aL: [-0.3, 0, 1.2] }); k = 0.22; }
     else if (S === 'getup') { Object.assign(tgt, clonePose(BASE), { rootY: -0.35, tx: 0.5, thL: 1.0, shL: -1.6, thR: -0.2, shR: -1.4 }); k = 0.3; }

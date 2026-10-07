@@ -55,7 +55,7 @@ export function createCrowd(game, scene) {
   const F = () => new Float32Array(N), I = () => new Int32Array(N);
   const c = { N, x: F(), z: F(), y: F(), vx: F(), vz: F(), vy: F(), yaw: F(), hp: F(), hpMax: F(), st: I(), stT: I(), kind: I(), squad: I(),
     lastKey: I(), flash: F(), spin: F(), spinV: F(), pitch: F(), cd: I(), ph: F(), pref: F(), kod: I(), strafe: F(), tele: F(), ox: F(), oz: F(),
-    squads: [], officers: [], arrows: [], ko: 0, alive: 0, spawned: 0, tokensUsed: 0, freeze: 0, lastHitBy: I() };
+    squads: [], officers: [], arrows: [], ko: 0, alive: 0, spawned: 0, tokensUsed: 0, freeze: 0, lastHitBy: I(), lx: F(), lz: F(), det: I(), detN: I() };
   const offBase = CROWD.maxGrunts;
   let rngS = 99;
   const rnd = () => ((rngS = Math.imul(rngS ^ (rngS >>> 15), 2246822519) + 0x6D2B79F5 | 0) >>> 0) / 4294967296;
@@ -86,7 +86,7 @@ export function createCrowd(game, scene) {
     c.x[i] = x; c.z[i] = z; c.y[i] = 0; c.vx[i] = c.vz[i] = c.vy[i] = 0; c.yaw[i] = yaw; c.kind[i] = kind; c.squad[i] = sq;
     c.hpMax[i] = c.hp[i] = (kind === KIND.CAPTAIN ? 110 : kind === KIND.BEARER ? 60 : 40 + rnd() * 16) * game.diff.hp;
     c.st[i] = st; c.stT[i] = 0; c.lastKey[i] = 0; c.flash[i] = 0; c.spin[i] = 0; c.pitch[i] = 0; c.cd[i] = 60 + (rnd() * 120) | 0; c.ph[i] = rnd() * TAU;
-    c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0;
+    c.pref[i] = rnd(); c.kod[i] = 0; c.strafe[i] = rnd() < 0.5 ? -1 : 1; c.tele[i] = 0; c.det[i] = 0; c.detN[i] = 0;
     c.spawned++;
     return i;
   }
@@ -189,6 +189,12 @@ export function createCrowd(game, scene) {
     return n;
   };
 
+  // a parried attacker is thrown off balance (officers lose their attack and their poise)
+  c.stagger = (i, ux, uz) => {
+    if (!alive(i)) return;
+    c.st[i] = ST.HURT; c.stT[i] = -18; c.vx[i] = ux * 5; c.vz[i] = uz * 5; c.flash[i] = 1; c.cd[i] = Math.max(c.cd[i], 120);
+    if (c.kind[i] === KIND.OFFICER) { const o = c.officers[i - offBase]; o.atk = null; o.danger = null; o.poise = 100; o.think = 70; c.stT[i] = -30; }
+  };
   c.shock = (x, z, r, force, lift) => {
     for (let i = 0; i < N; i++) {
       if (!alive(i)) continue;
@@ -317,6 +323,31 @@ export function createCrowd(game, scene) {
     return best;
   }
 
+  // slide round props instead of walking into them (a row of 拒馬 used to hold men for good)
+  function avoid(i, vx, vz) {
+    const sp = Math.hypot(vx, vz); if (sp < 0.1) return [vx, vz];
+    const x = c.x[i], z = c.z[i], ux = vx / sp, uz = vz / sp;
+    for (const k of game.world.colliders) {
+      const dx = k.x - x, dz = k.z - z, d = Math.hypot(dx, dz) || 1;
+      if (d > k.r + CROWD.radius + 0.5 || (dx * ux + dz * uz) / d < 0.3) continue;
+      const sg = c.strafe[i] >= 0 ? 1 : -1;
+      return [-dz / d * sg * sp, dx / d * sg * sp];
+    }
+    return [vx, vz];
+  }
+  // men walking somewhere (in formation or to the bridge) who make no headway sidestep until they do:
+  // overlapping props (a row of 拒馬) form pockets that plain sliding never leaves
+  function travel(i, vx, vz) {
+    if (game.frame % 40 === i % 40) {
+      const m = Math.hypot(c.x[i] - c.lx[i], c.z[i] - c.lz[i]); c.lx[i] = c.x[i]; c.lz[i] = c.z[i];
+      if (m < 0.35) { c.det[i] = 70; if (++c.detN[i] % 3 === 0) c.strafe[i] *= -1; } else if (c.det[i] <= 0) c.detN[i] = 0;
+    }
+    if (c.det[i] > 0) {
+      c.det[i]--; const sp = Math.hypot(vx, vz) || 1, sg = c.strafe[i] >= 0 ? 1 : -1;
+      return [(-vz * sg * 0.95 - vx * 0.3) / sp * 3.4, (vx * sg * 0.95 - vz * 0.3) / sp * 3.4];
+    }
+    return avoid(i, vx, vz);
+  }
   function stepSoldier(i, h, dt) {
     c.stT[i]++;
     if (c.flash[i] > 0) c.flash[i] = Math.max(0, c.flash[i] - 0.12);
@@ -341,7 +372,7 @@ export function createCrowd(game, scene) {
         const tx = sq.cx + rx * c.ox[i] + fx * c.oz[i], tz = sq.cz + rz * c.ox[i] + fz * c.oz[i];
         const ex = tx - c.x[i], ez = tz - c.z[i], ed = Math.hypot(ex, ez);
         const sp = Math.min(CROWD.run, ed * 3 + (sq.state === 'march' ? CROWD.march : 0));
-        if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
+        if (ed > 1.5) { const [ax, az] = travel(i, ex / ed * sp, ez / ed * sp); move(ax, az); } else if (ed > 0.05) move(ex / ed * sp, ez / ed * sp);
         faceTo(sq.yaw, 0.08);
         if (sq.state === 'hold') { c.st[i] = ST.FORM; }
         if (sq.state === 'engaged' || (sq.goal ? d < 4.4 && c.nearN < 30 : d < 5)) { c.st[i] = ST.ENGAGE; c.stT[i] = 0; }
@@ -352,7 +383,7 @@ export function createCrowd(game, scene) {
         if (game.goal && (d > (kind === KIND.ARCHER ? 27 : 12) || (c.nearN > 38 && d > 5.5 && c.pref[i] > 0.5 && kind !== KIND.ARCHER) || (game.rush && (kind === KIND.ARCHER || kind === KIND.BEARER)))) {   // nobody to fight here (or no room at him): make for the bridge
           const gx = game.goal.x - c.x[i], gz = game.goal.z - c.z[i], gd = Math.hypot(gx, gz) || 1;
           if (gd < 1.6) { c.st[i] = ST.OFF; game.emit('cross', { n: 1 }); break; }
-          move(gx / gd * 3.4, gz / gd * 3.4); faceTo(Math.atan2(gx, gz)); break;
+          const [ax, az] = travel(i, gx / gd * 3.4, gz / gd * 3.4); move(ax, az); faceTo(Math.atan2(ax, az)); break;
         }
         if (kind === KIND.ARCHER) {
           const want = 15 + c.pref[i] * 4;
@@ -369,7 +400,7 @@ export function createCrowd(game, scene) {
         }
         const want = 2.3 + c.pref[i] * 2.4;
         let vx = 0, vz = 0;
-        if (d > want + 0.3) { const sp = d > 8 ? CROWD.run : CROWD.walk; vx = dx / d * sp; vz = dz / d * sp; }
+        if (d > want + 0.3) { const sp = d > 8 ? CROWD.run : CROWD.walk; [vx, vz] = avoid(i, dx / d * sp, dz / d * sp); }
         else if (d < want - 0.5) { vx = -dx / d * 1.2; vz = -dz / d * 1.2; }
         // slow strafe around the ring
         if (d < want + 2) { vx += -dz / d * c.strafe[i] * 0.45; vz += dx / d * c.strafe[i] * 0.45; if (c.stT[i] % 240 === 0) c.strafe[i] *= -1; }
@@ -391,7 +422,7 @@ export function createCrowd(game, scene) {
         if (c.stT[i] === 4) {
           const reach = c.kind[i] === KIND.SWORD ? 2.0 : 2.5;
           const a = Math.atan2(Math.sin(toHero - c.yaw[i]), Math.cos(toHero - c.yaw[i]));
-          if (d < reach && Math.abs(a) < 0.9 && h.y < 1.2) h.hurt(CROWD.dmg * (c.kind[i] === KIND.CAPTAIN ? 1.6 : 1), c.x[i], c.z[i], false, 'grunt');
+          if (d < reach && Math.abs(a) < 0.9 && h.y < 1.2) h.hurt(CROWD.dmg * (c.kind[i] === KIND.CAPTAIN ? 1.6 : 1), c.x[i], c.z[i], false, 'grunt', { i });
         }
         if (c.stT[i] >= CROWD.strike) { c.st[i] = ST.RECOVER; c.stT[i] = 0; }
         break;
@@ -449,11 +480,12 @@ export function createCrowd(game, scene) {
 
   // ------------------------------------------------ officer AI
   function officerStep(o, i, h, dt) {
-    c.stT[i]++; o.mt++;
+    c.stT[i]++;
     if (c.flash[i] > 0) c.flash[i] = Math.max(0, c.flash[i] - 0.1);
     const s = c.st[i];
     if (s === ST.DEAD) { if (c.stT[i] > 200) { o.rig.root.visible = false; c.st[i] = ST.OFF; } return; }
     if (c.freeze && s !== ST.AIR) return;
+    o.mt++;   // after the freeze check: the attack clock must not run while the world is held
     const dx = h.x - c.x[i], dz = h.z - c.z[i], d = Math.hypot(dx, dz) || 1, toHero = Math.atan2(dx, dz);
     const faceTo = (a, k = 0.12) => { let q = a - c.yaw[i]; q = Math.atan2(Math.sin(q), Math.cos(q)); c.yaw[i] += Math.sign(q) * Math.min(Math.abs(q), k); };
     o.poise = Math.max(0, o.poise - 0.25);
@@ -497,14 +529,14 @@ export function createCrowd(game, scene) {
       if (t >= 0) {
         if (m.lunge) for (const [a, b, dd, e] of m.lunge) if (t > a && t <= b) { const u0 = (t - 1 - a) / (b - a), u1 = (t - a) / (b - a); const f = e === 'lin' ? (x) => x : (x) => 1 - (1 - x) ** 2; const adv = (f(u1) - f(u0)) * dd * (seg.clip === 'c5' ? 1.1 : 1); c.x[i] += Math.sin(c.yaw[i]) * adv; c.z[i] += Math.cos(c.yaw[i]) * adv; }
         if (seg.leap) {
-          if (t === 8) { o.leapTo = { x: h.x, z: h.z }; c.vy[i] = 9; }
+          if (t === 8 || (t > 8 && !o.leapTo)) { o.leapTo = { x: h.x, z: h.z }; c.vy[i] = 9; }
           if (t > 8 && t < 30) { const u = 0.08; c.x[i] += (o.leapTo.x - c.x[i]) * u; c.z[i] += (o.leapTo.z - c.z[i]) * u; o.danger = { x: o.leapTo.x, z: o.leapTo.z, r: seg.hit.range, k: t / 30 }; }
           c.vy[i] -= CROWD.g * dt; c.y[i] = Math.max(0, c.y[i] + c.vy[i] * dt); if (c.y[i] === 0) c.vy[i] = 0;
           if (t > 8 && t < 29 && c.y[i] <= 0.01 && t > 14) o.mt = seg.tele + 29;
         }
         const hf = seg.leap ? [30, 33] : m.hits[m.hits.length - 1].f;
         if (t >= hf[0] && t <= hf[1] && !o.hitDone) {
-          if (heroInShape(seg.hit, c.x[i], c.z[i], c.yaw[i], h)) { o.hitDone = true; h.hurt(seg.hit.dmg * d0.dmg, c.x[i], c.z[i], !!seg.hit.heavy, o.def.key + ':' + o.atkName); }
+          if (heroInShape(seg.hit, c.x[i], c.z[i], c.yaw[i], h)) { o.hitDone = true; h.hurt(seg.hit.dmg * d0.dmg, c.x[i], c.z[i], !!seg.hit.heavy, o.def.key + ':' + o.atkName, { i }); }
           if (t === hf[0]) { game.emit('officerStrike', { o, heavy: seg.hit.heavy, x: c.x[i], z: c.z[i], shape: seg.hit.shape, r: seg.hit.range }); o.danger = null; }
         }
         const end = Math.min(m.dur, m.cancel + 8);

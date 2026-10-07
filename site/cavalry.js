@@ -43,7 +43,7 @@ export function createCavalry(game, scene) {
       r.spd += (CAV.speed - r.spd) * 0.09;
       const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
       r.x += fx * r.spd * dt; r.z += fz * r.spd * dt; r.ph += r.spd * dt * 0.8;
-      if (r.rider && Math.hypot(h.x - r.x, h.z - r.z) < 1.3 && h.y - groundY(h.x, h.z) < 1.3) h.hurt(CAV.dmg, r.x - fx * 2, r.z - fz * 2, true, 'cavalry');
+      if (r.rider && Math.hypot(h.x - r.x, h.z - r.z) < 1.3 && h.y - groundY(h.x, h.z) < 1.3) h.hurt(CAV.dmg, r.x - fx * 2, r.z - fz * 2, true, 'cavalry', { cav: r });
       if (r.t > CAV.tele + 90 && (Math.abs(r.x) > ARENA.x1 + 14 || r.z > ARENA.z1 + 4 || r.z < ARENA.z0 - 10)) { r.on = false; r.rig.root.visible = false; }
     }
     if (!cav.busy()) cav.lanes.length = 0;
@@ -67,6 +67,7 @@ export function createCavalry(game, scene) {
     return n;
   };
 
+  cav.unseat = (r, ux = 0, uz = 0) => { if (!r.on || !r.rider) return; r.rider = false; r.rig.rider.visible = false; cav.unseated++; game.crowd.ko++; game.emit('cavKo', { x: r.x, z: r.z, ux, uz }); };
   cav.render = (t) => {
     for (const r of cav.riders) {
       if (!r.on) continue;

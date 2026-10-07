@@ -126,6 +126,10 @@ export function createVfx(scene, game, camera) {
     V.flash = 0.9; V.flashCol.setRGB(1, 0.92, 0.75); V.shake = 1.4;
     for (let k = 0; k < 70; k++) { const a = Math.PI * (k / 70) , r = 4 + Math.random() * 10; dust.spawn({ x: e.x + Math.cos(a) * r, y: 0.4, z: e.z + Math.sin(a) * r, vx: Math.cos(a) * 14, vy: 1 + Math.random() * 2, vz: Math.sin(a) * 14, drag: 2, s: 1.6, grow: 4, life: 1.4, a0: 0.4, r: 0.7, gg: 0.6, b: 0.48 }); }
   });
+  game.on('parry', (e) => { ring(e.x, 1.1, e.z, 0.2, 3.2, 0.3, 0xfff2b0, 1); V.flash = 0.5; V.flashCol.setRGB(1, 0.97, 0.8); V.shake = Math.max(V.shake, 0.5);
+    for (let k = 0; k < 18; k++) { const a = Math.random() * 6.28, v = 4 + Math.random() * 7; glow.spawn({ x: e.x, y: 1.2, z: e.z, vx: Math.cos(a) * v, vy: Math.random() * 5, vz: Math.sin(a) * v, g: 12, drag: 3, s: 0.16, life: 0.35, r: 1, gg: 0.95, b: 0.7 }); } });
+  game.on('block', (e) => { for (let k = 0; k < 6; k++) { const a = Math.random() * 6.28, v = 2 + Math.random() * 4; glow.spawn({ x: e.x, y: 1.2, z: e.z, vx: Math.cos(a) * v, vy: Math.random() * 3, vz: Math.sin(a) * v, g: 12, drag: 3, s: 0.1, life: 0.22, r: 0.9, gg: 0.92, b: 1 }); } });
+  game.on('guardBreak', (e) => { ring(e.x, 0.8, e.z, 0.3, 2.6, 0.3, 0xff5030, 0.9); V.shake = Math.max(V.shake, 0.6); });
   game.on('roarMini', (e) => {
     ring(e.x, 0.15, e.z, 0.6, e.r * 1.05, e.big ? 0.7 : 0.45, 0xffb060, 0.95); ring(e.x, 0.9, e.z, 0.4, e.r * 0.7, 0.35, 0xffffff, 0.8);
     V.shake = Math.max(V.shake, e.big ? 1.2 : 0.7); V.flash = e.big ? 0.8 : 0.35; V.flashCol.setRGB(1, 0.8, 0.55);

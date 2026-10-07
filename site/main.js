@@ -126,7 +126,8 @@ function crateDrop(x, z) { const r = Math.random(); dropItem(r < 0.34 ? 'bun' : 
 
 // ---------------------------------------------------------------- input
 const keys = new Set(), pressed = new Set();
-const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'] };
+const KEYMAP = { attack: ['KeyJ'], charge: ['KeyK'], jump: ['Space'], dodge: ['KeyL', 'ShiftLeft', 'ShiftRight'], musou: ['KeyI'], mount: ['KeyF'], lock: ['KeyR'] };
+const heldT = new Set();   // touch buttons that are held (guard)
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
   audio.resume();
@@ -151,14 +152,16 @@ let padPrev = [];
 // ---- touch: left joystick, right buttons, drag elsewhere to turn the camera
 const touch = { id: null, ox: 0, oy: 0, x: 0, y: 0, cam: null };
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const padScale = () => document.documentElement.style.setProperty('--ts', Math.max(0.68, Math.min(1.25, (innerHeight - 172) / 194)).toFixed(3));
 if (isTouch) {
+  padScale(); addEventListener('resize', padScale);
   const tc = $('touch'); tc.classList.remove('hidden');
   const knob = $('knob'), base = $('stickBase');
   tc.addEventListener('touchstart', (e) => {
     audio.resume();
     for (const t of e.changedTouches) {
       const b = t.target.closest && t.target.closest('[data-k]');
-      if (b) { const k = b.dataset.k; if (k === 'pause') togglePause(); else pressed.add('T_' + k); b.classList.add('on'); continue; }
+      if (b) { const k = b.dataset.k; if (k === 'pause') togglePause(); else if (k === 'guard') { heldT.add(k); b.dataset.tid = t.identifier; } else pressed.add('T_' + k); b.classList.add('on'); continue; }
       if (t.clientX < innerWidth * 0.45 && touch.id === null) { touch.id = t.identifier; touch.ox = touch.x = t.clientX; touch.oy = touch.y = t.clientY; base.style.cssText = `left:${t.clientX}px;top:${t.clientY}px;opacity:1`; }
       else if (!touch.cam) touch.cam = { id: t.identifier, x: t.clientX };
     }
@@ -171,7 +174,7 @@ if (isTouch) {
     }
     e.preventDefault();
   }, { passive: false });
-  const end = (e) => { for (const t of e.changedTouches) { if (t.identifier === touch.id) { touch.id = null; knob.style.transform = ''; base.style.opacity = '0.35'; } if (touch.cam && t.identifier === touch.cam.id) touch.cam = null; } tc.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); };
+  const end = (e) => { for (const t of e.changedTouches) { const gb = tc.querySelector('[data-k=guard]'); if (gb && gb.dataset.tid === String(t.identifier)) { heldT.delete('guard'); gb.dataset.tid = ''; } if (t.identifier === touch.id) { touch.id = null; knob.style.transform = ''; base.style.opacity = '0.35'; } if (touch.cam && t.identifier === touch.cam.id) touch.cam = null; } tc.querySelectorAll('.on').forEach((b) => b.classList.remove('on')); };
   tc.addEventListener('touchend', end); tc.addEventListener('touchcancel', end);
 }
 const input = {
@@ -181,7 +184,8 @@ const input = {
     if (keys.has('KeyD') || keys.has('ArrowRight')) sx += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) sx -= 1;
     let camX = (keys.has('KeyE') ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0);
     const pr = (a) => KEYMAP[a].some((k) => pressed.has(k));
-    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount') };
+    const o = { attack: pr('attack') || pressed.has('Mouse0'), charge: pr('charge') || pressed.has('Mouse2'), jump: pr('jump'), dodge: pr('dodge'), musou: pr('musou'), mount: pr('mount'), lock: pr('lock') };
+    let guard = keys.has('KeyU') || heldT.has('guard');
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find((p) => p && p.connected);
     if (gp) {
@@ -189,26 +193,41 @@ const input = {
       sx += ax(0); fx -= ax(1); camX += ax(2) * 1.2;
       const b = (i) => gp.buttons[i] && gp.buttons[i].pressed, was = (i) => padPrev[i];
       const edge = (i) => b(i) && !was(i);
-      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4) || edge(6)) o.mount = true;
+      if (edge(2)) o.attack = true; if (edge(3)) o.charge = true; if (edge(0)) o.jump = true; if (edge(1)) o.musou = true; if (edge(5) || edge(7)) o.dodge = true; if (edge(4)) o.mount = true; if (edge(11) || edge(10)) o.lock = true; if (b(6)) guard = true;
       if (edge(9)) togglePause();
       padPrev = gp.buttons.map((x) => x.pressed);
     }
     if (touch.id !== null) { const dx = touch.x - touch.ox, dy = touch.y - touch.oy, l = Math.hypot(dx, dy); if (l > 8) { const k = Math.min(1, l / 50) / l; sx += dx * k; fx -= dy * k; } }
-    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount']) if (pressed.has('T_' + a)) o[a] = true;
+    for (const a of ['attack', 'charge', 'jump', 'dodge', 'musou', 'mount', 'lock']) if (pressed.has('T_' + a)) o[a] = true;
     const mag = Math.min(1, Math.hypot(fx, sx));
     const cy = cam.yaw, cfx = Math.sin(cy), cfz = Math.cos(cy);
     let mx = cfx * fx + -cfz * sx, mz = cfz * fx + cfx * sx;
     const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l;
     if (consume) pressed.clear();
     const dx = camDX; camDX = 0;
-    return { mx, mz, mag, camX, dragX: dx, ...(consume ? o : {}) };
+    return { mx, mz, mag, camX, dragX: dx, guard, ...(consume ? o : {}) };
   },
 };
 
 // ---------------------------------------------------------------- camera
 const cam = { crowdK: 0, yaw: 0, pitch: 0.3, dist: 6.6, pos: new THREE.Vector3(0, 4, -20), look: new THREE.Vector3(), manualT: 0, fov: 52 };
 const _t = new THREE.Vector3(), _p = new THREE.Vector3();
+// lock-on: R picks the nearest officer; the camera keeps him in frame and neutral attacks face him
+const lock = { o: null };
+game.lockPos = () => { const o = lock.o; return o ? { x: game.crowd.x[o.idx], z: game.crowd.z[o.idx] } : null; };
+function toggleLock() {
+  if (lock.o) { lock.o = null; return; }
+  const c = game.crowd, h = game.hero; let best = null, bd = 38;
+  for (const o of c.officers) if (o.active && !o.dead) { const d = Math.hypot(c.x[o.idx] - h.x, c.z[o.idx] - h.z); if (d < bd) { bd = d; best = o; } }
+  lock.o = best; if (best) game.emit('lockOn');
+}
 function camStep(inp) {
+  if (inp.lock) toggleLock();
+  if (lock.o) {
+    const o = lock.o, c = game.crowd, hh = game.hero;
+    if (!o.active || o.dead || Math.hypot(c.x[o.idx] - hh.x, c.z[o.idx] - hh.z) > 46) lock.o = null;
+    else { let d = Math.atan2(c.x[o.idx] - hh.x, c.z[o.idx] - hh.z) - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * 0.07; cam.manualT = 30; }
+  }
   cam.yaw -= inp.camX * 2.4 / 60 + inp.dragX * 0.006;
   if (Math.abs(inp.camX) > 0.05 || inp.dragX) cam.manualT = 90; else cam.manualT--;
   const h = game.hero;
@@ -379,7 +398,7 @@ function bridgeDirector() {
   if (DIR.cavLeft > 0 && --DIR.cavT <= 0) { if (game.cav.launch(DIR.cavSize)) { DIR.cavLeft--; DIR.cavT = 60 * 20 / game.diff.cav; } else DIR.cavT = 120; }
   const offAlive = c.officers.some((o) => o.active && !o.dead);
   // once only archers and standard-bearers are left they make a run for the bridge themselves
-  if (DIR.t % 60 === 0) { let f = 0; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.ARCHER && c.kind[i] !== KIND.BEARER) f++; game.rush = f === 0 && DIR.waveLive > 60 * 12; }
+  if (DIR.t % 60 === 0) { let f = 0; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.ARCHER && c.kind[i] !== KIND.BEARER) f++; game.rush = (f === 0 && DIR.waveLive > 60 * 12) || (f <= 4 && DIR.waveLive > 60 * 50) || DIR.waveLive > 60 * 85; }
   if (DIR.waveLive > 60 * 5 && !offAlive && ((c.alive <= 2 && !game.cav.busy() && DIR.cavLeft === 0) || DIR.waveLive > 60 * (DIR.wave >= WAVES.length ? 180 : 100))) {
     if (DIR.wave >= WAVES.length) {
       DIR.endAt = DIR.t + 230; game.hero.inv = 99999;
@@ -420,6 +439,12 @@ game.on('ko', (e) => {
 game.on('cavalry', () => {
   banner('<em>虎豹騎</em> 突擊！', 'TIGER-LEOPARD CAVALRY — CLEAR THE LANE');
   if (game.cav.waves === 1) say('曹純', '虎豹騎，踏平他！', 'Tiger-Leopard riders — run him down!');
+});
+game.on('parry', (e) => {
+  const h = game.hero, f = e.from;
+  floatText('彈反！', '#fff2b0');
+  if (f && f.cav) game.cav.unseat(f.cav, Math.sin(h.yaw), Math.cos(h.yaw));
+  else if (f && f.i != null) game.crowd.stagger(f.i, Math.sin(h.yaw), Math.cos(h.yaw));
 });
 game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true; });
 game.on('mount', () => { if (!DIR.rode && charKey === 'zhao') { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
@@ -522,6 +547,7 @@ function hudUpdate() {
     if (d < bd) { bd = d; boss = o; }
     _v.set(c.x[i], c.y[i] + 2.45 * (o.def.opts.scale || 1), c.z[i]).project(camera);
     if (_v.z > 1 || d > 45) { e.style.display = 'none'; return; }
+    e.classList.toggle('lock', lock.o === o);
     e.style.display = ''; e.style.left = ((_v.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px'; e.style.top = ((-_v.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px';
     e.querySelector('.bar i').style.width = (Math.max(0, c.hp[i] / c.hpMax[i]) * 100).toFixed(1) + '%';
     e.style.opacity = d > 38 ? ((45 - d) / 7).toFixed(2) : '1';
@@ -543,6 +569,7 @@ function startGame() {
   ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden');
 }
 function resetGame() {
+  lock.o = null;
   game.hero.reset(); game.crowd.reset(); game.cav.reset(); game.world.resetCrates(); game.frame = 0; game.hitstop = 0; game.slow = 0; game.musou.active = false; game.crowd.freeze = 0; game.reinforceOK = true;
   Object.assign(DIR, { phase: 0, t: 0, time: 0, ko0: 0, dmg: 0, maxCombo: 0, combo: 0, comboT: 0, offDown: 0, over: false, endT: 0, win: false, lastMile: 0, dlgQ: [], src: {}, cavT: 60 * 14, koPos: null, rode: false });
   Object.assign(feiPose, clonePose(FEI.stand));
@@ -555,9 +582,19 @@ function resetGame() {
   } else { game.goal = null; game.crowd.spawnArmy(); }
   cam.yaw = 0; cam.pos.set(0, 4, game.hero.z - 8); ui.hpLag = 1; lastKoShown = -1;
 }
+const K = (s) => s.split('').map((c) => `<kbd>${c}</kbd>`).join('');
+const MOVELIST = {
+  zhao: [['連擊', `${K('J')}×6 — 刺・挑・掃・連刺・劈・迴旋`], ['C1', `${K('K')} — 挑空`], ['C2', `${K('JK')} — 旋挑，再追刺空中`], ['C3', `${K('JJK')} — 百烈突`],
+    ['C4', `${K('J')}×3 ${K('K')} — 旋風，收招吹飛`], ['C5', `${K('J')}×4 ${K('K')} — 龍突進（可轉向）`], ['C6', `${K('J')}×5 ${K('K')} — 躍斬震地`]],
+  fei: [['連擊', `${K('J')}×5 — 橫掃・回掃・砸地・肩撞・迴旋`], ['C1', `${K('K')} — 頓矛震地（挑空）`], ['C2', `${K('JK')} — 上撩`], ['C3', `${K('JJK')} — 蛇矛亂舞（可轉向）`],
+    ['C4', `${K('J')}×3 ${K('K')} — 躍起砸地`], ['C5', `${K('J')}×4 ${K('K')} — 蠻牛衝撞（可轉向）`]],
+};
+const MOVE_COMMON = [['空中', `${K('J')} 連斬 ×3 · ${K('K')} 下刺`], ['馬上', `${K('J')} 左右橫掃 · ${K('K')} 挺槍突擊 · <kbd>Space</kbd> 躍下`],
+  ['格擋', `按住 ${K('U')} — 擋正面攻擊；剛按下的瞬間擋住即<b>彈反</b>，重擊會破防`], ['鎖定', `${K('R')} — 鎖定最近的敵將`]];
 function togglePause() {
   if (ui.mode === 'play') {
     ui.mode = 'pause'; showMenu('pause');
+    $('moveList').innerHTML = [...MOVELIST[charKey], ...MOVE_COMMON].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
     const s = Math.floor(DIR.time / 60);
     $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / ${game.stage === 'bridge' ? 2 : 4}</dd>`;
   } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
@@ -644,7 +681,7 @@ function render(dt) {
   composer.render();
   if (ui.mode === 'play' || ui.mode === 'result') hudUpdate();
 }
-let acc = 0;
+let acc = 0, shotW = 0, shotH = 0;   // test hook: fixed render size for captures
 function frame(now) {
   requestAnimationFrame(frame);
   if (manual) return;
@@ -656,8 +693,7 @@ function frame(now) {
   if (n === 4) acc = 0;
   render(dt);
 }
-function onResize() {
-  const w = innerWidth, h = innerHeight;
+function onResize(e, w = shotW || innerWidth, h = shotH || innerHeight) {
   renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
@@ -694,8 +730,8 @@ function autoInput(real) {
   if (!tgt) { const e = c.nearest(h.x, h.z, 60, 0, 1, -2); if (e) { tgt = e; td = Math.hypot(e.x - h.x, e.z - h.z); } }
   if (game.goal) {
     const offNear = c.officers.some((of) => of.active && !of.dead && Math.hypot(c.x[of.idx] - h.x, c.z[of.idx] - h.z) < 6);
-    let bd = 1e9, bi = -1; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && c.kind[i] !== KIND.BEARER && c.kind[i] !== KIND.ARCHER) { const d = Math.hypot(c.x[i] - game.goal.x, c.z[i] - game.goal.z); if (d < bd) { bd = d; bi = i; } }
-    if (bi >= 0 && bd > 24) { bi = -1; if (!offNear) tgt = null; }   // hold the bridge mouth until they come
+    let bd = 1e9, bi = -1; for (let i = 0; i < CROWD.maxGrunts; i++) if (c.isAlive(i) && (game.rush || (c.kind[i] !== KIND.BEARER && c.kind[i] !== KIND.ARCHER))) { const d = Math.hypot(c.x[i] - game.goal.x, c.z[i] - game.goal.z); if (d < bd) { bd = d; bi = i; } }
+    if (bi >= 0 && bd > 15) { bi = -1; if (!offNear) tgt = null; }   // hold the bridge mouth until they come
     if (bi >= 0 && offNear && bd > 9) bi = -2;                        // an officer is on him and nobody is near the bridge yet
     if (bi >= 0) { tgt = { x: c.x[bi], z: c.z[bi] }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z); } else if (!tgt) { tgt = { x: game.goal.x, z: game.goal.z + 7 }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z) > 2 ? 99 : 0; }
   }
@@ -720,6 +756,8 @@ window.__vm = {
   info() { const h = game.hero, c = game.crowd; return { t: +(DIR.time / 60).toFixed(1), phase: DIR.phase, ride: h.riding, cav: game.cav.waves + '/' + game.cav.unseated, diff: diffKey, char: charKey, wave: DIR.wave, crossed: DIR.crossed, hp: Math.round(h.hp), musou: Math.round(h.musou), ko: c.ko, alive: c.alive, state: h.state, over: DIR.over, win: DIR.win, dmg: Math.round(DIR.dmg), combo: DIR.maxCombo, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, offs: c.officers.map((o) => o.active ? (o.dead ? 'x' : Math.round(c.hp[o.idx])) : '-').join(' ') }; },
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
+  size(w, h) { shotW = w; shotH = h; onResize(); },
+  hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
   setDiff, setChar, dropItem, items, startWave,
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },

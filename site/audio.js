@@ -123,6 +123,7 @@ export function createAudio(game) {
   on('arrow', () => { if (Math.random() < 0.5) S.arrow(); });
   on('pickup', S.pickup);
   on('mount', S.whinny); on('whistle', S.whistle); on('hoof', S.hoof); on('unhorse', S.whinny);
+  on('parry', () => { S.armor(); S.tell(); }); on('block', S.armor); on('guardBreak', () => S.hurt(true)); on('lockOn', S.tell);
   on('cavalry', S.horn); on('waveHorn', S.horn); on('roarMini', (e) => { S.roar(); S.slam(e.big); }); on('cross', () => S.hurt(true)); on('cavKo', () => S.ko(true)); on('crate', S.crack); on('roar', S.bellow);
   on('milestone', S.milestone);
   on('victory', S.victory);

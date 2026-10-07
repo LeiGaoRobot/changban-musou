@@ -85,6 +85,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tag .nm small { font-family: var(--latin); font-size: 9px; letter-spacing: .2em; color: #e8c8a0; display: block; margin-top: -2px; }
 .tag .bar { width: 96px; height: 5px; margin: 2px auto 0; background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.3); }
 .tag .bar i { display: block; height: 100%; background: linear-gradient(180deg, #ff8a6a, #c02a18); width: 100%; }
+.tag.lock .nm { color: #ffe08a; } .tag.lock .mk { color: #ffe08a; text-shadow: 0 0 8px #ffb000; } .tag.lock .bar { border-color: #ffe08a; box-shadow: 0 0 8px rgba(255,200,80,.7); }
 .tag .mk { color: var(--red2); font-size: 12px; line-height: 1; margin-top: 2px; text-shadow: 0 0 4px #000; }
 .boss-bar { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: min(520px, 60vw); text-align: center; opacity: 0; transition: opacity .4s; }
 .boss-bar.on { opacity: 1; }
@@ -119,7 +120,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tb.on { background: rgba(232,192,96,.55); }
 .tb.big { width: 82px; height: 82px; font-size: 28px; }
 .tb.mu { font-size: 16px; border-color: #ffd060; }
-.tb.sm { width: 40px; height: 40px; font-size: 13px; }
+.tb.sm { width: 40px; height: 40px; font-size: 13px; } .tb.md { width: 48px; height: 48px; font-size: 17px; }
 /* ---------- menus */
 .menu { position: fixed; inset: 0; display: flex; pointer-events: auto; z-index: 10; }
 .menu .col { scrollbar-width: none; width: min(580px, 100vw); padding: 4vh 56px 2.5vh; display: flex; flex-direction: column;
@@ -129,8 +130,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
 .menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
-.ctl { display: grid; grid-template-columns: auto 1fr; gap: 5px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 15px; align-items: center; }
-.ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 17px; white-space: nowrap; }
+.ctl { display: grid; grid-template-columns: auto 1fr; gap: 1px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 14px; align-items: center; }
+.ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 15px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
 .ctl dd { margin: 0; color: #eadfc8; }
 .ctl kbd { font-family: var(--latin); font-size: 12px; background: #f3ead8; color: #2a1a10; border-radius: 3px; padding: 1px 6px; margin-right: 4px; font-weight: 800; box-shadow: 0 2px 0 #8a7a60; }
@@ -152,11 +153,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .res-grid dt { color: var(--gold); font-family: var(--serif); font-weight: 900; }
 .res-grid dd { margin: 0; font-family: var(--latin); font-weight: 600; }
 .center-note { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 18px; color: var(--dim); }
-@media (pointer: coarse) { .h-ko { bottom: auto; top: 228px; } .h-help { display: none; } .h-combo { top: 330px; } .h-combo b { font-size: 40px; }
+#pad { position: absolute; right: 8px; bottom: 8px; width: 290px; height: 200px; transform: scale(var(--ts, 1)); transform-origin: 100% 100%; }
+:root { --mapw: 188px; }
+@media (pointer: coarse) { .h-ko { bottom: auto; top: 10px; right: calc(var(--mapw) + 30px); } .h-ko .num { font-size: 40px; } .h-help { display: none; } .h-combo { top: 118px; right: auto; left: 22px; text-align: left; } .h-combo b { font-size: 40px; }
   .h-dlg { bottom: auto; top: 136px; } .h-dlg .line { font-size: 17px; } .boss-bar { top: 150px; } }
 @media (max-width: 760px) {
   .h-title b { font-size: 40px; } .h-title small { top: 46px; } .h-help { display: none; }
-  .h-map { width: 120px; } .h-map canvas { width: 120px; height: 120px; }
+  :root { --mapw: 120px; } .h-map { width: 120px; } .h-map canvas { width: 120px; height: 120px; }
   .h-player .badge { width: 60px; height: 60px; } .h-ko .num { font-size: 40px; } .h-obj { top: 78px; left: 16px; transform: none; padding: 3px 14px; text-align: left; background: rgba(20,12,8,.6); } .h-obj .txt { font-size: 14px; } .h-obj .lbl { display: none; }
   .menu .col { padding: 5vh 20px 3vh; } .ctl { font-size: 13px; } .h-banner .main { font-size: 28px; padding: 6px 30px; }
 }
@@ -171,7 +174,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
-    <kbd>L</kbd>閃避 · <kbd>I</kbd>無雙 · <kbd>F</kbd>喚馬 · <kbd>Q</kbd><kbd>E</kbd>視角
+    <kbd>L</kbd>閃避 · <kbd>U</kbd>格擋 · <kbd>I</kbd>無雙<br>
+    <kbd>F</kbd>喚馬 · <kbd>R</kbd>鎖定 · <kbd>Q</kbd><kbd>E</kbd>視角
   </div>
   <div class="h-obj"><div class="lbl">戰 目 標</div><div class="txt" id="obj">擊破魏軍 · 殺出重圍</div><div class="tm" id="tm">00:00</div></div>
   <div class="h-map"><div class="morale"><span style="color:#8ab8ff">蜀</span><div class="bar"><i id="morale"></i></div><span style="color:#ff8a70">魏</span></div><canvas id="map" width="188" height="188"></canvas></div>
@@ -195,12 +199,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 <div id="touch" class="hidden">
   <div id="stickBase"><div id="knob"></div></div>
-  <div class="tb big" data-k="attack" style="right:96px;bottom:130px">攻</div>
-  <div class="tb" data-k="charge" style="right:20px;bottom:196px">蓄</div>
-  <div class="tb" data-k="jump" style="right:108px;bottom:228px">跳</div>
-  <div class="tb" data-k="dodge" style="right:188px;bottom:120px">閃</div>
-  <div class="tb mu" data-k="musou" style="right:26px;bottom:282px">無雙</div>
-  <div class="tb" data-k="mount" style="right:112px;bottom:316px">馬</div>
+  <div id="pad">
+    <div class="tb big" data-k="attack" style="right:84px;bottom:14px">攻</div>
+    <div class="tb" data-k="charge" style="right:10px;bottom:50px">蓄</div>
+    <div class="tb" data-k="dodge" style="right:176px;bottom:8px">閃</div>
+    <div class="tb" data-k="guard" style="right:190px;bottom:80px">擋</div>
+    <div class="tb" data-k="jump" style="right:104px;bottom:104px">跳</div>
+    <div class="tb mu" data-k="musou" style="right:26px;bottom:122px">無雙</div>
+    <div class="tb md" data-k="mount" style="right:178px;bottom:152px">馬</div>
+    <div class="tb md" data-k="lock" style="right:234px;bottom:152px">鎖</div>
+  </div>
   <div class="tb sm" data-k="pause" style="left:50%;top:10px;margin-left:-20px">❚❚</div>
 </div>
 <div class="menu" id="title">
@@ -214,11 +222,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="tag2" id="tTag">長坂坡 · 一杆長槍，單騎七進七出</div>
     <dl class="ctl">
       <dt>移動<small>MOVE</small></dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向鍵</dd>
-      <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 — 連按出六段連擊</dd>
-      <dt>蓄力<small>CHARGE</small></dt><dd><kbd>K</kbd> / 右鍵 — 連擊中按出 C1–C6</dd>
-      <dt>跳・閃<small>JUMP / DODGE</small></dt><dd><kbd>Space</kbd> 跳（空中可接 <kbd>J</kbd><kbd>K</kbd>）· <kbd>L</kbd> / <kbd>Shift</kbd> 閃避</dd>
+      <dt>攻擊<small>ATTACK</small></dt><dd><kbd>J</kbd> / 左鍵 連擊 · <kbd>K</kbd> / 右鍵 蓄力（連擊中接出）</dd>
+      <dt>跳閃擋<small>EVADE</small></dt><dd><kbd>Space</kbd> 跳 · <kbd>L</kbd> / <kbd>Shift</kbd> 閃避 · 按住 <kbd>U</kbd> 格擋（瞬間擋住可彈反）</dd>
       <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · 馬上 <kbd>J</kbd>橫掃 <kbd>K</kbd>突擊</dd>
-      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）· 視角 <kbd>Q</kbd><kbd>E</kbd> / 拖曳</dd>
+      <dt>無雙<small>MUSOU</small></dt><dd><kbd>I</kbd> 氣力滿時（瀕危為真・無雙）</dd>
+      <dt>視角<small>CAMERA</small></dt><dd><kbd>Q</kbd><kbd>E</kbd> / 拖曳 · <kbd>R</kbd> 鎖定敵將</dd>
     </dl>
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
     <button class="go" id="go">出陣 <small>START</small></button>
@@ -227,7 +235,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
       <label><input type="checkbox" id="lowq"> 低畫質</label>
     </div>
-    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
+    <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬 L2格擋 R3鎖定）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
   </div>
 </div>
 
@@ -236,17 +244,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <h1><b style="font-size:84px">暫停</b></h1>
     <div class="sub">PAUSED</div>
     <dl class="ctl" style="margin-top:3vh" id="pauseStats"></dl>
-    <dl class="ctl moves">
-      <dt>連擊</dt><dd><kbd>J</kbd>×6 — 刺・挑・掃・連刺・劈・迴旋</dd>
-      <dt>C1</dt><dd><kbd>K</kbd> — 挑空</dd>
-      <dt>C2</dt><dd><kbd>J</kbd><kbd>K</kbd> — 旋挑，再追刺空中</dd>
-      <dt>C3</dt><dd><kbd>J</kbd><kbd>J</kbd><kbd>K</kbd> — 百烈突</dd>
-      <dt>C4</dt><dd><kbd>J</kbd>×3 <kbd>K</kbd> — 旋風，收招吹飛</dd>
-      <dt>C5</dt><dd><kbd>J</kbd>×4 <kbd>K</kbd> — 龍突進（可轉向）</dd>
-      <dt>C6</dt><dd><kbd>J</kbd>×5 <kbd>K</kbd> — 躍斬震地</dd>
-      <dt>空中</dt><dd><kbd>J</kbd> 連斬 ×3 · <kbd>K</kbd> 下刺</dd>
-      <dt>馬上</dt><dd><kbd>J</kbd> 左右橫掃 · <kbd>K</kbd> 挺槍突擊 · <kbd>Space</kbd> 躍下</dd>
-    </dl>
+    <dl class="ctl moves" id="moveList"></dl>
     <button class="go" id="resume">再戰 <small>RESUME</small></button>
     <button class="btn2" id="restart">重新出陣</button>
     <div class="opts">
