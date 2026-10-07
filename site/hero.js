@@ -211,7 +211,7 @@ export function createHero(game) {
       dmg *= 0.5; heavy = false; game.emit('guardBreak', { x: h.x, z: h.z });      // a heavy blow smashes through, but only staggers
     }
     const armored = (h.state === 'move' && h.move.armor) || (h.riding && h.ratk && h.ratk.id === 'rc');
-    dmg *= game.diff.dmg * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
+    dmg *= game.diff.dmg * (game.bonus ? game.bonus.def : 1) * (h.buff.armor > 0 ? 0.5 : 1) * (armored ? 0.5 : 1);
     h.hp -= dmg;
     h.musou = Math.min(HERO.musouMax, h.musou + dmg * 0.25);
     game.emit('heroHurt', { dmg, heavy, src });
@@ -254,7 +254,7 @@ export function createHero(game) {
     const dt = 1 / 60;
     h.t++; if (h.inv > 0) h.inv--;
     for (const k in h.buff) if (h.buff[k] > 0) h.buff[k]--;
-    h.atkMul = game.char.atk * (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
+    h.atkMul = game.char.atk * (game.bonus ? game.bonus.atk : 1) * (h.sword ? 1.3 : 1) * (h.buff.axe > 0 ? 2 : 1);
     const runTop = game.char.run * (h.buff.boots > 0 ? 1.25 : 1), reach = game.char.reach;
     horseStep(dt);
     // buffer presses
@@ -288,7 +288,7 @@ export function createHero(game) {
     }
 
     if (S === 'ride') {
-      let top = HERO.ride * (h.buff.boots > 0 ? 1.2 : 1), wantR = inp.mag > 0.1 ? inp.mag : 0;
+      let top = HERO.ride * (game.bonus ? game.bonus.ride : 1) * (h.buff.boots > 0 ? 1.2 : 1), wantR = inp.mag > 0.1 ? inp.mag : 0;
       const ra = h.ratk;
       if (ra) {
         const A = RIDE_ATK[ra.id]; ra.t++;

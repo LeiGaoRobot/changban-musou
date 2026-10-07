@@ -131,6 +131,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
 .menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
 .res-grid + .go + .foot .me, #resNote .me { color: var(--gold); } .h-time.warn, #tm.warn { color: #ff7a5a; }
+.gorow { display: flex; align-items: flex-end; gap: 16px; } .metacol { display: flex; flex-direction: column; gap: 6px; padding-bottom: 2px; } .metacol b { color: var(--gold); }
+.modal { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(10,6,4,.74); pointer-events: auto; }
+.modal .box { width: min(640px, 94vw); max-height: 92vh; overflow-y: auto; background: #20140e; border: 1px solid var(--line); border-radius: 6px; padding: 22px 26px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.modal h2 { font-family: var(--serif); font-weight: 900; font-size: 30px; margin: 0; letter-spacing: .2em; color: #f7efdd; }
+.msub { color: var(--dim); font-size: 13px; margin: 4px 0 16px; }
+.up { display: grid; grid-template-columns: 1fr auto auto; gap: 10px 16px; align-items: center; }
+.up b { font-family: var(--serif); font-size: 18px; color: var(--gold); letter-spacing: .1em; } .up small { color: var(--dim); display: block; font-size: 12px; }
+.pips i { display: inline-block; width: 16px; height: 8px; margin-right: 3px; background: rgba(255,255,255,.12); border-radius: 2px; } .pips i.on { background: var(--gold); }
+.up button { font: inherit; min-width: 96px; padding: 6px 10px; border-radius: 3px; border: 1px solid #e8a090; background: linear-gradient(180deg, rgba(184,40,30,.85), rgba(120,24,18,.85)); color: #fff; cursor: pointer; } .up button:disabled { opacity: .38; cursor: default; background: rgba(255,255,255,.06); border-color: var(--line); }
+.achs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .achs div { border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; opacity: .45; position: relative; } .achs div.on { opacity: 1; border-color: var(--gold); background: rgba(232,192,96,.08); }
+.achs b { font-family: var(--serif); font-size: 16px; color: #f7efdd; } .achs div.on b { color: var(--gold); } .achs i { position: absolute; right: 10px; top: 7px; font-style: normal; font-size: 12px; color: var(--dim); } .achs small { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+#toast { position: absolute; left: 24px; top: 40%; padding: 8px 18px; background: rgba(30,18,10,.88); border-left: 3px solid var(--gold); font-family: var(--serif); font-weight: 900; font-size: 18px; color: #ffe9b0; opacity: 0; pointer-events: none; z-index: 6; }
+#toast small { display: block; font-size: 12px; font-weight: 400; color: #cdbfa6; font-family: inherit; } #toast.on { animation: toast 3.8s ease-out; }
+@keyframes toast { 0% { opacity: 0; transform: translateX(-24px); } 7%, 82% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@media (max-width: 760px) { .achs { grid-template-columns: 1fr; } }
 .qbtn { font: inherit; color: #eadfc8; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 3px; padding: 2px 10px; cursor: pointer; white-space: nowrap; } .qbtn:hover { border-color: var(--gold); color: var(--gold); }
 .ctl { display: grid; grid-template-columns: auto 1fr; gap: 1px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 14px; align-items: center; }
 .ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 15px; white-space: nowrap; }
@@ -173,6 +188,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 <body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
+<div id="toast"></div>
   <div class="h-title"><b id="hName">趙雲</b><i class="seal" id="hSeal">常山</i><small id="hEn">ZHAO YUN</small></div>
   <div class="h-help" id="help">
     <kbd>WASD</kbd>移動 · <kbd>J</kbd>攻擊 · <kbd>K</kbd>蓄力 · <kbd>Space</kbd>跳躍<br>
@@ -230,7 +246,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <dt>白馬<small>HORSE</small></dt><dd><kbd>F</kbd> 喚馬／上下馬 · <kbd>Q</kbd><kbd>E</kbd> / 拖曳 轉視角</dd>
     </dl>
     <div class="diffs" id="diffs"><span>難度</span><button data-d="easy">易</button><button data-d="normal">普</button><button data-d="hard">難</button><button data-d="chaos">修羅</button></div>
-    <button class="go" id="go">出陣 <small>START</small></button>
+    <div class="gorow"><button class="go" id="go">出陣 <small>START</small></button><div class="metacol"><button class="qbtn" id="upBtn">強化</button><button class="qbtn" id="achBtn">成就</button></div></div>
     <div class="opts">
       <label>音量 <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
@@ -266,6 +282,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="foot" id="resNote"></div>
   </div>
 </div>
+<div class="modal hidden" id="modal"><div class="box">
+  <h2 id="mTitle"></h2><div class="msub" id="mSub"></div><div id="mBody"></div>
+  <button class="btn2" id="mClose">返回</button>
+</div></div>
 <div class="center-note" id="loading">布陣中…</div>
 
 <script type="module" src="./main.js"></script>

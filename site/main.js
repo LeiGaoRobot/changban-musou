@@ -16,6 +16,7 @@ import { createAudio } from './audio.js';
 import { buildWarrior, PAL, Vox } from './voxel.js';
 import { applyPose, idlePose, P, approach, clonePose } from './anim.js';
 import { TIERS, createGovernor } from './quality.js';
+import { UPGRADES, ACHS, createProgress } from './progress.js';
 
 const $ = (id) => document.getElementById(id);
 const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('vm.' + k, JSON.stringify(v)); } catch {} } };
@@ -79,7 +80,8 @@ const DIFFS = {
   chaos: { zh: '修羅', en: 'CHAOS', dmg: 2.2, hp: 1.6, tokens: 4, cav: 2, heal: 0.6 },
 };
 let diffKey = LS.get('diff', 'normal'); if (!DIFFS[diffKey]) diffKey = 'normal';
-game.diff = { ...DIFFS[diffKey] }; game.slow = 0;   // a copy: 千人斬 scales it as the ranks climb
+game.diff = { ...DIFFS[diffKey] }; game.slow = 0;
+const meta = createProgress(LS); game.bonus = meta.bonus();   // 武勳, permanent upgrades, achievements   // a copy: 千人斬 scales it as the ranks climb
 let charKey = LS.get('char', 'zhao'); if (!CHARS[charKey]) charKey = 'zhao';
 game.char = CHARS[charKey]; game.stage = game.char.stage; game.goal = null;
 game.world = createWorld(scene);
@@ -149,7 +151,8 @@ const heldT = new Set();   // touch buttons that are held (guard)
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
   audio.resume();
-  if (e.code === 'Escape') { togglePause(); return; }
+  if (e.code === 'Escape') { if (modalKind) closeModal(); else togglePause(); return; }
+  if (modalKind) return;
   if ((e.code === 'Enter' || e.code === 'NumpadEnter') && ui.mode !== 'play') { if (ui.mode === 'title' || ui.mode === 'result') startGame(); else if (ui.mode === 'pause') togglePause(); return; }
   if (e.code === 'KeyH') { $('help').style.opacity = $('help').style.opacity === '0' ? '1' : '0'; }
   keys.add(e.code); pressed.add(e.code);
@@ -318,6 +321,8 @@ function directorStep() {
   DIR.t++; DIR.time++;
   const c = game.crowd, h = game.hero, ko = c.ko;
   const offs = c.officers;
+  if (auto.on) DIR.autoRun = true;
+  if (h.sword) ach('sword');
   if (game.stage === 'bridge') bridgeDirector();
   else if (game.stage === 'endless') endlessDirector();
   else if (DIR.phase >= 10) xunzhuDirector();
@@ -501,7 +506,7 @@ game.on('heroDead', () => { if (game.stage === 'endless') banner(`<em>${game.cro
 game.on('heroHit', (e) => {
   const h = game.hero;
   DIR.combo += e.n; DIR.comboT = 150; DIR.maxCombo = Math.max(DIR.maxCombo, DIR.combo);
-  if (!e.musou) h.musou = Math.min(HERO.musouMax, h.musou + e.n * 0.2 * (h.sword ? 1.2 : 1));
+  if (!e.musou) h.musou = Math.min(HERO.musouMax, h.musou + e.n * 0.2 * (h.sword ? 1.2 : 1) * game.bonus.mus);
   comboPop = true;
 });
 game.on('heroHurt', (e) => { DIR.dmg += e.dmg; DIR.src[e.src] = (DIR.src[e.src] || 0) + Math.round(e.dmg); DIR.combo = 0; hurtFlash = 1; });
@@ -527,6 +532,21 @@ game.on('cavKo', () => { floatText('騎兵 擊落', '#ffb070'); comboPop = true;
 game.on('mount', () => { if (!DIR.rode && charKey === 'zhao') { DIR.rode = true; say('趙雲', '白龍，隨我殺出去！', 'Bailong — carry me through!', 150); } });
 game.on('musouEnd', () => { if (charKey === 'fei') say('張飛', '燕人張翼德在此！', 'Zhang Yide of Yan stands here!', 150); else say('趙雲', '吾乃常山趙子龍也！', 'I am Zhao Zilong of Changshan!', 150); });
 game.on('wave', () => { if (game.frame - (DIR.waveF || -9999) > 60 * 25) { DIR.waveF = game.frame; banner('魏軍 <em>援兵</em> 到着', 'WEI REINFORCEMENTS HAVE ARRIVED'); } });
+// ---- achievements. Autopilot battles (attract / tests) earn nothing unless auto.count is set
+const counts = () => !DIR.autoRun || auto.count;
+function ach(k) {
+  if (!counts()) return;
+  const a = meta.unlock(k); if (!a) return;
+  toast(`成就 · ${a.zh}`, `${a.d} · 武勳 +${a.merit}`); game.emit('achieve', a); refreshMeta();
+}
+game.on('officer', (e) => { DIR.offDmg[e.o.def.key] = DIR.dmg; });
+game.on('ko', (e) => {
+  if (game.crowd.ko >= 1000) ach('thousand');
+  if (e.off) { if (DIR.offDmg[e.o.def.key] === DIR.dmg) ach('flawless'); } else if (game.hero.riding && ++DIR.rideKo >= 50) ach('trample');
+});
+game.on('heroHit', () => { if (DIR.combo >= 300) ach('combo'); });
+game.on('parry', () => { if (++DIR.parries >= 10) ach('parry'); });
+game.on('cavKo', () => { if (++DIR.unseats >= 5) ach('unseat'); });
 game.musicIntensity = () => (ui.mode !== 'play' ? 0.6 : game.crowd.officers.some((o) => o.active && !o.dead) || game.musou.active ? 2 : 1);
 
 // ---------------------------------------------------------------- HUD
@@ -541,6 +561,7 @@ function floatText(txt, color) {
   e.style.cssText = `position:absolute;left:50%;top:58%;transform:translate(-50%,0);font-family:var(--serif);font-weight:900;font-size:22px;color:${color};text-shadow:0 2px 0 #000;transition:all 1.2s ease-out;opacity:1`;
   floatLayer.appendChild(e); requestAnimationFrame(() => { e.style.top = '50%'; e.style.opacity = '0'; }); setTimeout(() => e.remove(), 1300);
 }
+function toast(main, sub) { const e = $('toast'); e.innerHTML = `${main}<small>${sub || ''}</small>`; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); }
 // portrait
 function drawFace(k) {
   const x = $('face').getContext('2d');
@@ -659,7 +680,8 @@ function resetGame() {
   Object.assign(feiPose, clonePose(FEI.stand));
   for (const it of items) scene.remove(it.m); items.length = 0;
   Object.assign(DIR, { wave: 0, waveT: 0, waveLive: 0, crossed: 0, endAt: 0, cavLeft: 0 }); game.rush = false;
-  Object.assign(DIR, { mark: null, miT: 0, lost: false, lv: 1, nextOff: 150, offN: 0, thousand: false, resShown: false });
+  Object.assign(DIR, { mark: null, miT: 0, lost: false, lv: 1, nextOff: 150, offN: 0, thousand: false, resShown: false, parries: 0, unseats: 0, rideKo: 0, offDmg: {}, autoRun: false, gain: 0 });
+  game.bonus = meta.bonus(); { const hh = game.hero; hh.hpMax = hh.hp = Math.round(game.char.hp * game.bonus.hp); hh.musou = HERO.musouMax * Math.min(1, game.bonus.start); }
   game.diff = { ...DIFFS[diffKey] };
   const xz = game.stage === 'xunzhu';
   feiRig.root.visible = game.stage === 'changban' || xz;
@@ -714,8 +736,18 @@ function showResult() {
     note = (DIR.win ? (br ? '評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上<br>' : `評價：突圍・${st === 'xunzhu' ? 10 : 8} 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>`) : '') + (best ? `最佳紀錄（${game.diff.zh}）${fmtT(best.time)} · ${best.ko} 擊破 · ${best.rank}` : '');
   }
   DIR.rank = rank;
+  let gain = 0;
+  if (counts()) {
+    gain = meta.award(meta.runMerit({ ko, officers: DIR.offDown, win: DIR.win, diff: diffKey })); DIR.gain = gain;
+    ach('first');
+    if (DIR.win) { ach({ changban: 'break', xunzhu: 'heir', bridge: 'bridge' }[st]); if (br && DIR.crossed <= 5) ach('nocross'); if (diffKey === 'chaos') ach('chaos'); }
+    if (rank === 'S') ach('srank');
+  }
+  const fresh = meta.fresh.splice(0);
+  note = (fresh.length ? `<span class="me">成就達成：${fresh.map((a) => a.zh).join(' · ')}</span><br>` : '') + note;
+  refreshMeta();
   $('resRank').textContent = rank; $('resRank').style.display = DIR.win || en ? '' : 'none';
-  $('resGrid').innerHTML = `<dt>關卡</dt><dd style="font-family:var(--serif)">${STAGE_INFO[st].zh} · ${DIFFS[diffKey].zh}</dd><dt>時間</dt><dd>${fmtT(s)}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown}${en ? '' : ' / ' + (br ? 2 : 4)}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
+  $('resGrid').innerHTML = `<dt>關卡</dt><dd style="font-family:var(--serif)">${STAGE_INFO[st].zh} · ${DIFFS[diffKey].zh}</dd><dt>時間</dt><dd>${fmtT(s)}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown}${en ? '' : ' / ' + (br ? 2 : 4)}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd><dt>武勳</dt><dd>${counts() ? `+${gain}（持有 ${meta.st.merit}）` : '自動演示不計'}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
   $('resNote').innerHTML = note;
   game.emit('result', { win: DIR.win, stage: st, ko, time: s, rank });
 }
@@ -756,6 +788,28 @@ function setDiff(k) { diffKey = k; game.diff = { ...DIFFS[k] }; LS.set('diff', k
 for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
 setDiff(diffKey);
 $('qbtn').onclick = cycleQuality; $('qbtn2').onclick = cycleQuality;
+// ---- 強化 / 成就 panels
+let modalKind = null;
+function refreshMeta() {
+  $('upBtn').innerHTML = `強化 · 武勳 <b>${meta.st.merit}</b>`; $('achBtn').innerHTML = `成就 <b>${meta.count()}</b> / ${ACHS.length}`;
+  if (modalKind) openModal(modalKind);
+}
+function openModal(kind) {
+  modalKind = kind; $('modal').classList.remove('hidden');
+  if (kind === 'up') {
+    $('mTitle').textContent = '強化'; $('mSub').textContent = `持有武勳 ${meta.st.merit} · 每場戰鬥依擊破數、敵將與勝敗獲得，難度越高越多`;
+    $('mBody').innerHTML = '<div class="up">' + UPGRADES.map((u) => { const n = meta.lvl(u.key), c = meta.cost(u.key);
+      return `<div><b>${u.zh}</b><small>${u.tip}</small></div><div class="pips">${Array.from({ length: u.max }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><button data-u="${u.key}" ${c == null || meta.st.merit < c ? 'disabled' : ''}>${c == null ? '已滿' : c + ' 武勳'}</button>`; }).join('') + '</div>';
+    for (const b of document.querySelectorAll('#mBody button')) b.onclick = () => { if (meta.buy(b.dataset.u)) { game.emit('buff'); refreshMeta(); if (ui.mode === 'title') resetGame(); } };
+  } else {
+    $('mTitle').textContent = '成就'; $('mSub').textContent = `${meta.count()} / ${ACHS.length} · 達成即得武勳`;
+    $('mBody').innerHTML = '<div class="achs">' + ACHS.map((a) => `<div class="${meta.has(a.key) ? 'on' : ''}"><b>${a.zh}</b><i>+${a.merit}</i><small>${a.d}</small></div>`).join('') + '</div>';
+  }
+}
+function closeModal() { modalKind = null; $('modal').classList.add('hidden'); }
+$('upBtn').onclick = () => openModal('up'); $('achBtn').onclick = () => openModal('ach'); $('mClose').onclick = closeModal;
+$('modal').addEventListener('pointerdown', (e) => { if (e.target === $('modal')) closeModal(); });
+refreshMeta();
 
 // ---------------------------------------------------------------- loop
 let paused = false, manual = false;
@@ -884,7 +938,7 @@ window.__vm = {
   gov, quality(m) { if (m) { qMode = m; applyQuality(); } return { mode: qMode, tier: TIERS[qTier()].key, pr: renderer.getPixelRatio() }; },
   hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
-  setDiff, setChar, setStage, STAGES, miRig, jianRig, dropItem, items, startWave, result() { showResult(); },
+  setDiff, setChar, setStage, STAGES, miRig, jianRig, meta, ach, openModal, closeModal, dropItem, items, startWave, result() { showResult(); },
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 

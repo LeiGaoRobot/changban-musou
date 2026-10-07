@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE, DIST, VENDOR = (os.path.join(ROOT, d) for d in ('site', 'dist', 'vendor'))
 os.makedirs(DIST, exist_ok=True); os.makedirs(VENDOR, exist_ok=True)
 THREE = 'https://cdn.jsdelivr.net/npm/three@0.184.0'
-ORDER = ['quality', 'voxel', 'world', 'anim', 'horse', 'hero', 'crowd', 'cavalry', 'musou', 'vfx', 'audio']   # dependency order, main last
+ORDER = ['quality', 'progress', 'voxel', 'world', 'anim', 'horse', 'hero', 'crowd', 'cavalry', 'musou', 'vfx', 'audio']   # dependency order, main last
 
 def read(p):
     with open(p, encoding='utf-8') as f:
