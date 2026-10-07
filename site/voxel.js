@@ -155,6 +155,8 @@ export class Vox {
 
 // ------------------------------------------------------------------ palettes
 export const PAL = {
+  mi: { armor: 0xd9a6b6, plate: 0xecd0d6, trim: 0xa63a58, trim2: 0xf0d890, cloth: 0xf2e6e0, skin: 0xf4dcc8, hair: 0x15131a },      // 糜夫人
+  jian: { armor: 0x66788a, plate: 0x8a98a8, trim: 0x2a3a4a, trim2: 0xb8c4d0, cloth: 0x3a4250, skin: 0xe8c8a8, hair: 0x1a1a1e },    // 簡雍
   zhao: { armor: 0xeeece6, plate: 0xc9ced6, trim: 0x1fa39a, trim2: 0x66dccd, cloth: 0x26303e, skin: 0xf0d4b8, hair: 0x17171c,
     boot: 0xe6e4de, belt: 0x1b6c68, cape: 0xf3f0e8, eye: 0x1b1b22, lip: 0xc07a6a, metal: 0xd9dee6 },
   grunt: { armor: 0x414857, plate: 0x7a8496, trim: 0xb02c20, cloth: 0x4a3e32, skin: 0xe2bfa0, helm: 0x4c535f, plume: 0xc42c1e, boot: 0x25252b, wrap: 0x8a7860, eye: 0x1a1a1a, hair: 0x1a1512 },
@@ -414,7 +416,13 @@ export function buildWarrior(p, o = {}) {
   const body = new THREE.Group(); body.scale.setScalar(scale); root.add(body);
   const j = {};
   j.hips = node(body, 0, RIG.hipY + 1, 0, g(pelvisV(p)));
-  j.torso = node(j.hips, 0, 6, 0, g(torsoV(p, o)));
+  const tv = torsoV(p, { ...o, adou: false });
+  j.torso = node(j.hips, 0, 6, 0, g(tv));
+  if (o.adou) {   // everything the sling adds sits proud of the torso, so it is simply the voxels the plain torso lacks
+    const full = torsoV(p, o), d = new Vox(); for (const [k, c] of full.m) if (!tv.m.has(k)) d.m.set(k, c);
+    j.adou = node(j.torso, 0, 0, 0, g(d));
+  }
+  if (o.skirt) { const sk = new Vox(); for (let y = -30; y <= 1; y++) { const u = (y + 30) / 31; sk.layer(y, 0, 0, 9.4 - 3.0 * u, 8.2 - 3.4 * u, mod(y, 6) === 0 ? p.trim : y < -26 ? p.plate : p.armor, 2.4); } node(j.hips, 0, 0, 0, g(sk)); }
   j.head = node(j.torso, 0, RIG.neckY, 0, g(headV(p, o)));
   const thigh = g(thighV(p)), shin = g(shinV(p)), up = g(upperArmV(p)), fore = g(foreArmV(p));
   for (const s of [1, -1]) {
@@ -430,7 +438,7 @@ export function buildWarrior(p, o = {}) {
     j.cape1 = node(j.cape0, 0, -CAPE_H, 0, g(capeV(p, 1)));
     j.cape2 = node(j.cape1, 0, -CAPE_H, 0, g(capeV(p, 2)));
   }
-  j.wep = node(j.torso, 0, 0, 0, g(weaponV(o.weapon || 'spear')));
+  j.wep = node(j.torso, 0, 0, 0, o.weapon === 'none' ? null : g(weaponV(o.weapon || 'spear')));
   if (o.offhand) j.wep2 = node(j.torso, 0, 0, 0, g(weaponV(o.offhand)));
   root.traverse((n) => { if (n.isMesh) n.frustumCulled = false; });
   return { root, body, j, mat, scale };
@@ -587,6 +595,29 @@ export function propParts() {
   bz.ell(0, 25, 0, 9.2, 0.9, 9.2, 0x5a524a, (x, y, z) => y === 25 && Math.hypot(x + 0.5, z + 0.5) > 7.4);
   bz.ell(0, 25, 0, 7.2, 3, 7.2, (x, y, z) => { const h = hash3(x, y, z); return h < 0.3 ? 0x2a1610 : h < 0.65 ? 0xff7a1e : h < 0.9 ? 0xffb43c : 0xffe08a; }, (x, y) => y >= 24 && y <= 27);
   P.brazier = bz.geometry({ s: 0.04, o: [0, 0, 0], jit: 0.04 });
+  // dry well (8 cm): stone ring, two posts, crossbeam, rope and bucket
+  const well = new Vox();
+  const stone = (x, y, z) => { const h = hash3(x >> 1, y >> 1, z >> 1); return mod(y, 3) === 2 ? 0x4e4a44 : h < 0.3 ? 0x7a756c : h < 0.7 ? 0x8c877c : 0x9c968a; };
+  for (let y = 0; y <= 9; y++) well.layer(y, 0, 0, 11.5, 11.5, stone, 2, (x, yy, z) => Math.hypot(x + 0.5, z + 0.5) > 8.2);
+  well.layer(10, 0, 0, 12.2, 12.2, 0x6a655c, 2, (x, yy, z) => Math.hypot(x + 0.5, z + 0.5) > 7.6);
+  well.layer(1, 0, 0, 8, 8, 0x14110e, 2);
+  for (const sx of [-13, 12]) well.box(sx, 0, -1, sx + 1, 27, 0, W2);
+  well.box(-14, 27, -1, 14, 28, 0, W3); well.box(-3, 25, -1, 2, 26, 0, W2);
+  for (let y = 15; y <= 24; y++) well.set(0, y, 0, 0xcbb58c);
+  well.box(-2, 11, -2, 1, 14, 1, W3); well.box(-1, 12, -1, 0, 14, 0, 0x2a2018); well.box(-2, 14, -2, 1, 14, 1, IRON);
+  P.well = well.geometry({ s: 0.08, o: [0, 0, 0], greedy: true, bj: 1 });
+  // a stretch of broken earth wall (12.5 cm)
+  const ruin = new Vox();
+  for (let x = -14; x <= 13; x++) {
+    const hgt = Math.round(5 + 9 * Math.abs(Math.sin(x * 0.37 + 1.1)) * (0.5 + hash3(x >> 1, 3, 7)) + (x > 6 ? -3 : 0));
+    for (let y = 0; y <= Math.max(2, hgt); y++) for (let z = -1; z <= 1; z++) {
+      if (y === hgt && hash3(x, y, z) < 0.4) continue;
+      const brick = mod(x + (mod(y, 2) ? 2 : 0), 4) === 0 || mod(y, 2) === 1 && hash3(x, y, 9) < 0.08;
+      ruin.set(x, y, z, brick ? 0x5a4a3a : hash3(x >> 1, y, z) < 0.5 ? 0x9a8468 : 0x8a7458);
+    }
+  }
+  for (let k = 0; k < 16; k++) { const x = Math.round((hash3(k, 1, 2) - 0.5) * 30), z = Math.round(2 + hash3(k, 5, 2) * 5); ruin.box(x, 0, z, x + 1, hash3(k, 8, 1) < 0.4 ? 1 : 0, z + 1, 0x8a7458); }
+  P.ruin = ruin.geometry({ s: 0.125, o: [0, 0, 0], greedy: true, bj: 1 });
   // crate (5 cm)
   const cr = new Vox();
   for (let x = 0; x < 16; x++) for (let y = 0; y < 15; y++) for (let z = 0; z < 16; z++) {

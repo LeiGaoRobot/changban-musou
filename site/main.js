@@ -5,7 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { createWorld, BRIDGE, GATE, ARENA, RIVER, bridgeDeck, radialTexture } from './world.js';
+import { createWorld, BRIDGE, GATE, ARENA, RIVER, WELL, CLUE, bridgeDeck, radialTexture } from './world.js';
 import { createHero, createHeroView, HERO, CHARS } from './hero.js';
 import { createCrowd, OFFICERS, ST, KIND, CROWD, shapeHit } from './crowd.js';
 import { createCavalry } from './cavalry.js';
@@ -79,7 +79,7 @@ const DIFFS = {
   chaos: { zh: '修羅', en: 'CHAOS', dmg: 2.2, hp: 1.6, tokens: 4, cav: 2, heal: 0.6 },
 };
 let diffKey = LS.get('diff', 'normal'); if (!DIFFS[diffKey]) diffKey = 'normal';
-game.diff = DIFFS[diffKey]; game.slow = 0;
+game.diff = { ...DIFFS[diffKey] }; game.slow = 0;   // a copy: 千人斬 scales it as the ranks climb
 let charKey = LS.get('char', 'zhao'); if (!CHARS[charKey]) charKey = 'zhao';
 game.char = CHARS[charKey]; game.stage = game.char.stage; game.goal = null;
 game.world = createWorld(scene);
@@ -112,6 +112,16 @@ const FEI = {
 const feiPose = clonePose(FEI.stand);
 const beacon = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x7ac8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
 beacon.position.set(BRIDGE.x, 30, BRIDGE.z); scene.add(beacon);
+
+// 尋主: 糜夫人 by the dry well with A Dou, 簡雍 wounded beside the cart
+const miRig = buildWarrior(PAL.mi, { topknot: true, weapon: 'none', adou: true, skirt: true, scale: 0.93 });
+const jianRig = buildWarrior(PAL.jian, { beard: true, topknot: true, weapon: 'none' });
+scene.add(miRig.root, jianRig.root);
+miRig.root.position.set(WELL.x + 1.75, 0, WELL.z + 1.0); miRig.root.rotation.y = 0.9;
+jianRig.root.position.set(CLUE.x, 0, CLUE.z); jianRig.root.rotation.y = -1.9;
+applyPose(miRig, P({ rootY: -0.02, ty: 0, tx: 0.12, hx: 0.3, hy: 0.2, thL: 0.04, shL: -0.04, thR: -0.04, shR: -0.04, lzL: 0.05, lzR: -0.05, w: [0, 0.2, 0.3, 0, -1.57, 0], gR: -0.13, gL: 0.13 }));
+applyPose(jianRig, P({ rootY: -0.8, ty: 0, tx: -0.3, hx: 0.35, hy: 0.4, thL: 1.5, shL: -0.25, thR: 1.25, shR: -1.1, lzL: 0.14, lzR: -0.14, w: [0.05, 0.05, 0.28, 0, -1.57, 0], gR: -0.2, gL: 0.16 }));
+miRig.root.visible = jianRig.root.visible = false;
 
 // pickups
 const itemGeo = {};
@@ -302,12 +312,15 @@ function spawnOfficerNear(k, dist = 16) {
   game.crowd.spawnSquad(x - Math.sin(yaw) * 3, z - Math.cos(yaw) * 3, yaw, 14, 'mixed', 'march');
   return o;
 }
+const markPos = () => (DIR.phase === 6 ? BRIDGE : game.stage === 'bridge' ? null : DIR.mark);   // where the light pillar stands
 function directorStep() {
   if (DIR.over) { DIR.endT++; return; }
   DIR.t++; DIR.time++;
   const c = game.crowd, h = game.hero, ko = c.ko;
   const offs = c.officers;
   if (game.stage === 'bridge') bridgeDirector();
+  else if (game.stage === 'endless') endlessDirector();
+  else if (DIR.phase >= 10) xunzhuDirector();
   else if (DIR.phase === 0) {
     if (DIR.t === 30) say('趙雲', '主公之子在此，趙雲誓死護之！', 'My lord\'s son is in my care. None of you shall pass!');
     if (ko >= 50 || DIR.t > 60 * 60) {
@@ -354,10 +367,14 @@ function directorStep() {
     if (DIR.t >= 270) finish(true);
   }
   // 虎豹騎 charges once the first officer is down
-  if (game.stage === 'changban' && DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
+  if (game.stage === 'xunzhu' && !h.sword && offs[0].active && offs[0].dead) {   // 夏侯恩's sword is a prize here, not a gate
+    h.sword = true; setTimeout(() => banner('獲得 <em>青釭劍</em>', 'QINGGANG SWORD OBTAINED · ATTACK UP', true), 1600);
+    say('趙雲', '青釭之劍……削鐵如泥，好劍！', 'The Qinggang blade — it cuts iron like clay!');
+  }
+  if ((game.stage === 'changban' || game.stage === 'xunzhu') && DIR.phase >= 2 && DIR.phase <= 6 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(DIR.phase >= 5 ? 5 : 4) ? (60 * 40 + Math.random() * 60 * 20) / game.diff.cav : 120;
   // KO milestones
   const mile = Math.floor(ko / 100) * 100;
-  if (mile > DIR.lastMile && mile > 0) { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
+  if (mile > DIR.lastMile && mile > 0 && game.stage !== 'endless') { DIR.lastMile = mile; banner(`<em>${mile}</em> 人 擊破`, `${mile} K.O.`); game.emit('milestone'); }
   // combo decay
   if (DIR.comboT > 0 && --DIR.comboT === 0) DIR.combo = 0;
   // pickups
@@ -371,6 +388,58 @@ function directorStep() {
       scene.remove(it.m); items.splice(k, 1);
     } else if (it.t > 60 * 60) { scene.remove(it.m); items.splice(k, 1); }
   }
+}
+// ---- 尋主: find 簡雍, reach 糜夫人 at the dry well before the clock runs out, take A Dou, then the breakout as usual
+const MI_TIME = { easy: 100, normal: 75, hard: 60, chaos: 50 };
+function xunzhuDirector() {
+  const h = game.hero, c = game.crowd;
+  if (DIR.phase === 10) {
+    if (DIR.t === 30) say('趙雲', '主母與小主人失散在亂軍之中……先尋個人問問！', 'My lady and the young lord are lost in this rout. Someone must have seen them.');
+    if (Math.hypot(h.x - CLUE.x, h.z - CLUE.z) < 3.4) {
+      DIR.phase = 11; DIR.t = 0; DIR.mark = WELL; DIR.miT = MI_TIME[diffKey] * 60;
+      say('簡雍', '子龍！二位夫人棄了車仗，往西南斷牆那邊去了……快去！', 'Zilong! The ladies left the carriage and fled south-west, toward the broken wall — go!', 250);
+      banner('趕往 <em>枯井</em>', 'REACH THE DRY WELL BEFORE IT IS TOO LATE', true);
+      spawnOfficerNear(0, 15);
+      say('夏侯恩', '來將休走！且看我背上這口青釭劍！', 'Stand, rider! See the Qinggang blade on my back!');
+    }
+  } else if (DIR.phase === 11) {
+    DIR.miT--;
+    if (DIR.miT === 60 * 30) banner('糜夫人 <em>危急</em>', 'LADY MI IS IN DANGER — 30 SECONDS');
+    if (DIR.miT <= 0) { DIR.lost = true; banner('幼主 <em>失散</em>', 'THE HEIR IS LOST'); finish(false); return; }
+    if (Math.hypot(h.x - WELL.x, h.z - WELL.z) < 3.6) {
+      DIR.phase = 12; DIR.t = 0; DIR.mark = null; h.inv = Math.max(h.inv, 430);
+      c.shock(WELL.x, WELL.z, 9, 7, 4);
+      say('糜夫人', '將軍來了……妾身腿上中槍，行走不得。阿斗就託付給將軍了！', 'General, you came. I am wounded and cannot walk. A Dou is in your hands now.', 280);
+    }
+  } else if (DIR.phase === 12) {
+    if (DIR.t === 150) {
+      heroView.setBaby(true); miRig.j.adou.visible = false;
+      banner('懷抱 <em>阿斗</em>', 'THE HEIR IS IN YOUR ARMS · BREAK OUT', true);
+      game.emit('pickup', { x: h.x, z: h.z, col: [1, 0.85, 0.4] }); h.hp = Math.min(h.hpMax, h.hp + h.hpMax * 0.3);
+    }
+    if (DIR.t === 290) say('趙雲', '夫人放心，雲拼死也護小主人殺出重圍！', 'Rest easy, my lady. I will carry him out or die trying.', 200);
+    if (DIR.t === 400) { miRig.root.visible = false; game.emit('thud', { x: WELL.x, z: WELL.z }); say('趙雲', '夫人——！', 'My lady—!', 110); }
+    if (DIR.t >= 430) { DIR.phase = 2; DIR.t = 60 * 13; DIR.ko0 = c.ko; }
+  }
+}
+// ---- 千人斬: no end. Every hundred down the army gets tougher; officers and cavalry keep coming
+function endlessDirector() {
+  const c = game.crowd, ko = c.ko;
+  if (DIR.t === 30) say(game.char.zh, charKey === 'fei' ? '來多少，俺殺多少！' : '縱有千軍萬馬，雲何懼哉！', charKey === 'fei' ? 'Send as many as you like — I will cut them all down!' : 'A thousand horse, ten thousand men — what of it?');
+  const lv = 1 + Math.floor(ko / 100);
+  if (lv !== DIR.lv) {
+    DIR.lv = lv; const d = DIFFS[diffKey];
+    game.diff.hp = d.hp * (1 + 0.1 * (lv - 1)); game.diff.dmg = d.dmg * (1 + 0.07 * (lv - 1)); game.diff.tokens = d.tokens + Math.floor((lv - 1) / 3);
+    if (ko === 1000 || (ko > 1000 && !DIR.thousand)) { DIR.thousand = true; banner('<em>千人斬</em> 達成', 'A THOUSAND SLAIN', true); game.emit('thousand'); }
+    else banner(`<em>${(lv - 1) * 100}</em> 人擊破 · 第 ${lv} 陣`, `${(lv - 1) * 100} K.O. · RANK ${lv}`);
+    game.emit('milestone');
+    if (lv % 3 === 0) dropItem('bun', game.hero.x + 2, game.hero.z + 2);
+  }
+  if (ko >= DIR.nextOff && c.officers.filter((o) => o.active && !o.dead).length < 2) {
+    const k = DIR.offN++ % OFFICERS.length, o = c.officers[k];
+    if (!o.active || o.dead) { spawnOfficerNear(k, 16); DIR.nextOff = ko + 130; banner(`敵將 <em>${o.def.zh}</em> 出現`, `ENEMY OFFICER ${o.def.en} APPROACHES`); }
+  }
+  if (ko >= 200 && --DIR.cavT <= 0) DIR.cavT = game.cav.launch(lv >= 8 ? 5 : 4) ? (60 * 45) / game.diff.cav : 120;
 }
 // ---- 據水斷橋: Zhang Fei holds the bridge mouth against five waves; twenty men across and it is lost
 const WAVES = [
@@ -428,7 +497,7 @@ function finish(win) {
   if (win) { game.emit('victory'); if (game.stage === 'bridge') banner('長坂橋 <em>守住了</em>', 'THE BRIDGE HOLDS', true); else { banner('突圍 <em>成功</em>', 'VICTORY', true); say('趙雲', '主公，阿斗安然無恙！', 'My lord, your son is safe!', 220); } }
   setTimeout(showResult, win ? 3800 : 3200);
 }
-game.on('heroDead', () => { banner(`${game.char.zh} <em>敗走</em>`, 'DEFEATED'); finish(false); });
+game.on('heroDead', () => { if (game.stage === 'endless') banner(`<em>${game.crowd.ko}</em> 人斬`, `${game.crowd.ko} SLAIN`, true); else banner(`${game.char.zh} <em>敗走</em>`, 'DEFEATED'); finish(false); });
 game.on('heroHit', (e) => {
   const h = game.hero;
   DIR.combo += e.n; DIR.comboT = 150; DIR.maxCombo = Math.max(DIR.maxCombo, DIR.combo);
@@ -514,7 +583,7 @@ function drawMap() {
   for (const r of game.cav.riders) if (r.on) { mctx.fillStyle = r.rider ? '#ffb030' : '#8a7a60'; mctx.fillRect(mx(r.x) - 3, mz(r.z) - 3, 6, 6); }
   if (!h.riding) { const hz = h.horse; mctx.fillStyle = '#ffffff'; mctx.beginPath(); mctx.moveTo(mx(hz.x), mz(hz.z) - 4); mctx.lineTo(mx(hz.x) + 3.5, mz(hz.z)); mctx.lineTo(mx(hz.x), mz(hz.z) + 4); mctx.lineTo(mx(hz.x) - 3.5, mz(hz.z)); mctx.fill(); }
   for (const it of items) { mctx.fillStyle = it.type === 'wine' ? '#ffd060' : BUFFS[it.type] ? BUFFS[it.type].col : '#8af0b0'; mctx.beginPath(); mctx.arc(mx(it.x), mz(it.z), 2.5, 0, 7); mctx.fill(); }
-  if (DIR.phase === 6 || game.stage === 'bridge') { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(0), mz(BRIDGE.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); }
+  { const mk = game.stage === 'bridge' ? BRIDGE : markPos(); if (mk) { const t = performance.now() / 300; mctx.strokeStyle = '#7ac8ff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(mx(mk.x), mz(mk.z), 6 + Math.sin(t) * 2, 0, 7); mctx.stroke(); } }
   // hero + view cone
   const hx = mx(h.x), hz = mz(h.z);
   mctx.save(); mctx.translate(hx, hz);
@@ -523,6 +592,12 @@ function drawMap() {
   mctx.fillStyle = '#5fe8d8'; mctx.strokeStyle = '#0a2a28'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.moveTo(0, 7); mctx.lineTo(-5, -5); mctx.lineTo(0, -2); mctx.lineTo(5, -5); mctx.closePath(); mctx.stroke(); mctx.fill(); mctx.restore();
 }
 const OBJ = ['擊破魏軍 · 殺出重圍', '擊破敵將 夏侯恩', '奪得青釭劍 · 繼續突破', '擊破敵將 晏明・淳于導', '魏軍名將將至……', '擊破魏將 張郃', '向長坂橋突圍！', '張飛 據水斷橋'];
+const OBJ_X = { 10: '尋找簡雍 · 打聽主母下落', 11: '趕往枯井 · 糜夫人危在旦夕', 12: '接過阿斗' };
+function objText() {
+  if (game.stage === 'bridge') return DIR.endAt ? '曹軍退卻' : DIR.wave ? `死守長坂橋 · 第 ${DIR.wave} / ${WAVES.length} 波` : '魏軍將至 · 死守長坂橋';
+  if (game.stage === 'endless') return `千人斬 · 第 ${DIR.lv} 陣 · 距下一陣 ${100 - game.crowd.ko % 100} 人`;
+  return OBJ_X[DIR.phase] || OBJ[Math.min(DIR.phase, OBJ.length - 1)];
+}
 let buffKey = '';
 const _v = new THREE.Vector3();
 let dlgCur = null, dlgT = 0, lastKoShown = -1, mapT = 0;
@@ -542,8 +617,9 @@ function hudUpdate() {
   if (c.ko !== lastKoShown) { hudEls.ko.textContent = c.ko; if (lastKoShown >= 0) { hudEls.ko.classList.remove('pop'); void hudEls.ko.offsetWidth; hudEls.ko.classList.add('pop'); } lastKoShown = c.ko; }
   hudEls.combo.classList.toggle('on', DIR.combo >= 2);
   if (comboPop) { hudEls.comboN.textContent = DIR.combo; hudEls.comboN.classList.remove('pop'); void hudEls.comboN.offsetWidth; hudEls.comboN.classList.add('pop'); comboPop = false; }
-  hudEls.obj.textContent = game.stage === 'bridge' ? (DIR.endAt ? '曹軍退卻' : DIR.wave ? `死守長坂橋 · 第 ${DIR.wave} / ${WAVES.length} 波` : '魏軍將至 · 死守長坂橋') : OBJ[Math.min(DIR.phase, OBJ.length - 1)];
-  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` + (game.stage === 'bridge' ? ` · 渡橋 ${DIR.crossed} / ${CROSS_MAX}` : '');
+  hudEls.obj.textContent = objText();
+  const s = Math.floor(DIR.time / 60); hudEls.tm.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` + (game.stage === 'bridge' ? ` · 渡橋 ${DIR.crossed} / ${CROSS_MAX}` : DIR.phase === 11 ? ` · 糜夫人 ${Math.floor(DIR.miT / 3600)}:${String(Math.floor(DIR.miT / 60) % 60).padStart(2, '0')}` : '');
+  hudEls.tm.classList.toggle('warn', DIR.phase === 11 && DIR.miT < 60 * 30);
   const wei = c.alive + 40, shu = 40 + c.ko * 0.8;
   hudEls.morale.style.width = Math.max(8, Math.min(92, shu / (shu + wei) * 100)).toFixed(1) + '%';
   // officer tags + boss bar
@@ -583,7 +659,13 @@ function resetGame() {
   Object.assign(feiPose, clonePose(FEI.stand));
   for (const it of items) scene.remove(it.m); items.length = 0;
   Object.assign(DIR, { wave: 0, waveT: 0, waveLive: 0, crossed: 0, endAt: 0, cavLeft: 0 }); game.rush = false;
-  feiRig.root.visible = game.stage === 'changban';
+  Object.assign(DIR, { mark: null, miT: 0, lost: false, lv: 1, nextOff: 150, offN: 0, thousand: false, resShown: false });
+  game.diff = { ...DIFFS[diffKey] };
+  const xz = game.stage === 'xunzhu';
+  feiRig.root.visible = game.stage === 'changban' || xz;
+  miRig.root.visible = jianRig.root.visible = xz; miRig.j.adou.visible = true; heroView.setBaby(!xz);
+  if (xz) { DIR.phase = 10; DIR.mark = CLUE; game.crowd.spawnSquad(WELL.x + 6, WELL.z + 5, 2.4, 14, 'mixed', 'hold'); }
+  if (game.stage === 'endless') DIR.cavT = 60 * 20;
   if (game.stage === 'bridge') {
     const h = game.hero; h.z = -38; h.horse.x = 4.5; h.horse.z = -42; h.horse.yaw = 0.4;
     game.goal = { x: BRIDGE.x, z: ARENA.z0 + 1.2 }; game.reinforceOK = false;
@@ -604,23 +686,38 @@ function togglePause() {
     ui.mode = 'pause'; showMenu('pause');
     $('moveList').innerHTML = [...MOVELIST[charKey], ...MOVE_COMMON].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
     const s = Math.floor(DIR.time / 60);
-    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown} / ${game.stage === 'bridge' ? 2 : 4}</dd>`;
+    $('pauseStats').innerHTML = `<dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破</dt><dd>${game.crowd.ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將</dt><dd>${DIR.offDown}${game.stage === 'endless' ? '' : ' / ' + (game.stage === 'bridge' ? 2 : 4)}</dd>`;
   } else if (ui.mode === 'pause') { ui.mode = 'play'; showMenu(null); $('hud').classList.remove('hidden'); }
 }
+const fmtT = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 function showResult() {
+  if (DIR.resShown) return; DIR.resShown = true;
   ui.mode = 'result'; showMenu('result');
-  const s = Math.floor(DIR.time / 60), ko = game.crowd.ko;
-  const br = game.stage === 'bridge';
-  const pts = (DIR.win ? 1 : 0) + (br ? (DIR.crossed <= 5 ? 1 : 0) : (s < 480 ? 1 : 0)) + (ko >= 300 ? 1 : 0) + (DIR.dmg < (br ? 500 : 400) ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
-  const rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
-  $('resTitle').textContent = DIR.win ? (br ? '斷橋' : '突圍') : (br && DIR.crossed >= CROSS_MAX ? '失守' : '敗走'); $('resSub').textContent = DIR.win ? (br ? 'VICTORY · THE BRIDGE HOLDS' : 'VICTORY · CHANGBAN') : 'DEFEAT';
-  $('resRank').textContent = rank; $('resRank').style.display = DIR.win ? '' : 'none';
-  const bkey = (br ? 'bestB_' : 'best_') + diffKey;
-  const best = LS.get(bkey, !br && diffKey === 'normal' ? LS.get('best', null) : null);
-  const rec = { time: s, ko, combo: DIR.maxCombo, rank };
-  if (DIR.win && (!best || (br ? ko > best.ko : s < best.time))) LS.set(bkey, rec);
-  $('resGrid').innerHTML = `<dt>難度</dt><dd style="font-family:var(--serif)">${game.diff.zh}</dd><dt>時間</dt><dd>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown} / ${br ? 2 : 4}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
-  $('resNote').innerHTML = (DIR.win ? (br ? '評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上<br>' : '評價：突圍・8 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>') : '') + (best ? `最佳紀錄（${game.diff.zh}）${Math.floor(best.time / 60)}:${String(best.time % 60).padStart(2, '0')} · ${best.ko} 擊破 · ${best.rank}` : '');
+  const s = Math.floor(DIR.time / 60), ko = game.crowd.ko, st = game.stage;
+  const br = st === 'bridge', en = st === 'endless';
+  let rank, note = '';
+  if (en) {
+    rank = ko >= 1000 ? 'S' : ko >= 600 ? 'A' : ko >= 300 ? 'B' : 'C';
+    $('resTitle').textContent = ko >= 1000 ? '千人斬' : '力盡'; $('resSub').textContent = `${ko} SLAIN · RANK ${DIR.lv}`;
+    const key = 'board_' + charKey, me = { ko, time: s, diff: diffKey, lv: DIR.lv, at: Date.now() };
+    const board = [...LS.get(key, []), me].sort((p, q) => q.ko - p.ko || p.time - q.time).slice(0, 5); LS.set(key, board);
+    note = '評價：300 人 B · 600 人 A · 千人斬 S<br>' + board.map((r, i) => `<span class="${r.at === me.at ? 'me' : ''}">${i + 1}. ${r.ko} 人 · 第 ${r.lv} 陣 · ${fmtT(r.time)} · ${DIFFS[r.diff] ? DIFFS[r.diff].zh : ''}</span>`).join('<br>');
+  } else {
+    const pts = (DIR.win ? 1 : 0) + (br ? (DIR.crossed <= 5 ? 1 : 0) : (s < (st === 'xunzhu' ? 600 : 480) ? 1 : 0)) + (ko >= 300 ? 1 : 0) + (DIR.dmg < (br ? 500 : 400) ? 1 : 0) + (DIR.maxCombo >= 60 ? 1 : 0);
+    rank = !DIR.win ? '—' : ['C', 'C', 'C', 'B', 'A', 'S'][pts];
+    $('resTitle').textContent = DIR.win ? (br ? '斷橋' : '突圍') : DIR.lost ? '失散' : (br && DIR.crossed >= CROSS_MAX ? '失守' : '敗走');
+    $('resSub').textContent = DIR.win ? (br ? 'VICTORY · THE BRIDGE HOLDS' : st === 'xunzhu' ? 'VICTORY · THE HEIR IS SAFE' : 'VICTORY · CHANGBAN') : 'DEFEAT';
+    const bkey = `best_${st}_${diffKey}`;
+    const best = LS.get(bkey, st === 'changban' ? LS.get('best_' + diffKey, null) : br ? LS.get('bestB_' + diffKey, null) : null);
+    const rec = { time: s, ko, combo: DIR.maxCombo, rank };
+    if (DIR.win && (!best || (br ? ko > best.ko : s < best.time))) LS.set(bkey, rec);
+    note = (DIR.win ? (br ? '評價：守住・渡橋 5 人以下・擊破 300・受傷 500 以下・連擊 60 以上<br>' : `評價：突圍・${st === 'xunzhu' ? 10 : 8} 分鐘內・擊破 300・受傷 400 以下・連擊 60 以上<br>`) : '') + (best ? `最佳紀錄（${game.diff.zh}）${fmtT(best.time)} · ${best.ko} 擊破 · ${best.rank}` : '');
+  }
+  DIR.rank = rank;
+  $('resRank').textContent = rank; $('resRank').style.display = DIR.win || en ? '' : 'none';
+  $('resGrid').innerHTML = `<dt>關卡</dt><dd style="font-family:var(--serif)">${STAGE_INFO[st].zh} · ${DIFFS[diffKey].zh}</dd><dt>時間</dt><dd>${fmtT(s)}</dd><dt>擊破數</dt><dd>${ko}</dd><dt>最大連擊</dt><dd>${DIR.maxCombo}</dd><dt>敵將擊破</dt><dd>${DIR.offDown}${en ? '' : ' / ' + (br ? 2 : 4)}</dd><dt>受到傷害</dt><dd>${Math.round(DIR.dmg)}</dd>` + (br ? `<dt>渡橋</dt><dd>${DIR.crossed} / ${CROSS_MAX}</dd>` : '');
+  $('resNote').innerHTML = note;
+  game.emit('result', { win: DIR.win, stage: st, ko, time: s, rank });
 }
 $('go').onclick = startGame; $('again').onclick = startGame; $('resume').onclick = togglePause;
 $('restart').onclick = () => { startGame(); };
@@ -629,18 +726,33 @@ for (const [a, b, k, f] of [['vol', 'vol2', 'vol', (v) => audio.setVol(v)], ['mu
   const h = (e) => { const v = +e.target.value; $(a).value = v; $(b).value = v; f(v); LS.set(k, v); };
   $(a).oninput = h; $(b).oninput = h;
 }
-const STAGE_TAG = { changban: '長坂坡 · 一杆長槍，單騎七進七出', bridge: '長坂橋 · 據水斷橋，一夫當關' };
-function setChar(k, refresh = true) {
-  charKey = k; game.char = CHARS[k]; game.stage = game.char.stage; LS.set('char', k);
-  heroView.setChar(k); drawFace(k);
-  const ch = game.char;
-  $('tName').textContent = ch.zh; $('tSeal').textContent = ch.seal; $('tTag').textContent = STAGE_TAG[game.stage];
-  $('hName').textContent = ch.zh; $('hSeal').textContent = ch.seal; $('hEn').textContent = ch.en; $('pName').textContent = ch.zh;
-  for (const b of document.querySelectorAll('#chars button')) b.classList.toggle('on', b.dataset.c === k);
+const STAGES = { zhao: ['changban', 'xunzhu', 'endless'], fei: ['bridge', 'endless'] };
+const STAGE_INFO = {
+  changban: { zh: '長坂單騎', en: 'LONE RIDER', tag: '長坂坡 · 一杆長槍，單騎七進七出', foot: '擊破四員魏將，向長坂橋突圍。' },
+  xunzhu: { zh: '尋主', en: 'SEEK THE HEIR', tag: '亂軍之中 · 尋回糜夫人與阿斗', foot: '先找簡雍打聽下落，趕在糜夫人遇害前到枯井接過阿斗，再殺出重圍。' },
+  bridge: { zh: '據水斷橋', en: 'HOLD THE BRIDGE', tag: '長坂橋 · 據水斷橋，一夫當關', foot: '守住橋頭五波，放過二十人即失守。' },
+  endless: { zh: '千人斬', en: 'THOUSAND SLAIN', tag: '無盡魏軍 · 每百人更強一陣', foot: '沒有終點：每擊破一百人敵軍變強一陣，戰至力盡。目標千人斬。' },
+};
+let stageKey = 'changban';
+function setStage(k, refresh = true) {
+  if (!STAGES[charKey].includes(k)) k = STAGES[charKey][0];
+  stageKey = k; game.stage = k; LS.set('stage_' + charKey, k);
+  $('stages').innerHTML = '<span>關卡</span>' + STAGES[charKey].map((q) => `<button data-s="${q}" class="${q === k ? 'on' : ''}">${STAGE_INFO[q].zh}</button>`).join('');
+  for (const b of document.querySelectorAll('#stages button')) b.onclick = () => setStage(b.dataset.s);
+  $('tTag').textContent = STAGE_INFO[k].tag; $('tFoot').textContent = STAGE_INFO[k].foot;
   if (refresh && ui.mode === 'title') resetGame();
 }
+function setChar(k, refresh = true) {
+  charKey = k; game.char = CHARS[k]; LS.set('char', k);
+  heroView.setChar(k); drawFace(k);
+  const ch = game.char;
+  $('tName').textContent = ch.zh; $('tSeal').textContent = ch.seal;
+  $('hName').textContent = ch.zh; $('hSeal').textContent = ch.seal; $('hEn').textContent = ch.en; $('pName').textContent = ch.zh;
+  for (const b of document.querySelectorAll('#chars button')) b.classList.toggle('on', b.dataset.c === k);
+  setStage(LS.get('stage_' + k, ch.stage), refresh);
+}
 for (const b of document.querySelectorAll('#chars button')) b.onclick = () => setChar(b.dataset.c);
-function setDiff(k) { diffKey = k; game.diff = DIFFS[k]; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
+function setDiff(k) { diffKey = k; game.diff = { ...DIFFS[k] }; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
 for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
 setDiff(diffKey);
 $('qbtn').onclick = cycleQuality; $('qbtn2').onclick = cycleQuality;
@@ -680,7 +792,8 @@ function render(dt) {
   game.world.update(dt, _v.set(game.hero.x, 0, game.hero.z));
   feiRig.root.position.y = bridgeDeck(feiRig.root.position.z);
   applyPose(feiRig, feiPose);
-  beacon.material.opacity += ((DIR.phase === 6 ? 0.22 + Math.sin(game.frame * 0.08) * 0.06 : 0) - beacon.material.opacity) * 0.05;
+  const mk = markPos(); if (mk) { beacon.position.x = mk.x; beacon.position.z = mk.z; }
+  beacon.material.opacity += ((mk ? 0.22 + Math.sin(game.frame * 0.08) * 0.06 : 0) - beacon.material.opacity) * 0.05;
   beacon.visible = beacon.material.opacity > 0.01;
   grade.uniforms.flash.value = vfx.flash; grade.uniforms.flashCol.value.copy(vfx.flashCol);
   grade.uniforms.musou.value = musouView.strength; grade.uniforms.time.value = (grade.uniforms.time.value + 0.37) % 100;
@@ -745,6 +858,8 @@ function autoInput(real) {
     if (bi >= 0) { tgt = { x: c.x[bi], z: c.z[bi] }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z); } else if (!tgt) { tgt = { x: game.goal.x, z: game.goal.z + 7 }; td = Math.hypot(tgt.x - h.x, tgt.z - h.z) > 2 ? 99 : 0; }
   }
   if (DIR.phase === 6) { tgt = { x: BRIDGE.x, z: BRIDGE.z - 3 }; td = 99; }
+  if ((DIR.phase === 10 || DIR.phase === 11) && DIR.mark) { tgt = DIR.mark; td = 99; }
+  if (DIR.phase === 12) { tgt = null; td = 99; }
   if (tgt) { const dx = tgt.x - h.x, dz = tgt.z - h.z, d = Math.hypot(dx, dz) || 1; o.mx = dx / d; o.mz = dz / d; o.mag = td > 2.6 ? 1 : 0.3; }
   if (auto.ride && !h.riding && td > 26 && td < 90 && game.frame % 90 === 0) o.mount = true;
   if (h.riding && td < 4 && DIR.phase !== 6) { o.jump = true; return o; }
@@ -769,7 +884,7 @@ window.__vm = {
   gov, quality(m) { if (m) { qMode = m; applyQuality(); } return { mode: qMode, tier: TIERS[qTier()].key, pr: renderer.getPixelRatio() }; },
   hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
-  setDiff, setChar, dropItem, items, startWave,
+  setDiff, setChar, setStage, STAGES, miRig, jianRig, dropItem, items, startWave, result() { showResult(); },
   officer(k) { const o = spawnOfficerNear(k, 8); return o.def.zh; },
 };
 

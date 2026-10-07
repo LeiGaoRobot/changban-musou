@@ -440,6 +440,7 @@ export function createHeroView(scene, h) {
     for (const q in sets) sets[q].rig.root.visible = sets[q].horse.root.visible = q === k;
     rig = sets[k].rig; horse = sets[k].horse; v.rig = rig; v.horse = horse; v.char = CHARS[k];
   };
+  v.setBaby = (on) => { const a = sets.zhao.rig.j.adou; if (a) a.visible = on; };   // 尋主: 趙雲 starts without A Dou
   v.setChar('zhao');
   v.step = () => {   // once per sim frame
     t += 1 / 60;

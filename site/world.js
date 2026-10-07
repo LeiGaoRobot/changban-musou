@@ -6,6 +6,8 @@ export const ARENA = { x0: -52, x1: 52, z0: -48.5, z1: 57 };
 export const GATE = { x: 0, z: 60 };
 export const BRIDGE = { x: 0, z: -55, half: 5.5, w: 1.6 };
 export const RIVER = { z0: -60, z1: -50 };
+export const WELL = { x: -35, z: -22 };
+export const CLUE = { x: 32.2, z: 21 };   // 尋主: the dry well, and where 簡雍 lies by the cart
 export const SUN_DIR = new THREE.Vector3(-0.55, 0.42, 0.72).normalize();
 
 let _rng = 12345;
@@ -130,7 +132,7 @@ export function createWorld(scene) {
     list.forEach((it, i) => { e.set(it.rx || 0, it.ry || 0, it.rz || 0); q.setFromEuler(e); s.setScalar(it.s || 1); p.set(it.x, it.y || 0, it.z); m.compose(p, q, s); im.setMatrixAt(i, m); });
     im.castShadow = cast; im.receiveShadow = true; scene.add(im); return im;
   };
-  const clear = (x, z, r) => Math.hypot(x, z + 10) > r && !(Math.abs(x) < 6 && z > 44);   // keep the start and the gate lane open
+  const clear = (x, z, r) => Math.hypot(x, z + 10) > r && !(Math.abs(x) < 6 && z > 44) && Math.hypot(x - WELL.x, z - WELL.z) > 6.5 && Math.hypot(x - CLUE.x, z - CLUE.z) > 3;   // keep the start, the gate lane, the well and 簡雍's spot open
   // 拒馬 lines
   const juma = [];
   for (const [x0, z0, n, ry] of [[-30, 30, 4, 0.2], [18, 36, 4, -0.15], [-40, -8, 3, 1.4], [40, 4, 3, 1.7], [-12, 46, 3, 0], [28, -28, 3, 0.6], [-26, -34, 3, -0.5]]) {
@@ -161,6 +163,11 @@ export function createWorld(scene) {
   for (const [x, z] of brazierPts) { braz.push({ x, z }); W.colliders.push({ x, z, r: 0.4 }); }
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; if (Math.sin(a) < -0.8) continue; tents.push({ x: Math.cos(a) * 92, z: 20 + Math.sin(a) * 78, ry: -a + Math.PI / 2, s: 1.5 + rnd() * 0.5 }); }
   for (let x = -70; x <= 70; x += 14) tents.push({ x, z: 76 + rnd() * 6, ry: rnd() * 0.4, s: 1.6 });
+  // the dry well by a broken wall where 糜夫人 hides (尋主)
+  place(P.well, [{ x: WELL.x, z: WELL.z, ry: 0.5 }]); W.colliders.push({ x: WELL.x, z: WELL.z, r: 1.15 });
+  const ruins = [{ x: WELL.x - 2.6, z: WELL.z - 3.4, ry: 0.25 }, { x: WELL.x - 4.6, z: WELL.z + 0.6, ry: 1.75 }];
+  place(P.ruin, ruins);
+  for (const q of ruins) for (const t of [-1.2, 0, 1.2]) W.colliders.push({ x: q.x + Math.cos(q.ry) * t, z: q.z - Math.sin(q.ry) * t, r: 0.75 });
   place(P.rock, rocks); const crateIM = place(P.crate, crates); place(P.cart, carts); place(P.rack, racks); place(P.brazier, braz); place(P.tent, tents, false);
 
   // ---------------- fire sprites + smoke + motes
