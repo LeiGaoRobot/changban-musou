@@ -15,6 +15,7 @@ import { createVfx } from './vfx.js';
 import { createAudio } from './audio.js';
 import { buildWarrior, PAL, Vox } from './voxel.js';
 import { applyPose, idlePose, P, approach, clonePose } from './anim.js';
+import { TIERS, createGovernor } from './quality.js';
 
 const $ = (id) => document.getElementById(id);
 const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem('vm.' + k, JSON.stringify(v)); } catch {} } };
@@ -22,8 +23,12 @@ const LS = { get(k, d) { try { const v = localStorage.getItem('vm.' + k); return
 // ---------------------------------------------------------------- renderer / post
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-let lowQ = LS.get('lowq', matchMedia('(pointer: coarse)').matches);
-renderer.setPixelRatio(Math.min(devicePixelRatio, lowQ ? 1 : 1.5));
+// quality: 'auto' lets the governor walk the tiers from measured frame times; the rest pin one tier
+const coarse = matchMedia('(pointer: coarse)').matches;
+let qMode = LS.get('q', null); if (!['auto', 'high', 'mid', 'low', 'min'].includes(qMode)) qMode = LS.get('lowq', false) === true ? 'low' : 'auto';
+const gov = createGovernor(coarse ? 1 : TIERS.length - 1);
+const qTier = () => qMode === 'auto' ? gov.tier : TIERS.findIndex((t) => t.key === qMode);
+renderer.setPixelRatio(Math.min(devicePixelRatio, TIERS[qTier()].pr));
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
@@ -51,13 +56,16 @@ const grade = new ShaderPass({
 composer.addPass(grade);
 composer.addPass(new OutputPass());
 function applyQuality() {
-  game.lodDist = lowQ ? 0 : undefined;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, lowQ ? 1 : 1.5));
-  bloom.enabled = !lowQ;
-  game.world.sun.shadow.mapSize.set(lowQ ? 1024 : 2048, lowQ ? 1024 : 2048);
-  if (game.world.sun.shadow.map) { game.world.sun.shadow.map.dispose(); game.world.sun.shadow.map = null; }
+  const q = TIERS[qTier()], sun = game.world.sun; game.q = q;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, q.pr));
+  bloom.enabled = q.bloom;
+  sun.castShadow = q.shadow > 0;
+  if (q.shadow && sun.shadow.mapSize.x !== q.shadow) { sun.shadow.mapSize.set(q.shadow, q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   onResize();
+  for (const id of ['qbtn', 'qbtn2']) $(id).textContent = `畫質 ${qMode === 'auto' ? '自動 · ' + q.zh : q.zh}`;
 }
+const Q_ORDER = ['auto', 'high', 'mid', 'low', 'min'];
+function cycleQuality() { qMode = Q_ORDER[(Q_ORDER.indexOf(qMode) + 1) % Q_ORDER.length]; LS.set('q', qMode); applyQuality(); }
 
 // ---------------------------------------------------------------- game object + event bus
 const game = { frame: 0, hitstop: 0, listeners: {}, reinforceOK: true };
@@ -635,7 +643,7 @@ for (const b of document.querySelectorAll('#chars button')) b.onclick = () => se
 function setDiff(k) { diffKey = k; game.diff = DIFFS[k]; LS.set('diff', k); for (const b of document.querySelectorAll('#diffs button')) b.classList.toggle('on', b.dataset.d === k); }
 for (const b of document.querySelectorAll('#diffs button')) b.onclick = () => setDiff(b.dataset.d);
 setDiff(diffKey);
-$('lowq').checked = lowQ; $('lowq').onchange = (e) => { lowQ = e.target.checked; LS.set('lowq', lowQ); applyQuality(); };
+$('qbtn').onclick = cycleQuality; $('qbtn2').onclick = cycleQuality;
 
 // ---------------------------------------------------------------- loop
 let paused = false, manual = false;
@@ -692,6 +700,7 @@ function frame(now) {
   while (acc >= 1 / 60 && n < 4) { step(); acc -= 1 / 60; n++; }
   if (n === 4) acc = 0;
   render(dt);
+  if (qMode === 'auto' && ui.mode === 'play' && document.visibilityState === 'visible' && gov.push(dt * 1000)) applyQuality();
 }
 function onResize(e, w = shotW || innerWidth, h = shotH || innerHeight) {
   renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
@@ -757,6 +766,7 @@ window.__vm = {
   capture(name = 'shot.jpg', q = 0.85) { render(1 / 60); const data = canvas.toDataURL('image/jpeg', q); return fetch('http://127.0.0.1:8209/', { method: 'POST', body: JSON.stringify({ name, data }) }).then((r) => r.text()); },
   press(k) { pressed.add(k); },
   size(w, h) { shotW = w; shotH = h; onResize(); },
+  gov, quality(m) { if (m) { qMode = m; applyQuality(); } return { mode: qMode, tier: TIERS[qTier()].key, pr: renderer.getPixelRatio() }; },
   hold(code, on) { if (on) keys.add(code); else keys.delete(code); },
   ride() { const h = game.hero; h.horse.x = h.x + 1; h.horse.z = h.z; h.horse.yaw = h.yaw; h.mount(); },
   setDiff, setChar, dropItem, items, startWave,
@@ -766,7 +776,7 @@ window.__vm = {
 // ---------------------------------------------------------------- boot
 setChar(charKey, false);
 resetGame();
-game.lodDist = lowQ ? 0 : undefined; bloom.enabled = !lowQ;
+applyQuality();
 ui.mode = 'title'; showMenu('title'); $('hud').classList.add('hidden');
 $('loading').remove();
 onResize();

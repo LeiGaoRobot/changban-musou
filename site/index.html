@@ -130,6 +130,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu h1 .seal { writing-mode: vertical-rl; font-size: 20px; padding: 8px 5px; margin-top: 14px; }
 .menu .sub { font-family: var(--latin); font-size: 15px; letter-spacing: .72em; color: var(--dim); margin-top: 10px; }
 .menu .tag2 { font-size: 16px; letter-spacing: .28em; margin: 1.4vh 0 1.6vh; color: #f0e2c4; }
+.qbtn { font: inherit; color: #eadfc8; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 3px; padding: 2px 10px; cursor: pointer; white-space: nowrap; } .qbtn:hover { border-color: var(--gold); color: var(--gold); }
 .ctl { display: grid; grid-template-columns: auto 1fr; gap: 1px 16px; border-left: 3px solid var(--red); padding: 2px 0 2px 16px; font-size: 14px; align-items: center; }
 .ctl dt { font-family: var(--serif); font-weight: 900; color: var(--gold); font-size: 15px; white-space: nowrap; }
 .ctl dt small { font-family: var(--latin); font-size: 10px; color: var(--dim); letter-spacing: .15em; margin-left: 6px; }
@@ -233,7 +234,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="opts">
       <label>音量 <input type="range" id="vol" min="0" max="1" step="0.05" value="0.8"></label>
       <label>音樂 <input type="range" id="mus" min="0" max="1" step="0.05" value="0.55"></label>
-      <label><input type="checkbox" id="lowq"> 低畫質</label>
+      <button class="qbtn" id="qbtn">畫質 自動</button>
     </div>
     <div class="foot">Enter 出陣 · Esc 暫停 · 支援手柄（□攻擊 △蓄力 ×跳躍 ○無雙 R1閃避 L1喚馬 L2格擋 R3鎖定）<br>趙雲：擊破四員魏將，向長坂橋突圍。張飛：守住橋頭五波，放過二十人即失守。木箱有肉包與強化；虎豹騎的紅線要讓開。</div>
   </div>
@@ -250,6 +251,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     <div class="opts">
       <label>音量 <input type="range" id="vol2" min="0" max="1" step="0.05" value="0.8"></label>
       <label>音樂 <input type="range" id="mus2" min="0" max="1" step="0.05" value="0.55"></label>
+      <button class="qbtn" id="qbtn2">畫質 自動</button>
     </div>
   </div>
 </div>

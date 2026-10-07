@@ -80,33 +80,67 @@ export class Vox {
   // half-resolution copy for LOD (use with s * 2)
   down() { const v = new Vox(); for (const [k, c] of this.m) { const [x, y, z] = Vox.dec(k); const kk = Vox.key(Math.floor(x / 2), Math.floor(y / 2), Math.floor(z / 2)); if (!v.m.has(kk) || ((x & 1) === 0 && (y & 1) === 1)) v.m.set(kk, c); } return v; }
   // o = pivot in voxel units (voxel corners), s = metres per voxel, jit = per-voxel colour noise
-  geometry({ s = VS, o = [0, 0, 0], jit = 0.08, ao = true } = {}) {
+  // greedy: coplanar faces of one colour, one brightness and uniform AO are merged into rectangles.
+  // bj: brightness jitter is shared by blocks of 2^bj voxels, so there is something to merge while the surface still reads as voxels.
+  geometry({ s = VS, o = [0, 0, 0], jit = 0.08, ao = true, greedy = false, bj = 0 } = {}) {
     const pos = [], nor = [], col = [], idx = [];
-    for (const [k, c] of this.m) {
-      const [x, y, z] = Vox.dec(k);
+    const quad = (x, y, z, f, w, h, c, n0, av) => {
+      const base = pos.length / 3, t1 = (f.a + 1) % 3, t2 = (f.a + 2) % 3;
       _c.setHex(c);
-      const n0 = 1 + (hash3(x, y, z) - 0.5) * 2 * jit;
-      for (const f of FACES) {
+      for (let k = 0; k < 4; k++) {
+        const v = f.v[k], q = [x + v[0], y + v[1], z + v[2]];
+        if (v[t1]) q[t1] += w - 1; if (v[t2]) q[t2] += h - 1;
+        pos.push((q[0] - o[0]) * s, (q[1] - o[1]) * s, (q[2] - o[2]) * s);
+        nor.push(f.n[0], f.n[1], f.n[2]);
+        const m = n0 * AO[av[k]];
+        col.push(_c.r * m, _c.g * m, _c.b * m);
+      }
+      idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    };
+    const av = [3, 3, 3, 3];
+    for (let fi = 0; fi < FACES.length; fi++) {
+      const f = FACES[fi], t1 = (f.a + 1) % 3, t2 = (f.a + 2) % 3;
+      const layers = greedy ? new Map() : null;
+      for (const [k, c] of this.m) {
+        const [x, y, z] = Vox.dec(k);
         const nx = x + f.n[0], ny = y + f.n[1], nz = z + f.n[2];
         if (this.has(nx, ny, nz)) continue;
-        const base = pos.length / 3;
-        const t1 = (f.a + 1) % 3, t2 = (f.a + 2) % 3;
-        for (const v of f.v) {
-          pos.push((x + v[0] - o[0]) * s, (y + v[1] - o[1]) * s, (z + v[2] - o[2]) * s);
-          nor.push(f.n[0], f.n[1], f.n[2]);
+        const n0 = 1 + (hash3(x >> bj, y >> bj, z >> bj) - 0.5) * 2 * jit;
+        for (let vi = 0; vi < 4; vi++) {
           let a = 3;
           if (ao) {
-            const p = [nx, ny, nz], d1 = [0, 0, 0], d2 = [0, 0, 0];
+            const v = f.v[vi], p = [nx, ny, nz], d1 = [0, 0, 0], d2 = [0, 0, 0];
             d1[t1] = v[t1] ? 1 : -1; d2[t2] = v[t2] ? 1 : -1;
             const s1 = this.has(p[0] + d1[0], p[1] + d1[1], p[2] + d1[2]) ? 1 : 0;
             const s2 = this.has(p[0] + d2[0], p[1] + d2[1], p[2] + d2[2]) ? 1 : 0;
             const cc = this.has(p[0] + d1[0] + d2[0], p[1] + d1[1] + d2[1], p[2] + d1[2] + d2[2]) ? 1 : 0;
             a = s1 && s2 ? 0 : 3 - (s1 + s2 + cc);
           }
-          const m = n0 * AO[a];
-          col.push(_c.r * m, _c.g * m, _c.b * m);
+          av[vi] = a;
         }
-        idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        if (!greedy || av[0] !== av[1] || av[1] !== av[2] || av[2] !== av[3]) { quad(x, y, z, f, 1, 1, c, n0, av); continue; }
+        const q = [x, y, z], L = q[f.a];
+        let lay = layers.get(L); if (!lay) layers.set(L, lay = new Map());
+        lay.set(q[t1] + ',' + q[t2], { u: q[t1], v: q[t2], c, n0, a: av[0], sig: c * 4 + av[0] + ':' + (x >> bj) + ',' + (y >> bj) + ',' + (z >> bj), done: false });
+      }
+      if (!greedy) continue;
+      for (const [L, lay] of layers) {
+        // same-brightness test: with jitter the block id is part of the signature, without it only colour and AO are
+        const key = (e) => jit ? e.sig : e.c * 4 + e.a;
+        const cells = [...lay.values()].sort((p, q) => p.v - q.v || p.u - q.u);
+        for (const e of cells) {
+          if (e.done) continue;
+          const kk = key(e); let w = 1, h = 1;
+          for (;;) { const n = lay.get((e.u + w) + ',' + e.v); if (!n || n.done || key(n) !== kk) break; w++; }
+          grow: for (;;) {
+            for (let i = 0; i < w; i++) { const n = lay.get((e.u + i) + ',' + (e.v + h)); if (!n || n.done || key(n) !== kk) break grow; }
+            h++;
+          }
+          for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) lay.get((e.u + i) + ',' + (e.v + j)).done = true;
+          const q = [0, 0, 0]; q[f.a] = L; q[t1] = e.u; q[t2] = e.v;
+          av[0] = av[1] = av[2] = av[3] = e.a;
+          quad(q[0], q[1], q[2], f, w, h, e.c, e.n0, av);
+        }
       }
     }
     const g = new THREE.BufferGeometry();
@@ -477,7 +511,7 @@ export function soldierParts(lod = 0) {
   const pole = new Vox();
   pole.box(0, 0, 0, 0, 116, 0, 0x4a3a2c); for (let y = 10; y <= 110; y += 20) pole.box(-1, y, 0, 1, y, 0, 0x2a2018).box(0, y, -1, 0, y, 1, 0x2a2018);
   pole.ell(0.5, 119, 0.5, 1.6, 2.6, 1.6, 0xd8b04a); pole.box(0, 76, 1, 0, 76, 32, 0x4a3a2c); pole.set(0, 76, 33, 0xd8b04a);
-  const G = (v) => { let q = v; for (let i = 0; i < lod; i++) q = q.down(); return q.geometry({ s: VS * (1 << lod), jit: 0.05 }); };
+  const G = (v) => { let q = v; for (let i = 0; i < lod; i++) q = q.down(); return q.geometry({ s: VS * (1 << lod), jit: lod ? 0 : 0.05, greedy: lod > 0 }); };
   return { body: G(body), head: G(head), cap: G(cap), arm: G(arm), leg: G(leg), spear: G(spear), sword: G(sword), shield: G(shield), bow: G(bow), pole: G(pole) };
 }
 
@@ -528,13 +562,13 @@ export function propParts() {
   for (let y = 0; y <= 30; y++) stake.set(0, y, 0, y > 27 ? 0xd8c8a4 : mod(y, 7) === 0 ? W2 : W);
   stake.set(1, 0, 0, W2).set(-1, 0, 0, W2).set(0, 0, 1, W2).set(0, 0, -1, W2);
   stake.box(1, 20, 0, 2, 22, 0, 0x8a2a20).set(3, 20, 0, 0x8a2a20).set(2, 19, 0, 0x6a1e18);
-  P.stake = stake.geometry({ s: 0.05, o: [0.5, 0, 0.5] });
+  P.stake = stake.geometry({ s: 0.05, o: [0.5, 0, 0.5], greedy: true, bj: 1 });
   // spent arrows stuck in the ground (3 cm)
   const arr = new Vox();
   for (const [bx, bz, lx, lz] of [[0, 0, 0.25, 0.1], [6, 3, -0.2, 0.3], [-5, 5, 0.1, -0.35], [3, -6, -0.3, -0.1], [-7, -3, 0.35, 0.2], [9, -2, 0.1, 0.15]]) {
     for (let y = 0; y <= 20; y++) { const x = Math.round(bx + lx * y), z = Math.round(bz + lz * y); arr.set(x, y, z, 0x8e7650); if (y > 15) { arr.set(x + 1, y, z, y % 2 ? 0xf4f0e6 : 0xc42c1e); arr.set(x - 1, y, z, 0xf4f0e6); } }
   }
-  P.arrows = arr.geometry({ s: 0.03, o: [0, 0, 0] });
+  P.arrows = arr.geometry({ s: 0.03, o: [0, 0, 0], greedy: true, bj: 2 });
   // 拒馬 cheval-de-frise along X (6 cm): a log with crossed, sharpened stakes
   const jm = new Vox();
   for (let x = -22; x <= 21; x++) jm.ell(x + 0.5, 9, 0, 0.6, 1.7, 1.7, wood);
@@ -544,7 +578,7 @@ export function propParts() {
     jm.set(x + 3, 9 + i, -i, tip ? 0xe0d2b0 : W2).set(x + 4, 9 + i, -i, tip ? 0xe0d2b0 : W);
   }
   for (const x of [-21, 20]) { jm.box(x, 8, -2, x, 10, 2, IRON); jm.box(x, 7, -1, x, 11, 1, IRON); }
-  P.juma = jm.geometry({ s: 0.06, o: [0, 0, 0] });
+  P.juma = jm.geometry({ s: 0.06, o: [0, 0, 0], greedy: true, bj: 1 });
   // fire basket on a tripod (4 cm); rim at ~1 m
   const bz = new Vox();
   for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2 + 0.5; for (let y = 0; y <= 20; y++) { const r = 8 - y * 0.22; bz.set(Math.round(Math.cos(a) * r - 0.5), y, Math.round(Math.sin(a) * r - 0.5), IRON); if (y === 0) bz.set(Math.round(Math.cos(a) * (r + 1) - 0.5), 0, Math.round(Math.sin(a) * (r + 1) - 0.5), IRON); } }
@@ -564,19 +598,19 @@ export function propParts() {
     cr.set(x, y, z, c);
   }
   cr.box(5, 15, 4, 10, 15, 11, 0xcbb58c); cr.box(6, 16, 6, 9, 16, 9, 0xb8a078);
-  P.crate = cr.geometry({ s: 0.05, o: [8, 0, 8] });
+  P.crate = cr.geometry({ s: 0.05, o: [8, 0, 8], greedy: true, bj: 1 });
   // boulder (10 cm)
   const rock = new Vox();
   const rockC = (x, y, z) => { const h = hash3(x >> 1, y, z >> 1); return y > 4 && hash3(x, 9, z) < 0.35 ? 0x6a7048 : h < 0.3 ? 0x6e6a64 : h < 0.7 ? 0x86827a : 0x9a958a; };
   rock.ell(0, 2.5, 0, 6.5, 4.5, 5.5, rockC, (x, y) => y >= 0); rock.ell(3, 4, 2, 4, 4.5, 3.5, rockC, (x, y) => y >= 0); rock.ell(-3.5, 2, -2, 3.5, 3, 3.5, rockC, (x, y) => y >= 0);
-  P.rock = rock.geometry({ s: 0.1, o: [0, 0, 0] });
+  P.rock = rock.geometry({ s: 0.1, o: [0, 0, 0], greedy: true, bj: 1 });
   // round army tent (12.5 cm)
   const tent = new Vox();
   const canvas = (x, y, z) => { const a = Math.round(Math.atan2(z + 0.5, x + 0.5) * 7); return y === 9 || y === 10 || y === 22 ? 0xa8322a : mod(a, 2) ? 0xe6dcc8 : 0xd8ccb4; };
   for (let y = 0; y <= 30; y++) { const r = y < 10 ? 15 : 15 * Math.pow(1 - (y - 10) / 21, 0.85) + 0.6; tent.layer(y, 0, 0, r, r, canvas, 2, (x, yy, z) => Math.hypot(x + 0.5, z + 0.5) > r - 1.6); }
   for (let y = 0; y <= 8; y++) for (let x = -3; x <= 2; x++) { const z = tent.surf(x, y); if (z !== null) tent.set(x, y, z, Math.abs(x + 0.5) > 2 ? 0xa8322a : 0x2a1f18); }
   tent.box(0, 31, 0, 0, 38, 0, W2); tent.box(1, 35, 0, 4, 37, 0, 0xb8281c); tent.set(5, 36, 0, 0xb8281c);
-  P.tent = tent.down().geometry({ s: 0.25, o: [0, 0, 0] });
+  P.tent = tent.down().geometry({ s: 0.25, o: [0, 0, 0], greedy: true, bj: 1 });
   // supply cart (5 cm), drawbar toward +X
   const cart = new Vox();
   for (let x = -20; x <= 19; x++) for (let z = -9; z <= 8; z++) cart.set(x, 14, z, mod(z, 3) === 0 ? W2 : W3).set(x, 15, z, mod(z, 3) === 0 ? W2 : W);
@@ -593,7 +627,7 @@ export function propParts() {
   cart.ell(-11, 19, -3, 6, 4, 5, 0xc4ae82); cart.ell(-10, 19.5, 4, 5, 3.5, 4, 0xb49c70); cart.ell(-12, 24, 0, 5, 3, 5, 0xd0bc92);   // grain sacks
   cart.box(2, 16, -7, 11, 24, 2, W3); cart.box(2, 20, -7, 11, 20, 2, W2); cart.box(6, 16, -7, 7, 24, 2, W2);                       // crate
   for (let k = 0; k < 3; k++) { cart.box(-18, 22 + k, 5 - k, 16, 22 + k, 5 - k, 0x3a2c24); cart.box(17, 22 + k, 5 - k, 21, 22 + k, 5 - k, 0xc8ccd2); }  // spears
-  P.cart = cart.geometry({ s: 0.05, o: [0, 0, 0] });
+  P.cart = cart.geometry({ s: 0.05, o: [0, 0, 0], greedy: true, bj: 1 });
   // weapon rack (5 cm)
   const rack = new Vox();
   for (const x of [-16, 15]) { rack.box(x, 0, -3, x, 26, -3, W2); rack.box(x, 0, 3, x, 26, 3, W2); for (let z = -3; z <= 3; z++) rack.set(x, 26, z, W2); rack.box(x, 0, -4, x, 1, 4, W2); }
@@ -604,7 +638,7 @@ export function propParts() {
     if (i % 3 === 1) { rack.box(x - 2, top - 5, 1, x + 2, top - 3, 1, 0xc0c4ca); rack.box(x, top + 1, 1, x, top + 4, 1, 0xd8dce4); rack.set(x - 2, top - 2, 1, 0xd8dce4).set(x + 2, top - 2, 1, 0xd8dce4); }   // halberd
     else { rack.box(x - 1, top + 1, 1, x + 1, top + 3, 1, 0xc0c4ca); rack.box(x, top + 4, 1, x, top + 6, 1, 0xe0e4ea); rack.box(x - 1, top - 3, 1, x + 1, top - 2, 2, 0xb8281c); }
   }
-  P.rack = rack.geometry({ s: 0.05, o: [0, 0, 0] });
+  P.rack = rack.geometry({ s: 0.05, o: [0, 0, 0], greedy: true, bj: 1 });
   return P;
 }
 
@@ -678,7 +712,7 @@ export function wallGeometry(len = 150) {
   }
   for (let x = -12; x <= 11; x++) { v.set(x, RY + 10, 6, 0x2a2e34); v.set(x, RY + 10, 7, 0x2a2e34); }
   for (const x of [-13, 12]) { v.box(x, RY + 10, 6, x, RY + 12, 7, 0xd8b04a); v.set(x + (x < 0 ? -1 : 1), RY + 12, 6, 0xd8b04a); }
-  return v.geometry({ s: S, o: [0, 0, 0], jit: 0.05 });
+  return v.geometry({ s: S, o: [0, 0, 0], jit: 0.05, greedy: true, bj: 1 });
 }
 
 // 長坂橋 wooden bridge along Z, 12.5 cm voxels; deck top follows world.bridgeDeck()

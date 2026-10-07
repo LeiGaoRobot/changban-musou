@@ -599,8 +599,9 @@ export function createCrowd(game, scene) {
         const dxc = c.x[i] - cp.x, dzc = c.z[i] - cp.z, dc = Math.hypot(dxc, dzc);
         if (cf && dxc * cf.x + dzc * cf.z < -3) continue;                                  // behind the camera
         const lying = s === ST.DEAD || s === ST.DOWN;
-        if (dc < (game.lodDist ?? LOD_DIST) && !lying && hiN < 40) { V = VL[0]; hiN++; }
-        else if (dc < LOD_FAR && midN < 240) { V = VL[1]; midN++; }
+        const Q = game.q;
+        if (dc < (Q ? Q.lod : LOD_DIST) && !lying && hiN < (Q ? Q.hi : 40)) { V = VL[0]; hiN++; }
+        else if (dc < (Q ? Q.far : LOD_FAR) && midN < (Q ? Q.mid : 240)) { V = VL[1]; midN++; }
       }
       // pose params
       let lean = 0, pitch = 0, roll = 0, rootY = 0, aR = 0.15, aL = 0.05, lL = 0, lR = 0, wp = -1.35, head = 0, sink = 0, aRz = 0, aLz = 0;
